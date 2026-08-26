@@ -1,0 +1,13 @@
+torch
+transformers
+open_clip_torch
+timm
+huggingface_hub
+scikit-learn
+pandas
+numpy
+matplotlib
+pillow
+opencv-python
+albumentations
+jupyter

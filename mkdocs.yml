@@ -1,0 +1,44 @@
+site_name: OncoVLM
+site_description: "VLMs na Oncologia: Democratizando o Pré-Diagnóstico e a Interpretação de Exames Histopatológicos"
+site_author: "[a preencher]"
+
+theme:
+  name: material
+  language: pt-BR
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Modo escuro
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Modo claro
+  features:
+    - navigation.tabs
+    - navigation.top
+    - navigation.instant
+    - toc.integrate
+    - search.suggest
+    - content.code.copy
+
+nav:
+  - Início: index.md
+  - Resumo: 00-resumo.md
+  - Introdução e Motivação: 01-introducao-motivacao.md
+  - Fundamentação Teórica: 02-fundamentacao-teorica.md
+  - Objetivos: 03-objetivos.md
+  - Metodologia: 04-metodologia.md
+  - Datasets: 05-datasets.md
+  - Cronograma: 06-cronograma.md
+  - Referências: 07-referencias.md
+
+markdown_extensions:
+  - tables
+  - toc:
+      permalink: true
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
