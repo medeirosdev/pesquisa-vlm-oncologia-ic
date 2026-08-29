@@ -26,6 +26,7 @@ theme:
 
 nav:
   - Início: index.md
+  - Modelos Locais: modelos-locais.md
   - Datasets: datasets.md
 
 markdown_extensions:
