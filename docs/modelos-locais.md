@@ -49,8 +49,8 @@ Só entram se você for montar seu próprio VLM por cima. Incluí os leves, que 
 | Modelo | Params | Arquitetura | Licença | Link | Status |
 |---|---|---|---|---|---|
 | **Midnight-12k** | leve | destilado (kaiko) | Aberto | huggingface.co/kaiko-ai/midnight | ✓ |
-| **Virchow2G Mini** | 22M | destilado do Virchow2G (1.9B) | Gated | huggingface.co/paige-ai (buscar Virchow2G-Mini) | ⚠️ repo exato |
-| **CTransPath** | ~28M | Swin (leve) | Aberto | github.com/Xiyue-Wang/TransPath | ⚠️ não reverificado |
+| **Virchow2G Mini** | 22M | destilado do Virchow2G (1.9B) | Gated | ai.azure.com/catalog/models/Virchow2G-Mini | ✓ |
+| **CTransPath** | ~28M | Swin (leve) | Aberto | github.com/Xiyue-Wang/TransPath | ✓ |
 | **Phikon** | ~86M | ViT-B (iBOT) | Owkin non-commercial | huggingface.co/owkin/phikon | ✓ |
 | **Phikon-v2** | ~300M | ViT-L (embed 1024) | Owkin non-commercial | huggingface.co/owkin/phikon-v2 | ✓ |
 | **Hibou-B / -L** | 86M / 300M | ViT (DINOv2) | Aberto | huggingface.co/histai/hibou-b · /hibou-L | ✓ |
@@ -96,7 +96,5 @@ Nota GGUF em VLM: o backbone de texto é quantizado, mas o encoder de visão (mm
 Fontes vivas: github.com/lingxitong/Awesome-AI4DigitalPathology · leaderboard PathVLM-Eval (huggingface.co/spaces/gilalnauman/PathVLMs) · tabelas de encoders no github.com/mahmoodlab/trident.
 
 ## Itens a confirmar antes de usar
-- **PathGen-CLIP**: peso exato (org jamessyx no HF; dataset é gated).
-- **Virchow2G Mini**: repo exato dentro de paige-ai.
-- **CTransPath**: não reverificado nesta passada (repo provável: Xiyue-Wang/TransPath).
+- **PathGen-CLIP**: peso exato (link do dataset PathGen-1.6M confirmado; ainda falta achar onde estão os pesos do modelo em si).
 - Contagens de params com "~" são aproximadas — valor exato no model card.
