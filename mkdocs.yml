@@ -26,14 +26,7 @@ theme:
 
 nav:
   - Início: index.md
-  - Resumo: 00-resumo.md
-  - Introdução e Motivação: 01-introducao-motivacao.md
-  - Fundamentação Teórica: 02-fundamentacao-teorica.md
-  - Objetivos: 03-objetivos.md
-  - Metodologia: 04-metodologia.md
-  - Datasets: 05-datasets.md
-  - Cronograma: 06-cronograma.md
-  - Referências: 07-referencias.md
+  - Datasets: datasets.md
 
 markdown_extensions:
   - tables
