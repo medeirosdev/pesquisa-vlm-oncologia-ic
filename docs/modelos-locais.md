@@ -6,7 +6,7 @@ Matriz de referência para a fase de seleção. Foco em rodar em hardware modest
 
 Licença/acesso: **Aberto** = download livre · **Gated** = cadastro no HF + aceite de termos (quase sempre não-comercial/acadêmico).
 
-Quantização: para modelos < ~700M, fp16 já cabe em < 2 GB — quantizar não compensa. Só marco quantização onde é útil (7B+).
+Quantização: para modelos < ~700M, fp16 já cabe em < 2 GB — quantizar não compensa. Quantização é indicada apenas onde é útil (7B+).
 
 ---
 
@@ -44,7 +44,7 @@ Slide-level generativo relacionado: **TITAN / CONCH v1.5** → huggingface.co/Ma
 
 ## 3. Encoders de VISÃO pura (backbones — NÃO geram texto)
 
-Só entram se você for montar seu próprio VLM por cima. Incluí os leves, que servem ao argumento de eficiência.
+Só entram nesta lista os que forem usados para montar um VLM próprio por cima. Os modelos leves foram incluídos por servirem ao argumento de eficiência.
 
 | Modelo | Params | Arquitetura | Licença | Link | Status |
 |---|---|---|---|---|---|
@@ -67,7 +67,7 @@ Para o argumento de eficiência, os leves (Midnight, Virchow2G Mini, CTransPath,
 
 ## 4. VLMs pequenos GENÉRICOS (para fine-tuning em patologia)
 
-**MedGemma é o mais relevante:** é médico, da família Gemma que você já usa, e o encoder SigLIP dele foi pré-treinado incluindo **histopatologia** (avaliado em PathMCQA — mama, cérvix, próstata).
+**MedGemma é o mais relevante:** é médico, da família Gemma já utilizada no projeto, e o encoder SigLIP dele foi pré-treinado incluindo **histopatologia** (avaliado em PathMCQA — mama, cérvix, próstata).
 
 | Modelo | Params | Licença | Link | Quantização | Status |
 |---|---|---|---|---|---|
@@ -91,7 +91,7 @@ Nota GGUF em VLM: o backbone de texto é quantizado, mas o encoder de visão (mm
 
 - **Contrastivo** (classificação/retrieval): CONCH (SOTA, gated) + QuiltNet e PLIP (abertos). KEEP para resultado recente e forte, e é MIT.
 - **Generativo** (VQA/laudo): Quilt-LLaVA aberto, 4-bit; comparar com LLaVA-Med.
-- **Adaptar base pequena**: MedGemma-4B (médico + Gemma que você domina, encoder já viu histopatologia) ou Qwen2.5-VL-3B (Apache-2.0, AWQ pronto).
+- **Adaptar base pequena**: MedGemma-4B (médico + família Gemma já dominada no projeto, encoder já viu histopatologia) ou Qwen2.5-VL-3B (Apache-2.0, AWQ pronto).
 
 Fontes vivas: github.com/lingxitong/Awesome-AI4DigitalPathology · leaderboard PathVLM-Eval (huggingface.co/spaces/gilalnauman/PathVLMs) · tabelas de encoders no github.com/mahmoodlab/trident.
 
