@@ -21,7 +21,7 @@ Quantização: para modelos < ~700M, fp16 já cabe em < 2 GB — quantizar não 
 | **KEEP** | ViT-L (embed 768) | CLIP + grafo de conhecimento; supera CONCH em vários zero-shot | MIT (aberto) | huggingface.co/Astaxanthin/KEEP | ✓ |
 | **MUSK** | large | BEiT-3 (contrastivo + generativo) | Gated (CC-BY-NC-ND) | huggingface.co/xiangjx/musk | ✓ |
 | **BiomedCLIP** | ~200M | ViT-B/16 + PubMedBERT (biomédico geral) | Aberto | huggingface.co/microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224 | ✓ |
-| **PathGen-CLIP / -L** | B / ViT-L-336 | CLIP (PathGen-1.6M) | Gated (pesquisa) | huggingface.co/jamessyx/PathGen (org do autor) | ⚠️ peso exato |
+| **PathGen-CLIP / -L** | B / ViT-L-336 | CLIP (PathGen-1.6M) | Gated (pesquisa) | huggingface.co/datasets/jamessyx/PathGen | ⚠️ peso exato |
 | **PathCLIP** | ~150M | CLIP do PathAsst | Aberto | github.com/superjamessyx/Generative-Foundation-AI-Assistant-for-Pathology | ✓ |
 
 Nota CONCH: a versão pública teve o decoder generativo removido (precaução de PHI). Vision + text encoder intactos — classificação e retrieval OK; captioning nativo, não.
