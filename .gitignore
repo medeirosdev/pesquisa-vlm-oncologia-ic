@@ -24,6 +24,9 @@ results/*
 # MkDocs
 site/
 
+# Artigos (PDFs ficam só locais — ver artigos/artigosDataset/ArtigosLink.md)
+artigos/**/*.pdf
+
 # Ambiente
 .env
 
