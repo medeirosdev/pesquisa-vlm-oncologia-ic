@@ -26,9 +26,9 @@ theme:
 
 nav:
   - Início: index.md
-  - Metodologia: metodologia.md
-  - Modelos Locais: modelos-locais.md
   - Datasets: datasets.md
+  - Modelos Locais: modelos-locais.md
+  - Metodologia: metodologia.md
 
 markdown_extensions:
   - tables
