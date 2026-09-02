@@ -29,6 +29,7 @@ nav:
   - Datasets: datasets.md
   - Modelos Locais: modelos-locais.md
   - Metodologia: metodologia.md
+  - Conceitos: conceitos.md
 
 markdown_extensions:
   - tables
@@ -37,3 +38,9 @@ markdown_extensions:
   - admonition
   - pymdownx.details
   - pymdownx.superfences
+  - pymdownx.arithmatex:
+      generic: true
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
