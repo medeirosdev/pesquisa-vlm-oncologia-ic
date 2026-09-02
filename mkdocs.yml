@@ -30,6 +30,7 @@ nav:
   - Modelos Locais: modelos-locais.md
   - Metodologia: metodologia.md
   - Conceitos: conceitos.md
+  - Questões: questoes.md
 
 markdown_extensions:
   - tables
