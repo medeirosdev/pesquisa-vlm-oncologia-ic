@@ -7,3 +7,7 @@ acessíveis e capazes de diagnóstico? fazer também: como tornar as imagens mai
 - Como representar uma imagem de maneira mais eficiente, já que algumas imagens histopatológicas são gigantescas, como criar uma representação eficiente, acessível e rápida
 para modelos locais?
 
+
+- Ideia: Pesquisar como é feito um diagnóstico com um médico, ver como
+funciona seu reasoning de fato para tentar se inspirar na pipeline, como é feito no
+LightGlue com a comparação de imagens
