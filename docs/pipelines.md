@@ -2,62 +2,60 @@
 
 ## Pipeline Ideia 01 - 01/09/2026
 
-### A bifurcação: por qual canal a informação do patch entra na VLM?
+Estrutura em três partes: filtro de tecido, filtro de top-k patches, e extração de informação por patch (encoders e descritores) — reunida por patch e fornecida à VLM.
 
-Uma VLM generativa só tem dois canais de entrada: tokens visuais (pixels → encoder de visão → tokens) e tokens de texto. Os "encoders e descritores" do passo 3 produzem vetores e números — e a VLM não ingere vetor de embedding nativamente. Há três saídas possíveis, e elas não são equivalentes:
-
-- **A) Textualizar** — descritores viram texto e entram pelo canal de texto. Barato, sem treino, interpretável. É o que o PaperWVC mostrou competitivo.
-- **B) Tokens visuais** — os pixels do patch entram pelo encoder da própria VLM. Nativo, preserva sinal cru, mas caro em token e limita k a pouquíssimos patches.
-- **C) Ponte por embedding** — embedding do patch → projetor treinado → LLM. Poderoso, mas exige treinar o projetor (os 8 ciclos de debug do PaperWVC foram exatamente isso). Mata o ethos de "hardware modesto, sem cluster".
-
-Para o OncoVLM (democratização, sem treino pesado), o caminho é A com um punhado de B como âncora, não C. E o número decide isso: um patch como imagem custa ~256–576 tokens visuais; 32 patches viram 8–18k tokens e estouram a VRAM de um 4B. Os mesmos 32 patches textualizados custam ~30–60 tokens cada → ~1–2k tokens, cabe folgado. Ou seja, textualizar não é só mais barato: deixa o k ser maior, cobrindo mais da lâmina pelo mesmo orçamento. Esse é o argumento central da eficiência, e ele é mensurável.
-
-### Correção do objetivo do passo 3
-
-"Obter o máximo de informação possível" é o alvo errado. Informação máxima por patch = reproduzir os pixels = compressão zero = derrota o propósito. O alvo é estatística suficiente para a pergunta: o mínimo que decide o diagnóstico, não o máximo. Trocar "máximo" por "suficiente e não-redundante" muda o design — inclusive obriga a deduplicar o top-k, que costuma devolver quase-duplicatas da mesma região tumoral (aproveitando a lógica de um gate de diversidade já usado em outro projeto do grupo).
-
-### Descritores concretos, por custo de hardware
-
-O descritor mais elegante para este caso é o contrastivo zero-shot: passar o patch por CONCH/PLIP/QuiltNet/KEEP contra um banco de frases ("tumor nests", "necrosis", "high nuclear pleomorphism", "mitotic figures", "dense stroma") e pegar as que mais casam. Ele já sai como texto, sem engenharia de vocabulário e sem projetor. Complementos possíveis:
-
-- **Tecido/cor (CPU):** deconvolução H&E (Macenko) → razão hematoxilina/eosina, stats.
-- **Núcleos (leve):** StarDist ou detector rápido → densidade, área média, proxy de pleomorfismo. CellViT é pesado demais para "modesto" — recomendado só se sobrar GPU.
-- **Tipo de tecido:** cabeça de classificação linear sobre embedding de CTransPath (28M) ou Phikon (86M).
-- **Coordenada do patch**, para a VLM raciocinar sobre arranjo espacial.
-
-### Agregação (passo 4)
-
-Cada patch vira um bloco de texto curto: [coord] achados contrastivos + 2-3 números-chave. Por cima, um cabeçalho slide-level (contagens agregadas, tecido dominante). Mantendo 1–3 patches como imagem real (âncora visual), a VLM ainda "vê" e ancora — é o hedge contra a textualização jogar fora tudo. A VLM então raciocina sobre evidência estruturada + âncoras e escreve o pré-laudo.
-
-### Duas guardas necessárias
-
-1. Textualizar herda os pontos cegos dos descritores: se o contrastivo erra, a VLM não recupera — ela nunca viu o pixel. Vale aplicar aqui o swap-control do PaperWVC: provar que a VLM usa os descritores e não recita prior de classe.
-2. Top-k precisa de alvo. Rótulo fixo (BRACS-like) → ranqueia por saliência/atenção. VQA aberto → ranqueia por similaridade contrastiva com o texto da pergunta. Essa escolha precisa ser feita antes, porque muda o roteador.
-
-### Pipeline recomendada (caminho A + âncora visual)
-
-Já com o roteador contrastivo fazendo o top-k e a textualização como ponte principal:
+### Visão geral
 
 ```mermaid
 flowchart LR
-    A["Lâmina WSI<br/>imagem gigapixel"]:::io --> B["1. Tiling<br/>extração de patches"]:::stage
-    B --> C["2. Roteador contrastivo<br/>top-k por similaridade<br/>(CONCH / PLIP / QuiltNet / KEEP)"]:::stage
-    C --> D["3. Descritores<br/>achados contrastivos + tecido/cor<br/>+ núcleos + coordenada"]:::stage
-    D --> E["4. Agregação / textualização<br/>blocos de texto por patch<br/>+ cabeçalho slide-level"]:::stage
-    C -. "1–3 patches<br/>(âncora visual)" .-> F["VLM<br/>(ex.: MedGemma, Qwen2.5-VL)"]:::model
-    E --> F
+    A["0. Entrada<br/>WSI .svs/.tiff, 20x, tile 256px<br/>~10–40k tiles"]:::io --> B["1. Filtro de tecido<br/>Otsu / deconv. H&E → máscara<br/>~5–12k tiles"]:::stage
+    B --> C["2. Roteador → top-k<br/>encoder leve + rank + dedup<br/>k = 8–32"]:::stage
+    C --> D["3. Extração por patch<br/>descritor contrastivo + coordenada"]:::stage
+    D -. "variante: reasoning+cache<br/>(não é o default)" .-> D2["VLM por patch<br/>achado em texto, sem diagnóstico"]:::variant
+    D --> E["4. Agregação<br/>k blocos de texto + cabeçalho<br/>+ 1–3 âncoras visuais"]:::stage
+    D2 -.-> E
+    E --> F["5. Síntese na VLM<br/>MedGemma-4B / Quilt-LLaVA / LLaVA-Med, 4-bit"]:::model
     F --> G["Pré-laudo"]:::io
 
     classDef io fill:#9e9e9e,stroke:#616161,color:#fff
     classDef stage fill:#1e88e5,stroke:#1565c0,color:#fff
     classDef model fill:#43a047,stroke:#2e7d32,color:#fff
+    classDef variant fill:#90caf9,stroke:#1565c0,color:#000,stroke-dasharray: 5 5
 ```
 
-Os quatro estágios em azul são a contribuição do projeto — é onde "tornar a imagem acessível" acontece. O cinza é entrada/saída e o verde é o modelo pronto, apenas orquestrado.
+### 0. Entrada
 
-### Prioridades de pesquisa, em ordem
+WSI em .svs/.tiff piramidal. Magnificação de trabalho: 20× (padrão diagnóstico), tile de 256px. Uma lâmina em 20× vira ~10–40 mil tiles antes de filtrar.
 
-1. **O roteador contrastivo (estágio 2)** é o coração e o mais barato de defender: ele decide quanto da lâmina é pago em tokens. É onde a curva custo×fidelidade nasce — variando o k e medindo a acurácia. Um detalhe que muda o design: se a tarefa for VQA aberto, o roteador ranqueia por similaridade com o texto da pergunta; se for rótulo fixo, por saliência. Essa decisão precisa ser tomada antes de codar, porque o retriever é diferente nos dois casos.
-2. **Os descritores (estágio 3)** são onde mora o trade-off real: o contrastivo zero-shot já sai como texto e é grátis de ligar, mas herda os pontos cegos do modelo. Recomenda-se começar só com ele + coordenada, medir, e só adicionar núcleos/cor se a curva pedir. Extrair "tudo" é uma tentação a evitar — cada descritor a mais é token a mais na VLM, e a maioria não move a acurácia.
-3. **Um risco de arquitetura que o diagrama esconde:** a agregação (estágio 4) tem um teto de token que cresce linear com k. 32 patches textualizados cabem; 32 patches como âncora visual não. Por isso a âncora é 1–3, não 10 — é hedge, não canal principal.
-4. **A peça que falta na metodologia atual** (que só mede memória/VRAM): cada seta desse fluxo perde sinal, e é necessário medir a perda em cada seta — tecido → top-k → descritor → VLM. Sem isso, não é possível saber se um pré-laudo ruim é culpa do roteador que jogou fora o patch certo, do descritor que não viu a mitose, ou da VLM que ignorou o texto. É a mesma cadeia de "suficiência" do PaperWVC, aplicada aqui como diagnóstico da própria pipeline.
+### 1. Filtro de tecido
+
+Sobre o thumbnail em baixa magnificação: deconvolução H&E ou Otsu no canal de saturação → máscara de tecido. Descarta fundo branco, que é 60–80% da lâmina. Só tilifica dentro da máscara. Custo: CPU, desprezível. Saída: lista de coordenadas de tiles com tecido (de ~30 mil para ~5–12 mil).
+
+### 2. Roteador → top-k
+
+É aqui que se decide quanto da lâmina é pago. Cada tile passa por um encoder/contrastivo barato (CTransPath 28M, Phikon 86M, ou um contrastivo tipo CONCH/PLIP/QuiltNet) e é ranqueado. O critério de ranking depende da tarefa — decisão de projeto, não detalhe:
+
+- rótulo fixo (BRACS-like) → ranqueia por saliência/atenção;
+- VQA aberto → ranqueia por similaridade com o texto da pergunta.
+
+Depois, deduplica o top-k (o ranking devolve quase-duplicatas da mesma região tumoral — reaproveitando o gate de diversidade do PaperWVC). Saída: k patches diversos e relevantes (k = 8–32). Custo: uma passada de encoder leve por tile, em modelo pequeno.
+
+### 3. Extração por patch
+
+Para cada um dos k patches, gerar descritores baratos. O mais elegante é o contrastivo zero-shot, que já sai como texto: casa o patch contra um banco de frases ("tumor nests", "necrosis", "high pleomorphism", "mitotic figures", "dense stroma") e pega as que mais casam. Complementar com o mínimo que a curva pedir: densidade/tamanho nuclear (StarDist ou detector leve — CellViT só se sobrar GPU), razão H&E, e sempre a coordenada do patch. Recomenda-se começar só com contrastivo + coordenada, medir, e adicionar o resto só se mover a acurácia. Saída por patch: um bloco de texto curto (~30–60 tokens).
+
+> **Variante (reasoning+cache):** em vez de descritores fixos, a VLM olha cada patch e escreve um achado ("o que vejo aqui", não o diagnóstico), com append num cache textual. Mais fiel ao raciocínio de um patologista e potencialmente mais rico, porém ordens de magnitude mais caro (uma passada de VLM por patch) e sujeito a bola de neve caso cada patch "diagnostique". Tratar como um segundo braço a comparar, não como default.
+
+### 4. Agregação
+
+Concatena os k blocos de texto + um cabeçalho slide-level (contagens agregadas, tecido dominante) + 1–3 patches como imagem-âncora (não mais — token visual cresce rápido e estoura VRAM). Saída: um prompt multimodal enxuto (~1–2k tokens de texto + poucos tokens visuais). É o ponto em que a "imagem gigante" já virou uma representação compacta e relevante à pergunta.
+
+### 5. Síntese na VLM
+
+A VLM local (Quilt-LLaVA / LLaVA-Med / MedGemma-4B, 4-bit) recebe evidência estruturada + âncoras e raciocina uma vez para escrever o pré-laudo. Separar percepção (estágios 3–4) de decisão (aqui) é o que evita a cascata de confirmação. Saída: achados + explicação + hipótese diagnóstica.
+
+### Três coisas que amarram tudo
+
+1. **Métrica da representação.** A metodologia atual só mede memória/VRAM. Falta a curva custo × fidelidade: k (ou número de tokens) no eixo x, acurácia balanceada / acerto de VQA no eixo y. Sem ela, "eficiente" é infalsificável — cada botão da pipeline (limiar de tecido, k, quais descritores, textualizar vs. âncora visual) é um ponto nessa curva.
+2. **Perda por seta.** Medir onde o sinal morre: tecido → top-k → descritor → VLM. Um laudo ruim pode ser roteador que descartou o patch certo, descritor que não viu a mitose, ou VLM ignorando o texto — são consertos diferentes. É a lógica de suficiência do PaperWVC aplicada à própria pipeline.
+3. **Independência espacial.** Decidir pela tarefa/câncer do dataset: se o diagnóstico depende do arranjo entre regiões distantes (arquitetura glandular, invasão de margem), o pipeline patch-a-patch perde geometria — devolver coordenada e um thumbnail global no estágio 5. Se é campo-a-campo independente (contar mitoses, achar tumor), roda liso como está.
