@@ -29,7 +29,56 @@ WSI em .svs/.tiff piramidal. Magnificação de trabalho: 20× (padrão diagnóst
 
 ### 1. Filtro de tecido
 
-Sobre o thumbnail em baixa magnificação: deconvolução H&E ou Otsu no canal de saturação → máscara de tecido. Descarta fundo branco, que é 60–80% da lâmina. Só tilifica dentro da máscara. Custo: CPU, desprezível. Saída: lista de coordenadas de tiles com tecido (de ~30 mil para ~5–12 mil).
+Princípio: fundo de lâmina é branco (baixa saturação, alto brilho); tecido é corado (saturação mais alta). Os dois são separados por um limiar num espaço de cor onde se distanciam — sempre sobre um thumbnail de baixa resolução, nunca no full-res (desperdício de custo computacional). Descarta fundo branco, que é 60–80% da lâmina; só tilifica dentro da máscara. Custo: CPU, desprezível. Saída: lista de coordenadas de tiles com tecido (de ~30 mil para ~5–12 mil).
+
+#### Bibliotecas prontas
+
+Caminho pragmático: não reinventar. Duas bibliotecas já fazem isso de forma robusta e são padrão no campo:
+
+- **CLAM** (`create_patches_fp.py`, Mahmood Lab) — segmenta tecido, gera contornos e já tilifica. É o de-facto da área; opção sólida para um baseline rápido.
+- **TIAToolbox** — `tiatoolbox.tools.tissuemask`, com `OtsuTissueMasker` e `MorphologicalMasker` prontos.
+- **histolab** — também embrulha máscara de tecido de forma limpa.
+
+#### Receita manual (Otsu sobre a saturação)
+
+Para entender e controlar o processo — recomendado, já que os defaults das bibliotecas prontas erram em casos reais —, a receita manual é Otsu sobre a saturação, com OpenSlide + OpenCV/skimage:
+
+```python
+import openslide, cv2, numpy as np
+
+slide = openslide.OpenSlide("lamina.svs")
+
+# 1. thumbnail num nível baixo (~downsample 32-64x). NÃO no full-res.
+level = slide.get_best_level_for_downsample(32)
+img = np.array(slide.read_region((0,0), level, slide.level_dimensions[level]))[:, :, :3]
+
+# 2. suaviza pra matar ruído/poeira
+img = cv2.medianBlur(img, 7)
+
+# 3. HSV: tecido tem S alto, fundo branco tem S baixo
+hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+S = hsv[:, :, 1]
+
+# 4. Otsu na saturação -> máscara binária de tecido
+_, mask = cv2.threshold(S, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+# 5. limpeza morfológica: fecha buracos, remove ilhas pequenas
+k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, k)
+mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, k)
+```
+
+Depois, a decisão é por tile: para cada patch candidato na magnificação de trabalho, projeta-se as coordenadas na máscara e mantém-se só se a fração de tecido passar de um limiar (tipicamente ≥ 0,5). Um jeito barato de fazer isso sem reler a máscara é checar por tile a fração de pixels quase-brancos ou a saturação média — se o tile é majoritariamente branco, descarta.
+
+#### Armadilhas
+
+Os defaults ignoram estes casos, que de fato aparecem em histopatologia:
+
+- **Marca de caneta** (verde/azul/preto do patologista) tem saturação alta e passa como "tecido". Filtra por cor (faixa de matiz da caneta) antes do Otsu, ou remove os contornos grandes e coloridos que não são rosa/roxo de H&E.
+- **Tecido adiposo** é pálido e de baixa saturação → o Otsu na saturação joga fora gordura. Se o adipócito importa para o diagnóstico, o limiar de saturação fica agressivo demais; combinar com um critério de brilho (V) em vez de só S.
+- **Dobras de tecido** ficam escuras e viram falso-positivo denso; áreas fora de foco e bolhas de ar confundem.
+- **Otsu global falha** em lâmina com tecido tênue ou gradiente de fundo. Nesse caso, um limiar fixo calibrado no scanner às vezes é mais confiável que o Otsu adaptativo.
+- **O nível de downsample escolhido importa:** downsample demais (128×) perde tecido fino e bordas; de menos, desperdiça custo. 32–64× costuma ser o ponto de equilíbrio.
 
 ### 2. Roteador → top-k
 
