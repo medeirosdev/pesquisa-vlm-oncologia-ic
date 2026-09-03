@@ -24,6 +24,9 @@ results/*
 # MkDocs
 site/
 
+# Testes: scripts ficam versionados, outputs (imagens) não
+Testes/**/outputs/
+
 # Artigos (PDFs ficam só locais — ver artigos/artigosDataset/ArtigosLink.md)
 artigos/**/*.pdf
 
