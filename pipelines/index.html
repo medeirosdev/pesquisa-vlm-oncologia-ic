@@ -1,0 +1,929 @@
+
+<!doctype html>
+<html lang="pt" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="VLMs na Oncologia: Democratizando o Pré-Diagnóstico e a Interpretação de Exames Histopatológicos">
+      
+      
+        <meta name="author" content="[a preencher]">
+      
+      
+      
+        <link rel="prev" href="../conceitos/">
+      
+      
+        <link rel="next" href="../questoes/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Pipelines - OncoVLM</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#pipelines" class="md-skip">
+          Pular para conteúdo
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Cabeçalho">
+    <a href=".." title="OncoVLM" class="md-header__button md-logo" aria-label="OncoVLM" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            OncoVLM
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Pipelines
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Modo escuro"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Modo escuro" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Modo claro"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Modo claro" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Buscar" placeholder="Buscar" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Pesquisar">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Limpar" aria-label="Limpar" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Inicializando busca
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Abas" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Início
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../datasets/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Datasets
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../modelos-locais/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Modelos Locais
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../metodologia/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Metodologia
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../conceitos/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Conceitos
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Pipelines
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../questoes/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Questões
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navegação" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="OncoVLM" class="md-nav__button md-logo" aria-label="OncoVLM" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    OncoVLM
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Início
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../datasets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Datasets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../modelos-locais/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modelos Locais
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metodologia/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Metodologia
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../conceitos/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conceitos
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipelines
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Índice">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Índice
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pipeline-ideia-01-01092026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pipeline Ideia 01 - 01/09/2026
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pipeline Ideia 01 - 01/09/2026">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#visao-geral" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visão geral
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#0-entrada" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. Entrada
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#1-filtro-de-tecido" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Filtro de tecido
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Filtro de tecido">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bibliotecas-prontas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bibliotecas prontas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#receita-manual-otsu-sobre-a-saturacao" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Receita manual (Otsu sobre a saturação)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#armadilhas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Armadilhas
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-roteador-top-k" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Roteador → top-k
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-extracao-por-patch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Extração por patch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-agregacao" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Agregação
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-sintese-na-vlm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Síntese na VLM
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tres-coisas-que-amarram-tudo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Três coisas que amarram tudo
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../questoes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Questões
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="pipelines">Pipelines<a class="headerlink" href="#pipelines" title="Permanent link">&para;</a></h1>
+<h2 id="pipeline-ideia-01-01092026">Pipeline Ideia 01 - 01/09/2026<a class="headerlink" href="#pipeline-ideia-01-01092026" title="Permanent link">&para;</a></h2>
+<p>Estrutura em três partes: filtro de tecido, filtro de top-k patches, e extração de informação por patch (encoders e descritores) — reunida por patch e fornecida à VLM.</p>
+<h3 id="visao-geral">Visão geral<a class="headerlink" href="#visao-geral" title="Permanent link">&para;</a></h3>
+<pre class="mermaid"><code>flowchart LR
+    A["0. Entrada&lt;br/&gt;WSI .svs/.tiff, 20x, tile 256px&lt;br/&gt;~10–40k tiles"]:::io --&gt; B["1. Filtro de tecido&lt;br/&gt;Otsu / deconv. H&amp;E → máscara&lt;br/&gt;~5–12k tiles"]:::stage
+    B --&gt; C["2. Roteador → top-k&lt;br/&gt;encoder leve + rank + dedup&lt;br/&gt;k = 8–32"]:::stage
+    C --&gt; D["3. Extração por patch&lt;br/&gt;descritor contrastivo + coordenada"]:::stage
+    D -. "variante: reasoning+cache&lt;br/&gt;(não é o default)" .-&gt; D2["VLM por patch&lt;br/&gt;achado em texto, sem diagnóstico"]:::variant
+    D --&gt; E["4. Agregação&lt;br/&gt;k blocos de texto + cabeçalho&lt;br/&gt;+ 1–3 âncoras visuais"]:::stage
+    D2 -.-&gt; E
+    E --&gt; F["5. Síntese na VLM&lt;br/&gt;MedGemma-4B / Quilt-LLaVA / LLaVA-Med, 4-bit"]:::model
+    F --&gt; G["Pré-laudo"]:::io
+
+    classDef io fill:#9e9e9e,stroke:#616161,color:#fff
+    classDef stage fill:#1e88e5,stroke:#1565c0,color:#fff
+    classDef model fill:#43a047,stroke:#2e7d32,color:#fff
+    classDef variant fill:#90caf9,stroke:#1565c0,color:#000,stroke-dasharray: 5 5</code></pre>
+<h3 id="0-entrada">0. Entrada<a class="headerlink" href="#0-entrada" title="Permanent link">&para;</a></h3>
+<p>WSI em .svs/.tiff piramidal. Magnificação de trabalho: 20× (padrão diagnóstico), tile de 256px. Uma lâmina em 20× vira ~10–40 mil tiles antes de filtrar.</p>
+<h3 id="1-filtro-de-tecido">1. Filtro de tecido<a class="headerlink" href="#1-filtro-de-tecido" title="Permanent link">&para;</a></h3>
+<p>Princípio: fundo de lâmina é branco (baixa saturação, alto brilho); tecido é corado (saturação mais alta). Os dois são separados por um limiar num espaço de cor onde se distanciam — sempre sobre um thumbnail de baixa resolução, nunca no full-res (desperdício de custo computacional). Descarta fundo branco, que é 60–80% da lâmina; só tilifica dentro da máscara. Custo: CPU, desprezível. Saída: lista de coordenadas de tiles com tecido (de ~30 mil para ~5–12 mil).</p>
+<h4 id="bibliotecas-prontas">Bibliotecas prontas<a class="headerlink" href="#bibliotecas-prontas" title="Permanent link">&para;</a></h4>
+<p>Caminho pragmático: não reinventar. Duas bibliotecas já fazem isso de forma robusta e são padrão no campo:</p>
+<ul>
+<li><strong>CLAM</strong> (<code>create_patches_fp.py</code>, Mahmood Lab) — segmenta tecido, gera contornos e já tilifica. É o de-facto da área; opção sólida para um baseline rápido.</li>
+<li><strong>TIAToolbox</strong> — <code>tiatoolbox.tools.tissuemask</code>, com <code>OtsuTissueMasker</code> e <code>MorphologicalMasker</code> prontos.</li>
+<li><strong>histolab</strong> — também embrulha máscara de tecido de forma limpa.</li>
+</ul>
+<h4 id="receita-manual-otsu-sobre-a-saturacao">Receita manual (Otsu sobre a saturação)<a class="headerlink" href="#receita-manual-otsu-sobre-a-saturacao" title="Permanent link">&para;</a></h4>
+<p>Para entender e controlar o processo — recomendado, já que os defaults das bibliotecas prontas erram em casos reais —, a receita manual é Otsu sobre a saturação, com OpenSlide + OpenCV/skimage:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">openslide</span><span class="o">,</span><span class="w"> </span><span class="nn">cv2</span><span class="o">,</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">slide</span> <span class="o">=</span> <span class="n">openslide</span><span class="o">.</span><span class="n">OpenSlide</span><span class="p">(</span><span class="s2">"lamina.svs"</span><span class="p">)</span>
+
+<span class="c1"># 1. thumbnail num nível baixo (~downsample 32-64x). NÃO no full-res.</span>
+<span class="n">level</span> <span class="o">=</span> <span class="n">slide</span><span class="o">.</span><span class="n">get_best_level_for_downsample</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">slide</span><span class="o">.</span><span class="n">read_region</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="n">level</span><span class="p">,</span> <span class="n">slide</span><span class="o">.</span><span class="n">level_dimensions</span><span class="p">[</span><span class="n">level</span><span class="p">]))[:,</span> <span class="p">:,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+
+<span class="c1"># 2. suaviza pra matar ruído/poeira</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">medianBlur</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+
+<span class="c1"># 3. HSV: tecido tem S alto, fundo branco tem S baixo</span>
+<span class="n">hsv</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_RGB2HSV</span><span class="p">)</span>
+<span class="n">S</span> <span class="o">=</span> <span class="n">hsv</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span>
+
+<span class="c1"># 4. Otsu na saturação -&gt; máscara binária de tecido</span>
+<span class="n">_</span><span class="p">,</span> <span class="n">mask</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">threshold</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">THRESH_BINARY</span> <span class="o">+</span> <span class="n">cv2</span><span class="o">.</span><span class="n">THRESH_OTSU</span><span class="p">)</span>
+
+<span class="c1"># 5. limpeza morfológica: fecha buracos, remove ilhas pequenas</span>
+<span class="n">k</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">getStructuringElement</span><span class="p">(</span><span class="n">cv2</span><span class="o">.</span><span class="n">MORPH_ELLIPSE</span><span class="p">,</span> <span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">9</span><span class="p">))</span>
+<span class="n">mask</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">morphologyEx</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">MORPH_CLOSE</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+<span class="n">mask</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">morphologyEx</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">MORPH_OPEN</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+</code></pre></div>
+<p>Depois, a decisão é por tile: para cada patch candidato na magnificação de trabalho, projeta-se as coordenadas na máscara e mantém-se só se a fração de tecido passar de um limiar (tipicamente ≥ 0,5). Um jeito barato de fazer isso sem reler a máscara é checar por tile a fração de pixels quase-brancos ou a saturação média — se o tile é majoritariamente branco, descarta.</p>
+<h4 id="armadilhas">Armadilhas<a class="headerlink" href="#armadilhas" title="Permanent link">&para;</a></h4>
+<p>Os defaults ignoram estes casos, que de fato aparecem em histopatologia:</p>
+<ul>
+<li><strong>Marca de caneta</strong> (verde/azul/preto do patologista) tem saturação alta e passa como "tecido". Filtra por cor (faixa de matiz da caneta) antes do Otsu, ou remove os contornos grandes e coloridos que não são rosa/roxo de H&amp;E.</li>
+<li><strong>Tecido adiposo</strong> é pálido e de baixa saturação → o Otsu na saturação joga fora gordura. Se o adipócito importa para o diagnóstico, o limiar de saturação fica agressivo demais; combinar com um critério de brilho (V) em vez de só S.</li>
+<li><strong>Dobras de tecido</strong> ficam escuras e viram falso-positivo denso; áreas fora de foco e bolhas de ar confundem.</li>
+<li><strong>Otsu global falha</strong> em lâmina com tecido tênue ou gradiente de fundo. Nesse caso, um limiar fixo calibrado no scanner às vezes é mais confiável que o Otsu adaptativo.</li>
+<li><strong>O nível de downsample escolhido importa:</strong> downsample demais (128×) perde tecido fino e bordas; de menos, desperdiça custo. 32–64× costuma ser o ponto de equilíbrio.</li>
+</ul>
+<h3 id="2-roteador-top-k">2. Roteador → top-k<a class="headerlink" href="#2-roteador-top-k" title="Permanent link">&para;</a></h3>
+<p>É aqui que se decide quanto da lâmina é pago. Cada tile passa por um encoder/contrastivo barato (CTransPath 28M, Phikon 86M, ou um contrastivo tipo CONCH/PLIP/QuiltNet) e é ranqueado. O critério de ranking depende da tarefa — decisão de projeto, não detalhe:</p>
+<ul>
+<li>rótulo fixo (BRACS-like) → ranqueia por saliência/atenção;</li>
+<li>VQA aberto → ranqueia por similaridade com o texto da pergunta.</li>
+</ul>
+<p>Depois, deduplica o top-k (o ranking devolve quase-duplicatas da mesma região tumoral — reaproveitando o gate de diversidade do PaperWVC). Saída: k patches diversos e relevantes (k = 8–32). Custo: uma passada de encoder leve por tile, em modelo pequeno.</p>
+<h3 id="3-extracao-por-patch">3. Extração por patch<a class="headerlink" href="#3-extracao-por-patch" title="Permanent link">&para;</a></h3>
+<p>Para cada um dos k patches, gerar descritores baratos. O mais elegante é o contrastivo zero-shot, que já sai como texto: casa o patch contra um banco de frases ("tumor nests", "necrosis", "high pleomorphism", "mitotic figures", "dense stroma") e pega as que mais casam. Complementar com o mínimo que a curva pedir: densidade/tamanho nuclear (StarDist ou detector leve — CellViT só se sobrar GPU), razão H&amp;E, e sempre a coordenada do patch. Recomenda-se começar só com contrastivo + coordenada, medir, e adicionar o resto só se mover a acurácia. Saída por patch: um bloco de texto curto (~30–60 tokens).</p>
+<blockquote>
+<p><strong>Variante (reasoning+cache):</strong> em vez de descritores fixos, a VLM olha cada patch e escreve um achado ("o que vejo aqui", não o diagnóstico), com append num cache textual. Mais fiel ao raciocínio de um patologista e potencialmente mais rico, porém ordens de magnitude mais caro (uma passada de VLM por patch) e sujeito a bola de neve caso cada patch "diagnostique". Tratar como um segundo braço a comparar, não como default.</p>
+</blockquote>
+<h3 id="4-agregacao">4. Agregação<a class="headerlink" href="#4-agregacao" title="Permanent link">&para;</a></h3>
+<p>Concatena os k blocos de texto + um cabeçalho slide-level (contagens agregadas, tecido dominante) + 1–3 patches como imagem-âncora (não mais — token visual cresce rápido e estoura VRAM). Saída: um prompt multimodal enxuto (~1–2k tokens de texto + poucos tokens visuais). É o ponto em que a "imagem gigante" já virou uma representação compacta e relevante à pergunta.</p>
+<h3 id="5-sintese-na-vlm">5. Síntese na VLM<a class="headerlink" href="#5-sintese-na-vlm" title="Permanent link">&para;</a></h3>
+<p>A VLM local (Quilt-LLaVA / LLaVA-Med / MedGemma-4B, 4-bit) recebe evidência estruturada + âncoras e raciocina uma vez para escrever o pré-laudo. Separar percepção (estágios 3–4) de decisão (aqui) é o que evita a cascata de confirmação. Saída: achados + explicação + hipótese diagnóstica.</p>
+<h3 id="tres-coisas-que-amarram-tudo">Três coisas que amarram tudo<a class="headerlink" href="#tres-coisas-que-amarram-tudo" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Métrica da representação.</strong> A metodologia atual só mede memória/VRAM. Falta a curva custo × fidelidade: k (ou número de tokens) no eixo x, acurácia balanceada / acerto de VQA no eixo y. Sem ela, "eficiente" é infalsificável — cada botão da pipeline (limiar de tecido, k, quais descritores, textualizar vs. âncora visual) é um ponto nessa curva.</li>
+<li><strong>Perda por seta.</strong> Medir onde o sinal morre: tecido → top-k → descritor → VLM. Um laudo ruim pode ser roteador que descartou o patch certo, descritor que não viu a mitose, ou VLM ignorando o texto — são consertos diferentes. É a lógica de suficiência do PaperWVC aplicada à própria pipeline.</li>
+<li><strong>Independência espacial.</strong> Decidir pela tarefa/câncer do dataset: se o diagnóstico depende do arranjo entre regiões distantes (arquitetura glandular, invasão de margem), o pipeline patch-a-patch perde geometria — devolver coordenada e um thumbnail global no estágio 5. Se é campo-a-campo independente (contar mitoses, achar tumor), roda liso como está.</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Voltar para o topo
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.top", "navigation.instant", "toc.integrate", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copiado para \u00e1rea de transfer\u00eancia", "clipboard.copy": "Copiar para \u00e1rea de transfer\u00eancia", "search.result.more.one": "mais 1 nesta p\u00e1gina", "search.result.more.other": "# mais nesta p\u00e1gina", "search.result.none": "Nenhum documento encontrado", "search.result.one": "1 documento encontrado", "search.result.other": "# documentos encontrados", "search.result.placeholder": "Digite para iniciar a busca", "search.result.term.missing": "Ausente", "select.version": "Selecione a vers\u00e3o"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../javascripts/mathjax.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
