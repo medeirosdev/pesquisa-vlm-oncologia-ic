@@ -27,11 +27,13 @@ DOWNSAMPLE_ALVO = 32  # ver docs/pipelines.md — 32-64x é o ponto de equilíbr
 
 
 def ler_caminho_lamina() -> Path:
-    texto = CAMINHOS_MD.read_text(encoding="utf-8").strip()
-    caminho = Path(texto.splitlines()[0].strip())
-    if not caminho.exists():
-        raise FileNotFoundError(f"Lâmina não encontrada: {caminho}")
-    return caminho
+    for linha in CAMINHOS_MD.read_text(encoding="utf-8").splitlines():
+        if linha.strip().startswith("svs:"):
+            caminho = Path(linha.split(":", 1)[1].strip())
+            if not caminho.exists():
+                raise FileNotFoundError(f"Lâmina não encontrada: {caminho}")
+            return caminho
+    raise ValueError("svs: não encontrado em caminhos.md")
 
 
 def carregar_thumbnail(caminho_svs: Path) -> np.ndarray:
