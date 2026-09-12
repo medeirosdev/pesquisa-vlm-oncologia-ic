@@ -8,9 +8,11 @@ máscara + overlay + estatísticas de cada um em outputs/, mais uma grade
 comparativa única.
 
 Uso:
-    .venv/bin/python filtro_tecido.py
+    .venv/bin/python filtro_tecido.py                       # lâmina padrão (svs: em Caminhos/caminhos.md)
+    .venv/bin/python filtro_tecido.py --svs /caminho/outra.svs
 """
 
+import argparse
 import json
 import time
 from pathlib import Path
@@ -22,7 +24,8 @@ from skimage.filters import threshold_otsu, threshold_triangle, threshold_yen
 
 BASE_DIR = Path(__file__).parent
 CAMINHOS_MD = BASE_DIR.parent.parent / "Caminhos" / "caminhos.md"
-OUTPUT_DIR = BASE_DIR / "outputs"
+OUTPUTS_ROOT = BASE_DIR / "outputs"
+OUTPUT_DIR = OUTPUTS_ROOT  # sobrescrito por main() com o subdiretório da lâmina em uso
 DOWNSAMPLE_ALVO = 32  # ver docs/pipelines.md — 32-64x é o ponto de equilíbrio
 
 
@@ -34,6 +37,15 @@ def ler_caminho_lamina() -> Path:
                 raise FileNotFoundError(f"Lâmina não encontrada: {caminho}")
             return caminho
     raise ValueError("svs: não encontrado em caminhos.md")
+
+
+def resolver_caminho_svs(svs_cli: str | None) -> Path:
+    if svs_cli:
+        caminho = Path(svs_cli)
+        if not caminho.exists():
+            raise FileNotFoundError(f"Lâmina não encontrada: {caminho}")
+        return caminho
+    return ler_caminho_lamina()
 
 
 def carregar_thumbnail(caminho_svs: Path) -> np.ndarray:
@@ -132,9 +144,16 @@ def overlay_mascara(rgb: np.ndarray, mask: np.ndarray) -> np.ndarray:
 
 
 def main():
+    global OUTPUT_DIR
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--svs", help="Caminho do .svs (padrão: svs: em Caminhos/caminhos.md)")
+    args = parser.parse_args()
+
+    caminho_svs = resolver_caminho_svs(args.svs)
+    OUTPUT_DIR = OUTPUTS_ROOT / caminho_svs.stem
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    caminho_svs = ler_caminho_lamina()
     print(f"Lâmina: {caminho_svs}")
     rgb = carregar_thumbnail(caminho_svs)
     hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)

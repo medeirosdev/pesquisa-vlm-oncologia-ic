@@ -9,9 +9,11 @@ máscara de tecido) e comparado à máscara: recall = fração da área do RoI
 coberta por "tecido" segundo cada filtro.
 
 Uso:
-    .venv/bin/python recall_roi.py
+    .venv/bin/python recall_roi.py                       # lâmina padrão (svs: em Caminhos/caminhos.md)
+    .venv/bin/python recall_roi.py --svs /caminho/outra.svs
 """
 
+import argparse
 import csv
 import glob
 import json
@@ -26,12 +28,12 @@ from filtro_tecido import (
     carregar_thumbnail,
     filtro_otsu_saturacao,
     filtro_otsu_saturacao_morfologia,
-    ler_caminho_lamina,
+    resolver_caminho_svs,
 )
 
 BASE_DIR = Path(__file__).parent
 CAMINHOS_MD = BASE_DIR.parent.parent / "Caminhos" / "caminhos.md"
-OUTPUT_DIR = BASE_DIR / "outputs"
+OUTPUTS_ROOT = BASE_DIR / "outputs"
 LIMIAR_CONFIANCA = 0.5  # correlação mínima do template matching pra confiar no match
 
 
@@ -54,7 +56,14 @@ def localizar_roi_na_pagina3(crop_rgb: np.ndarray, search_gray: np.ndarray, down
 
 
 def main():
-    caminho_svs = ler_caminho_lamina()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--svs", help="Caminho do .svs (padrão: svs: em Caminhos/caminhos.md)")
+    args = parser.parse_args()
+
+    caminho_svs = resolver_caminho_svs(args.svs)
+    output_dir = OUTPUTS_ROOT / caminho_svs.stem
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     roi_root = ler_caminho_roi_dataset()
     crops = sorted(glob.glob(str(roi_root / "*" / "*" / f"{caminho_svs.stem}_*.png")))
     print(f"{len(crops)} RoIs encontrados para {caminho_svs.stem}")
@@ -108,9 +117,9 @@ def main():
         cor = (255, 255, 0) if correlacao >= LIMIAR_CONFIANCA else (255, 0, 255)
         cv2.rectangle(overlay, (x4, y4), (x4 + w4, y4 + h4), cor, 2)
 
-    cv2.imwrite(str(OUTPUT_DIR / "roi_overlay.png"), cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
+    cv2.imwrite(str(output_dir / "roi_overlay.png"), cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
 
-    with open(OUTPUT_DIR / "recall_roi.csv", "w", newline="", encoding="utf-8") as f:
+    with open(output_dir / "recall_roi.csv", "w", newline="", encoding="utf-8") as f:
         campos = list(linhas[0].keys())
         writer = csv.DictWriter(f, fieldnames=campos)
         writer.writeheader()
@@ -140,7 +149,7 @@ def main():
             f"{100*recall_90:.0f}% dos RoIs com >=90% coberto"
         )
 
-    (OUTPUT_DIR / "recall_roi_resumo.json").write_text(
+    (output_dir / "recall_roi_resumo.json").write_text(
         json.dumps(resumo, indent=2, ensure_ascii=False), encoding="utf-8"
     )
     print("\nDetalhe por RoI em outputs/recall_roi.csv, overlay em outputs/roi_overlay.png")
