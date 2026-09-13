@@ -39,7 +39,10 @@ def main():
     parser.add_argument("--svs", help="Caminho do .svs (padrão: svs: em Caminhos/caminhos.md)")
     parser.add_argument("--k", type=int, default=32, help="k do estágio 2 a usar (padrão: 32, dentro do range documentado 8-32)")
     parser.add_argument("--n-exemplos", type=int, default=5, help="quantos patches salvar como recorte de imagem pra conferência visual")
+    parser.add_argument("--normalizar", action="store_true",
+                         help="normaliza a similaridade por z-score (por frase, contra a população dos candidatos) antes de rankear os achados")
     args = parser.parse_args()
+    sufixo_banco = "_norm" if args.normalizar else ""
 
     caminho_svs = resolver_caminho_svs(args.svs)
     e2_dir = ESTAGIO2_OUTPUTS / caminho_svs.stem
@@ -74,12 +77,22 @@ def main():
         emb_frases = model.encode_text(tok)
         emb_frases = emb_frases / emb_frases.norm(dim=-1, keepdim=True)
 
+    media = std = None
+    if args.normalizar:
+        with torch.no_grad():
+            sim_populacao = (torch.from_numpy(embs).to(device) @ emb_frases.T).cpu().numpy()  # [N, n_frases]
+        media = sim_populacao.mean(axis=0)
+        std = sim_populacao.std(axis=0)
+        print(f"Normalizando por z-score (média/desvio calculados sobre os {len(embs)} candidatos)")
+
     descritores = []
     for item in selecionados:
         idx = indice_por_xy[(item["x0"], item["y0"])]
         emb_patch = torch.from_numpy(embs[idx:idx + 1]).to(device)
         with torch.no_grad():
             sim = (emb_patch @ emb_frases.T).squeeze(0).cpu().numpy()
+        if args.normalizar:
+            sim = (sim - media) / std
         ordem = np.argsort(-sim)[:TOP_N_ACHADOS]
         achados = [frases[i] for i in ordem]
         texto = f"[{item['x0']},{item['y0']}] " + ", ".join(achados)
@@ -91,7 +104,7 @@ def main():
             "tokens_estimados": n_tokens_estimado,
         })
 
-    with open(output_dir / f"estagio3_descritores_k{args.k}.json", "w", encoding="utf-8") as f:
+    with open(output_dir / f"estagio3_descritores_k{args.k}{sufixo_banco}.json", "w", encoding="utf-8") as f:
         json.dump({"lamina": str(caminho_svs), "k": args.k, "top_n_achados": TOP_N_ACHADOS,
                     "descritores": descritores}, f, indent=2, ensure_ascii=False)
 
@@ -110,7 +123,7 @@ def main():
     za = zarr.open(store, mode="r")
     za_nivel0 = za["0"] if hasattr(za, "array_keys") else za
 
-    exemplos_dir = output_dir / f"exemplos_k{args.k}"
+    exemplos_dir = output_dir / f"exemplos_k{args.k}{sufixo_banco}"
     exemplos_dir.mkdir(exist_ok=True)
     for i, d in enumerate(sorted(descritores, key=lambda x: -x["score_roteador"])[:args.n_exemplos]):
         janela = np.asarray(za_nivel0[d["y0"]:d["y0"] + TILE_NATIVO, d["x0"]:d["x0"] + TILE_NATIVO])

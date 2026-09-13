@@ -20,9 +20,37 @@ Todos os 32 patches selecionados receberam exatamente o mesmo achado: **"high nu
 
 **Testei normalização (z-score por frase, contra a população dos 15.138):** muda a ordem — ex. "cribriform architecture" sobe pro patch pior colocado, "micropapillary architecture" pro do meio — mas **não tenho RoI-por-classe pareado ainda pra confirmar se o normalizado acerta mais que o bruto**. Só sei que é menos enviesado, não que é mais certo.
 
+## k=128: a homogeneidade se confirma (e piora)
+
+Testado com `--k 128`: **122 de 128 patches (95%) receberam a combinação idêntica** "high nuclear pleomorphism, mitotic figures". Não é efeito do top-32 restrito — o viés de frase domina mesmo com 4x mais patches.
+
+## Normalização por z-score: implementada, resultado misto
+
+Adicionei `--normalizar` ao script: calcula média/desvio de cada frase sobre os 15.138 candidatos e usa `(sim − média) / desvio` em vez da similaridade bruta pra rankear os achados.
+
+**Resultado em k=128:** 8 combinações distintas em vez de 4 — mais variedade, mas ainda dominado por uma combinação (81/128 = 63% "mitotic figures, solid growth pattern").
+
+**Desvio-padrão de cada frase, sobre os 15.138 candidatos** (do menor pro maior):
+
+| Frase | Média | Desvio-padrão |
+|---|---|---|
+| necrosis | 0.271 | 0.0064 |
+| stromal invasion | 0.273 | 0.0091 |
+| nuclear crowding and stratification | 0.243 | 0.0094 |
+| high nuclear pleomorphism | 0.284 | 0.0097 |
+| desmoplastic stroma | 0.272 | 0.0100 |
+| micropapillary architecture | 0.263 | 0.0103 |
+| mitotic figures | 0.272 | 0.0107 |
+| cribriform architecture | 0.265 | 0.0118 |
+| tumor nests | 0.273 | 0.0120 |
+| comedonecrosis | 0.258 | 0.0151 |
+| solid growth pattern | 0.226 | 0.0196 |
+
+**Correção de leitura (registrada pra não repetir o erro):** a primeira hipótese — que "solid growth pattern" dominaria por ter *baixa* variância — estava invertida. É a frase de *maior* desvio-padrão do banco inteiro, junto com "comedonecrosis". Ou seja, normalizar não está inflando uma frase quase-constante; está privilegiando as duas frases que **de fato variam** patch a patch (potencialmente as mais informativas), em detrimento de frases quase-constantes como "necrosis" e "stromal invasion" (std ~0,006–0,009, quase ruído). Se isso é correto (as frases de maior variância carregam mais sinal real) ou é exagero da normalização (variância alta podendo ser artefato de outra coisa) — não dá pra saber sem checar contra classe real do patch.
+
 ## Em aberto
 
-- Decidir entre similaridade bruta (simples, mas com viés de frase confirmado) e normalizada por z-score (menos enviesada, não validada) — precisa de alguma checagem contra classe real do patch pra desempatar.
-- Testar achados em k maior (128, 256) pra ver se a homogeneidade de "todos iguais" se mantém fora do top-32 mais restrito.
+- Decidir entre similaridade bruta (viés de frase confirmado, mas estável) e normalizada por z-score (mais variada, mas concentra em torno das 2 frases de maior desvio-padrão) — precisa de checagem contra classe real do patch pra desempatar, não só argumento teórico.
+- Investigar por que "necrosis", "stromal invasion" e "nuclear crowding" têm desvio-padrão tão baixo — são achados genuinamente raros nesta lâmina, ou o encoder não tem boa resolução pra eles?
 - Adicionar frase neutra tipo "non-specific epithelium" ao banco, pra dar uma saída pra patches que não casam bem com nenhum achado específico.
 - Ainda sem H&E/densidade nuclear — só entram se a curva pedir, como documentado.
