@@ -17,28 +17,37 @@ Sobre os tiles com tecido do estágio 1 (máscara Otsu-S + morfologia), foi mont
 
 Ground-truth: os mesmos 98 RoIs anotados usados na validação do estágio 1. Um tile "acerta" se sua caixa se sobrepõe à caixa de algum RoI.
 
-| k | tiles selecionados | precisão@k | recall@k | RoIs cobertos |
-|---|---|---|---|---|
-| 8 | 8 | 0.62 | 0.05 | 5/98 |
-| 16 | 16 | 0.50 | 0.07 | 7/98 |
-| 32 | 32 | 0.62 | 0.19 | 19/98 |
-| 64 | 64 | 0.56 | 0.33 | 32/98 |
+| k | tiles selecionados | % da lâmina | precisão@k | recall@k | RoIs cobertos | tokens de texto estimados |
+|---|---|---|---|---|---|---|
+| 8 | 8 | 0.05% | 0.62 | 0.05 | 5/98 | ~360 |
+| 16 | 16 | 0.11% | 0.50 | 0.07 | 7/98 | ~720 |
+| 32 | 32 | 0.21% | 0.62 | 0.19 | 19/98 | ~1.440 |
+| 64 | 64 | 0.42% | 0.56 | 0.33 | 32/98 | ~2.880 |
+| 128 | 128 | 0.85% | 0.48 | 0.51 | 50/98 | ~5.760 |
+| 256 | 256 | 1.69% | 0.43 | 0.69 | 68/98 | ~11.520 |
+| 512 | 512 | 3.38% | 0.35 | 0.82 | 80/98 | ~23.040 |
+| 1024 | 1024 | 6.76% | 0.33 | 0.92 | 90/98 | ~46.080 |
 
-**Baseline aleatório** (200 amostras de k tiles aleatórios entre os 15.138 candidatos, mesma métrica): precisão média **0.18** para qualquer k testado.
+(Estimativa de tokens: ~45 tokens/patch, meio da faixa de 30–60 documentada para o estágio 3. Curva completa em `outputs/BRACS_748/estagio2_curva.json`.)
 
-→ O roteador acerta **~3x mais que o acaso** em todos os valores de k — sinal real, não ruído.
+**Baseline aleatório** (200 amostras de k tiles aleatórios entre os 15.138 candidatos, mesma métrica): precisão média **0.18** para qualquer k testado — o roteador fica **~2–3x acima do acaso** em toda a faixa testada.
 
-Ver [outputs/BRACS_748/estagio2_topk_overlay.png](outputs/BRACS_748/estagio2_topk_overlay.png) (tiles selecionados em laranja): visualmente, a seleção se concentra na mesma região roxo-densa onde estão os RoIs reais, consistente com o número.
+Ver overlays: [k=64](outputs/BRACS_748/estagio2_topk_overlay.png) · [k=512](outputs/BRACS_748/estagio2_topk512_overlay.png) · [k=1024](outputs/BRACS_748/estagio2_topk1024_overlay.png).
 
 ## Leitura honesta do resultado
 
-Precisão fica estável em ~0.5–0.6 (não sobe com k) e recall cresce devagar com k (33% em k=64, de um total de 98 RoIs). Duas explicações prováveis, não mutuamente exclusivas:
+**O trade-off é real e mensurável:** recall sobe de 5% (k=8) pra 92% (k=1024), mas com retorno decrescente — cada dobra de k rende cada vez menos recall novo (+18pp, +18pp, +13pp, +10pp por dobra de 128→1024) enquanto a precisão cai de 0,62 pra 0,33. Não existe "k certo" universal — é uma escolha de orçamento: em k≈256–512 já se cobre 69–82% dos achados anotados gastando 2–3% da lâmina; ir além de 512 custa caro (dobra os tokens) pra ganhar cada vez menos recall.
+
+**Ponto de atenção que a curva expõe:** em k=1024 o custo estimado (~46k tokens de texto) já é grande pra um modelo de contexto modesto — o "1–2k tokens" documentado no estágio 4 vale pra k≈32–64, não pra k=1024. Se a meta for cobertura alta (>80% dos achados), a pipeline não fica mais tão "enxuta" quanto o desenho original sugeria.
+
+Duas explicações prováveis pra precisão nunca passar de ~0,6, não mutuamente exclusivas:
 
 1. **Os RoIs do BRACS são exemplos curados**, não uma anotação exaustiva de "todo pixel diagnosticamente relevante". Um tile "errado" (fora de qualquer caixa de RoI) pode ainda estar em tecido epitelial genuinamente atípico que só não foi um dos 98 recortes escolhidos pelo patologista para anotar — ou seja, parte do que a métrica chama de "erro" pode não ser erro real do roteador.
 2. **O banco de frases é genérico** (não específico por classe BRACS) — não diferencia "isso é um ADH" de "isso é um DCIS", só "isso parece atípico". Pra discriminar entre as 7 classes do BRACS, provavelmente precisa de um banco de frases por classe ou um modelo mais específico.
 
 ## Em aberto
 
+- Achar o "cotovelo" da curva com mais granularidade entre 128 e 512 (ex. 192, 384) — a região onde o retorno decrescente começa a valer a pena parar.
 - Repetir com um banco de frases mais específico (por classe BRACS) e comparar a curva.
 - Testar KEEP ou CONCH (candidatos mais fortes na aba Modelos Locais) no lugar do QuiltNet-B-32, mesma metodologia, comparar a curva custo×fidelidade entre eles.
 - Como no estágio 1: bloqueado por dado pra repetir em outras lâminas (só há uma `.svs` local).
