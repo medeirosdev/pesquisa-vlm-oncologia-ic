@@ -45,13 +45,36 @@ TILE_TRABALHO = 256
 LIMIAR_TECIDO = 0.5  # fração mínima de tecido no tile pra virar candidato (mesmo critério do estágio 1)
 DIST_MIN_DIVERSIDADE = TILE_NATIVO * 1.5  # px no nível 0, entre centros de tiles aceitos
 
-BANCO_DE_FRASES = [
+BANCO_V1 = [
     "tumor nests",
     "necrosis",
     "high nuclear pleomorphism",
     "mitotic figures",
     "dense atypical stroma",
 ]
+
+BANCO_V2 = {
+    "benigno": [
+        "normal duct epithelium",
+        "normal lobular tissue",
+        "adipose tissue",
+        "benign fibrous stroma",
+        "usual ductal hyperplasia",
+    ],
+    "suspeito": [
+        "tumor nests",
+        "necrosis",
+        "comedonecrosis",
+        "high nuclear pleomorphism",
+        "nuclear crowding and stratification",
+        "mitotic figures",
+        "cribriform architecture",
+        "micropapillary architecture",
+        "solid growth pattern",
+        "stromal invasion",
+        "desmoplastic stroma",
+    ],
+}
 
 
 def montar_grade_candidatos(largura_full, altura_full, mask4, ds4):
@@ -113,12 +136,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--svs", help="Caminho do .svs (padrão: svs: em Caminhos/caminhos.md)")
     parser.add_argument("--k", type=int, nargs="+", default=[8, 16, 32, 64], help="Valores de k a avaliar")
+    parser.add_argument("--banco", choices=["v1", "v2"], default="v2",
+                         help="v1 = 5 frases, score=max. v2 = benigno/suspeito, score=margem.")
     args = parser.parse_args()
 
     caminho_svs = resolver_caminho_svs(args.svs)
     output_dir = OUTPUTS_ROOT / caminho_svs.stem
     output_dir.mkdir(parents=True, exist_ok=True)
-    print(f"Lâmina: {caminho_svs}")
+    sufixo = "" if args.banco == "v1" else f"_{args.banco}"
+    print(f"Lâmina: {caminho_svs} | banco: {args.banco}")
 
     # --- estágio 1: máscara de tecido já validada ---
     rgb4 = carregar_thumbnail(caminho_svs)
@@ -130,53 +156,79 @@ def main():
     altura_full = tif.pages[0].shape[0]
     ds4 = largura_full / rgb4.shape[1]
 
-    store = tif.series[0].aszarr()
-    za = zarr.open(store, mode="r")
-    za_nivel0 = za["0"] if hasattr(za, "array_keys") else za
-
     candidatos_xy = montar_grade_candidatos(largura_full, altura_full, mask4, ds4)
     print(f"{len(candidatos_xy)} tiles candidatos com tecido (grade {TILE_NATIVO}px no nível nativo)")
 
-    # --- QuiltNet-B-32 ---
+    # --- embeddings de imagem: cacheados, independem do banco de frases ---
+    emb_path = output_dir / "estagio2_embeddings.npy"
+    xy_path = output_dir / "estagio2_embeddings_xy.csv"
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"Carregando QuiltNet-B-32 ({device})...")
-    model, _, preprocess = open_clip.create_model_and_transforms("hf-hub:wisdomik/QuiltNet-B-32")
+
+    if emb_path.exists() and xy_path.exists():
+        print("Embeddings já calculados encontrados em disco — reaproveitando (sem GPU).")
+        img_embs = np.load(emb_path)
+        with open(xy_path, newline="", encoding="utf-8") as f:
+            candidatos_xy_cache = [(int(r["x0"]), int(r["y0"])) for r in csv.DictReader(f)]
+        assert candidatos_xy_cache == candidatos_xy, "grade de candidatos mudou — apague o cache pra recalcular"
+    else:
+        print(f"Carregando QuiltNet-B-32 ({device})...")
+        model, _, preprocess = open_clip.create_model_and_transforms("hf-hub:wisdomik/QuiltNet-B-32")
+        model = model.to(device).eval()
+
+        store = tif.series[0].aszarr()
+        za = zarr.open(store, mode="r")
+        za_nivel0 = za["0"] if hasattr(za, "array_keys") else za
+
+        from PIL import Image
+        embs = []
+        t0 = time.time()
+        BATCH = 64
+        for i in range(0, len(candidatos_xy), BATCH):
+            lote_xy = candidatos_xy[i:i + BATCH]
+            imgs = [preprocess(Image.fromarray(extrair_tile(za_nivel0, x0, y0))) for x0, y0 in lote_xy]
+            batch_tensor = torch.stack(imgs).to(device)
+            with torch.no_grad():
+                img_emb = model.encode_image(batch_tensor)
+                img_emb = img_emb / img_emb.norm(dim=-1, keepdim=True)
+            embs.append(img_emb.cpu().numpy())
+            if i % (BATCH * 20) == 0:
+                print(f"  {i+len(lote_xy)}/{len(candidatos_xy)} tiles embutidos...")
+        img_embs = np.concatenate(embs, axis=0)
+        dt = time.time() - t0
+        print(f"Embeddings de {len(candidatos_xy)} tiles em {dt:.1f}s ({dt/len(candidatos_xy)*1000:.1f} ms/tile)")
+
+        np.save(emb_path, img_embs)
+        with open(xy_path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=["x0", "y0"])
+            writer.writeheader()
+            writer.writerows({"x0": x0, "y0": y0} for x0, y0 in candidatos_xy)
+        print(f"Embeddings salvos em {emb_path.name} — próxima vez (qualquer banco) não recomputa a imagem.")
+
+    # --- texto do banco escolhido, e score a partir dos embeddings (cacheados ou não) ---
+    model_txt, _, _ = open_clip.create_model_and_transforms("hf-hub:wisdomik/QuiltNet-B-32")
     tokenizer = open_clip.get_tokenizer("hf-hub:wisdomik/QuiltNet-B-32")
-    model = model.to(device).eval()
+    model_txt = model_txt.to(device).eval()
+    img_embs_t = torch.from_numpy(img_embs).to(device)
 
     with torch.no_grad():
-        texto_tok = tokenizer(BANCO_DE_FRASES).to(device)
-        texto_emb = model.encode_text(texto_tok)
-        texto_emb = texto_emb / texto_emb.norm(dim=-1, keepdim=True)
+        if args.banco == "v1":
+            texto_tok = tokenizer(BANCO_V1).to(device)
+            texto_emb = model_txt.encode_text(texto_tok)
+            texto_emb = texto_emb / texto_emb.norm(dim=-1, keepdim=True)
+            score = (img_embs_t @ texto_emb.T).max(dim=1).values.cpu().numpy()
+        else:
+            tok_ben = tokenizer(BANCO_V2["benigno"]).to(device)
+            tok_sus = tokenizer(BANCO_V2["suspeito"]).to(device)
+            emb_ben = model_txt.encode_text(tok_ben); emb_ben = emb_ben / emb_ben.norm(dim=-1, keepdim=True)
+            emb_sus = model_txt.encode_text(tok_sus); emb_sus = emb_sus / emb_sus.norm(dim=-1, keepdim=True)
+            sim_ben = (img_embs_t @ emb_ben.T).max(dim=1).values
+            sim_sus = (img_embs_t @ emb_sus.T).max(dim=1).values
+            score = (sim_sus - sim_ben).cpu().numpy()
 
-    # --- score de cada candidato ---
-    from PIL import Image
-    candidatos = []
-    t0 = time.time()
-    BATCH = 64
-    for i in range(0, len(candidatos_xy), BATCH):
-        lote_xy = candidatos_xy[i:i + BATCH]
-        imgs = []
-        for x0, y0 in lote_xy:
-            tile = extrair_tile(za_nivel0, x0, y0)
-            imgs.append(preprocess(Image.fromarray(tile)))
-        batch_tensor = torch.stack(imgs).to(device)
-        with torch.no_grad():
-            img_emb = model.encode_image(batch_tensor)
-            img_emb = img_emb / img_emb.norm(dim=-1, keepdim=True)
-            sim = (img_emb @ texto_emb.T)  # [batch, n_frases]
-            score = sim.max(dim=1).values.cpu().numpy()
-        for (x0, y0), s in zip(lote_xy, score):
-            candidatos.append({"x0": x0, "y0": y0, "score": float(s)})
-        if i % (BATCH * 20) == 0:
-            print(f"  {i+len(lote_xy)}/{len(candidatos_xy)} tiles pontuados...")
-
-    dt = time.time() - t0
-    print(f"Pontuação de {len(candidatos)} tiles em {dt:.1f}s ({dt/len(candidatos)*1000:.1f} ms/tile)")
-
+    candidatos = [{"x0": x0, "y0": y0, "score": float(s)} for (x0, y0), s in zip(candidatos_xy, score)]
     candidatos_ordenados = sorted(candidatos, key=lambda c: -c["score"])
 
-    with open(output_dir / "estagio2_scores.csv", "w", newline="", encoding="utf-8") as f:
+    with open(output_dir / f"estagio2_scores{sufixo}.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["x0", "y0", "score"])
         writer.writeheader()
         writer.writerows(candidatos_ordenados)
@@ -209,8 +261,9 @@ def main():
         })
         print(f"k={k:>3}: precisão@k={precisao:.2f}  recall@k={recall:.2f}  ({rois_cobertos}/{len(rois_native)} RoIs)")
 
-    (output_dir / "estagio2_curva.json").write_text(
-        json.dumps({"lamina": str(caminho_svs), "banco_de_frases": BANCO_DE_FRASES, "curva": curva},
+    banco_usado = BANCO_V1 if args.banco == "v1" else BANCO_V2
+    (output_dir / f"estagio2_curva{sufixo}.json").write_text(
+        json.dumps({"lamina": str(caminho_svs), "banco": args.banco, "banco_de_frases": banco_usado, "curva": curva},
                     indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
@@ -225,9 +278,9 @@ def main():
         x4, y4 = int(s["x0"] / ds4), int(s["y0"] / ds4)
         w4 = h4 = max(int(TILE_NATIVO / ds4), 1)
         cv2.rectangle(overlay, (x4, y4), (x4 + w4, y4 + h4), (255, 140, 0), 2)
-    cv2.imwrite(str(output_dir / "estagio2_topk_overlay.png"), cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
+    cv2.imwrite(str(output_dir / f"estagio2_topk_overlay{sufixo}.png"), cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
 
-    print(f"\nSaída em {output_dir} (estagio2_curva.json, estagio2_scores.csv, estagio2_topk_overlay.png)")
+    print(f"\nSaída em {output_dir} (estagio2_curva{sufixo}.json, estagio2_scores{sufixo}.csv, estagio2_topk_overlay{sufixo}.png)")
 
 
 if __name__ == "__main__":
