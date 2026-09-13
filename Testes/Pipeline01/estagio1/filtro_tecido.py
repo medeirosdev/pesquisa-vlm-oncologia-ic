@@ -23,7 +23,7 @@ import tifffile
 from skimage.filters import threshold_otsu, threshold_triangle, threshold_yen
 
 BASE_DIR = Path(__file__).parent
-CAMINHOS_MD = BASE_DIR.parent.parent / "Caminhos" / "caminhos.md"
+CAMINHOS_MD = BASE_DIR.parent.parent.parent / "Caminhos" / "caminhos.md"
 OUTPUTS_ROOT = BASE_DIR / "outputs"
 OUTPUT_DIR = OUTPUTS_ROOT  # sobrescrito por main() com o subdiretório da lâmina em uso
 DOWNSAMPLE_ALVO = 32  # ver docs/pipelines.md — 32-64x é o ponto de equilíbrio

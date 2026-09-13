@@ -32,7 +32,7 @@ from filtro_tecido import (
 )
 
 BASE_DIR = Path(__file__).parent
-CAMINHOS_MD = BASE_DIR.parent.parent / "Caminhos" / "caminhos.md"
+CAMINHOS_MD = BASE_DIR.parent.parent.parent / "Caminhos" / "caminhos.md"
 OUTPUTS_ROOT = BASE_DIR / "outputs"
 LIMIAR_CONFIANCA = 0.5  # correlação mínima do template matching pra confiar no match
 

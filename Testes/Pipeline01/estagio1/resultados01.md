@@ -15,7 +15,7 @@
 | 05 | Triangle na saturação | 40.98% | 316 ms |
 | 06 | Distância euclidiana ao branco (RGB), baseline ingênuo | 41.54% | 680 ms |
 
-Ver [outputs/BRACS_748/comparacao_grid.png](../../Testes/Pipeline01/outputs/BRACS_748/comparacao_grid.png) para a grade visual e `outputs/BRACS_748/estatisticas.json` para os números brutos.
+Ver [outputs/BRACS_748/comparacao_grid.png](../outputs/BRACS_748/comparacao_grid.png) para a grade visual e `outputs/BRACS_748/estatisticas.json` para os números brutos.
 
 ## Achado
 
@@ -50,9 +50,9 @@ BRACS_748 tem 98 RoIs anotados por patologista. O `.qpdata` original (projeto Qu
 | 01 Otsu-S | 98/98 | 0.95 | 100% | 84% |
 | 02 Otsu-S + morfologia | 98/98 | 0.96 | 100% | 87% |
 
-Todos os 98 recortes foram localizados com alta confiança (correlação média bem acima de 0.5, muitos ≥0.9). Ver [outputs/BRACS_748/roi_overlay.png](../../Testes/Pipeline01/outputs/BRACS_748/roi_overlay.png) (boxes amarelos) e detalhe por RoI em `outputs/BRACS_748/recall_roi.csv`.
+Todos os 98 recortes foram localizados com alta confiança (correlação média bem acima de 0.5, muitos ≥0.9). Ver [outputs/BRACS_748/roi_overlay.png](../outputs/BRACS_748/roi_overlay.png) (boxes amarelos) e detalhe por RoI em `outputs/BRACS_748/recall_roi.csv`.
 
-**Confirmação visual:** no overlay, os 98 boxes caem exclusivamente na região roxo-densa — nenhum RoI anotado cai na região clara à esquerda. Um zoom em alta resolução dessa região clara ([outputs/BRACS_748/zoom_regiao_clara_page3.png](../../Testes/Pipeline01/outputs/BRACS_748/zoom_regiao_clara_page3.png)) mostra feixes de colágeno ondulados, tecido conjuntivo fibroso, sem estruturas glandulares/ductais e sem núcleos aglomerados — não é o tecido celular que o roteador do estágio 2 precisa (não é exatamente gordura clássica com vacúolos redondos, mas é claramente estroma não-epitelial).
+**Confirmação visual:** no overlay, os 98 boxes caem exclusivamente na região roxo-densa — nenhum RoI anotado cai na região clara à esquerda. Um zoom em alta resolução dessa região clara ([outputs/BRACS_748/zoom_regiao_clara_page3.png](../outputs/BRACS_748/zoom_regiao_clara_page3.png)) mostra feixes de colágeno ondulados, tecido conjuntivo fibroso, sem estruturas glandulares/ductais e sem núcleos aglomerados — não é o tecido celular que o roteador do estágio 2 precisa (não é exatamente gordura clássica com vacúolos redondos, mas é claramente estroma não-epitelial).
 
 ## Conclusão
 
