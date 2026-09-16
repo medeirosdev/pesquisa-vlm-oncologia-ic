@@ -21,9 +21,30 @@
 
 Isso muda o que vale investir a seguir — não é mais "escolher entre as duas versões que já tenho", é repensar o mecanismo:
 
+## Teste extra: ensemble de prompts (sugestão do orientador, Prof. João) — também não resolveu
+
+Ideia dele: em vez de uma frase fixa por conceito, usar vários templates ("histopathology image showing {}", "H&E stained tissue with {}" etc.) e tirar a média dos embeddings — técnica clássica de ensemble do próprio paper do CLIP, pra reduzir a idiossincrasia de uma formulação específica. Implementado em `descritores.py --ensemble` (5 templates por frase).
+
+**Achado colateral, antes do resultado principal:** a primeira rodada do teste de classe deu "ensemble: 2/2" (parecia discriminar!). Investigando, era **falso positivo** — o agrupamento por achado estava sensível à ordem das frases (`tuple` em vez de `frozenset`), e DCIS/IC tinham exatamente as mesmas duas frases, só em ordem trocada. Corrigido o agrupamento pra ordem-insensível antes de aceitar qualquer resultado.
+
+**Com a correção, as 4 variantes testadas dão o mesmo veredito:**
+
+| Variante | Achado dominante DCIS | Achado dominante IC | Discrimina? |
+|---|---|---|---|
+| Bruto | high nuclear pleomorphism, mitotic figures | mesmo | não (1/2) |
+| Normalizado | mitotic figures, solid growth pattern | mesmo | não (1/2) |
+| Ensemble | high nuclear pleomorphism, mitotic figures | mesmo | não (1/2) |
+| Ensemble + normalizado | comedonecrosis, mitotic figures | mesmo | não (1/2) |
+
+Ensemble sozinho até **reduziu** a diversidade bruta de achados entre patches (a média de templates estabiliza/denoisa uma frase, mas não resolve o viés *entre* frases diferentes — que é o problema de fundo). Combinado com normalização, fica no meio do caminho. Em nenhuma combinação a discriminação DCIS/IC aparece.
+
+## Conclusão consolidada
+
+Testei 4 variantes (bruto, normalizado, ensemble, ensemble+normalizado) — **nenhuma discrimina DCIS de IC**. Isso fortalece a hipótese de que o problema não está na forma de agregar/calibrar a similaridade (essas 4 são todas variações de "pegar similaridade CLIP e rankear"), e sim em algum destes:
+
 ## Em aberto
 
 - **Banco de frases por classe**, não genérico — frases que descrevam especificamente o que diferencia DCIS de IC (ex. arquitetura intraductal preservada vs. invasão do estroma), não um banco único "suspeito" pra tudo.
-- **Testar se o problema é o modelo, não o banco** — repetir com CONCH ou KEEP (mais fortes que QuiltNet-B-32, já catalogados na aba Modelos Locais) e ver se discriminam melhor DCIS de IC com o mesmo método.
-- **Aceitar que patch isolado pode não ser suficiente** — talvez a discriminação real só apareça olhando o padrão agregado de vários patches (arquitetura, não achado pontual), não um patch de cada vez. Conecta com a questão de "independência espacial" já registrada em `docs/pipelines.md`.
+- **Testar se o problema é o modelo, não o banco/agregação** — repetir com CONCH ou KEEP (mais fortes que QuiltNet-B-32, já catalogados na aba Modelos Locais) e ver se discriminam melhor DCIS de IC com o mesmo método.
+- **Aceitar que patch isolado pode não ser suficiente** — talvez a discriminação real só apareça olhando o padrão agregado de vários patches (arquitetura, não achado pontual), não um patch de cada vez. Conecta com a questão de "independência espacial" já registrada em `docs/pipelines.md`, e com a ideia de hierarquia (benigno/maligno → evidência) que o Prof. João também sugeriu — ainda não implementada.
 - Também bloqueado pelo mesmo motivo de sempre: só uma lâmina local, não dá pra saber se esse resultado é específico da BRACS_748.

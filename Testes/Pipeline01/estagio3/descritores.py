@@ -33,6 +33,34 @@ OUTPUTS_ROOT = BASE_DIR / "outputs"
 ESTAGIO2_OUTPUTS = BASE_DIR.parent / "estagio2" / "outputs"
 TOP_N_ACHADOS = 2  # quantas frases do banco "suspeito" entram no achado de cada patch
 
+# Ensemble de prompts (sugestão do orientador): várias formulações pro mesmo conceito,
+# em vez de uma frase fixa só — reduz a idiossincrasia de uma formulação específica
+# "vencer sempre" independente do conteúdo real do patch. Técnica clássica do próprio
+# paper do CLIP ("prompt engineering and ensembling").
+TEMPLATES = [
+    "{}",
+    "histopathology image showing {}",
+    "H&E stained tissue with {}",
+    "microscopic image of {}",
+    "a tissue patch with {}",
+]
+
+
+def encode_frases(frases, model, tokenizer, device, ensemble):
+    """Codifica cada frase; em modo ensemble, usa vários templates por frase e tira a média."""
+    templates = TEMPLATES if ensemble else ["{}"]
+    embs_por_frase = []
+    with torch.no_grad():
+        for frase in frases:
+            variantes = [t.format(frase) for t in templates]
+            tok = tokenizer(variantes).to(device)
+            emb = model.encode_text(tok)
+            emb = emb / emb.norm(dim=-1, keepdim=True)
+            media = emb.mean(dim=0)
+            media = media / media.norm()
+            embs_por_frase.append(media)
+    return torch.stack(embs_por_frase)
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -41,8 +69,10 @@ def main():
     parser.add_argument("--n-exemplos", type=int, default=5, help="quantos patches salvar como recorte de imagem pra conferência visual")
     parser.add_argument("--normalizar", action="store_true",
                          help="normaliza a similaridade por z-score (por frase, contra a população dos candidatos) antes de rankear os achados")
+    parser.add_argument("--ensemble", action="store_true",
+                         help="usa varios templates por frase (media dos embeddings) em vez de uma frase fixa")
     args = parser.parse_args()
-    sufixo_banco = "_norm" if args.normalizar else ""
+    sufixo_banco = ("_ensemble" if args.ensemble else "") + ("_norm" if args.normalizar else "")
 
     caminho_svs = resolver_caminho_svs(args.svs)
     e2_dir = ESTAGIO2_OUTPUTS / caminho_svs.stem
@@ -72,10 +102,9 @@ def main():
     model = model.to(device).eval()
 
     frases = BANCO_V2["suspeito"]
-    with torch.no_grad():
-        tok = tokenizer(frases).to(device)
-        emb_frases = model.encode_text(tok)
-        emb_frases = emb_frases / emb_frases.norm(dim=-1, keepdim=True)
+    emb_frases = encode_frases(frases, model, tokenizer, device, args.ensemble)
+    if args.ensemble:
+        print(f"Ensemble: {len(TEMPLATES)} templates por frase, média dos embeddings")
 
     media = std = None
     if args.normalizar:
