@@ -1,0 +1,29 @@
+# Estágio 4-teste — validação do estágio 3 contra classe real
+
+**Pergunta:** entre o achado bruto (similaridade máxima) e o normalizado (z-score) do estágio 3, qual discrimina melhor entre classes reais do BRACS?
+
+**Método** ([validacao_classe.py](validacao_classe.py)): os RoIs do BRACS_RoI já vêm com classe no nome do arquivo. Para cada um dos 128 patches selecionados no estágio 2, verifica se cai dentro de algum RoI anotado — se cair, herda a classe real daquele RoI. Não assume "classe X deveria dar achado Y" (isso seria inventar ground-truth de patologia) — só mede se cada método é consistente dentro da classe e diferente entre classes.
+
+## Resultado
+
+70/128 patches selecionados caem dentro de um RoI anotado (só classes ADH, DCIS e IC aparecem entre os RoIs deste slide; nenhum patch selecionado caiu dentro de um RoI de ADH — os 4 RoIs de ADH da lâmina não foram priorizados pelo roteador no top-128).
+
+| Achado dominante | DCIS (n=53) | IC (n=17) |
+|---|---|---|
+| Bruto | high nuclear pleomorphism, mitotic figures (51/53) | high nuclear pleomorphism, mitotic figures (17/17) |
+| Normalizado | solid growth pattern, mitotic figures (25/53) | solid growth pattern, mitotic figures (6/17) |
+
+**As duas versões dão o mesmo achado dominante pras duas classes.** DCIS (carcinoma in situ, não invasivo) e IC (carcinoma invasivo) são clinicamente bem diferentes — um descritor útil deveria, no mínimo, mostrar alguma diferença de padrão entre elas. Nenhuma das duas versões mostra.
+
+## Conclusão
+
+**A pergunta "bruto ou normalizado" estava mal colocada.** Não é que um dos dois esteja certo e o outro errado — **nenhum dos dois tem validade discriminativa demonstrada** por classe, pelo menos entre DCIS e IC nesta lâmina. A normalização mudou qual frase domina (de "high nuclear pleomorphism" pra "solid growth pattern"), mas não resolveu o problema de fundo: o mecanismo (top-2 frases por similaridade CLIP zero-shot, banco genérico, um patch isolado por vez) não parece ter resolução suficiente pra discriminar subtipos do espectro BRACS.
+
+Isso muda o que vale investir a seguir — não é mais "escolher entre as duas versões que já tenho", é repensar o mecanismo:
+
+## Em aberto
+
+- **Banco de frases por classe**, não genérico — frases que descrevam especificamente o que diferencia DCIS de IC (ex. arquitetura intraductal preservada vs. invasão do estroma), não um banco único "suspeito" pra tudo.
+- **Testar se o problema é o modelo, não o banco** — repetir com CONCH ou KEEP (mais fortes que QuiltNet-B-32, já catalogados na aba Modelos Locais) e ver se discriminam melhor DCIS de IC com o mesmo método.
+- **Aceitar que patch isolado pode não ser suficiente** — talvez a discriminação real só apareça olhando o padrão agregado de vários patches (arquitetura, não achado pontual), não um patch de cada vez. Conecta com a questão de "independência espacial" já registrada em `docs/pipelines.md`.
+- Também bloqueado pelo mesmo motivo de sempre: só uma lâmina local, não dá pra saber se esse resultado é específico da BRACS_748.
