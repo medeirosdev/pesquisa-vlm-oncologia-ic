@@ -42,9 +42,27 @@ Ensemble sozinho até **reduziu** a diversidade bruta de achados entre patches (
 
 Testei 4 variantes (bruto, normalizado, ensemble, ensemble+normalizado) — **nenhuma discrimina DCIS de IC**. Isso fortalece a hipótese de que o problema não está na forma de agregar/calibrar a similaridade (essas 4 são todas variações de "pegar similaridade CLIP e rankear"), e sim em algum destes:
 
+## Banco de frases por classe — testado, e piorou
+
+Ideia: em vez de um banco genérico "suspeito", um banco dedicado por classe (ADH, DCIS, IC), com termos de critério diagnóstico real (WHO/critérios de Page — ex. DCIS: "intact myoepithelial cell layer"; IC: "loss of myoepithelial cell layer, stromal invasion"; ADH: "monomorphic epithelial cell population, mild nuclear atypia"). Classificação = argmax da similaridade máxima entre os 3 bancos. Implementado em [banco_por_classe.py](banco_por_classe.py), testado contra **todos os 15.138 candidatos** (não só o top-128 do roteador) — 2.711 caem dentro de exatamente 1 RoI anotado, dando uma amostra bem maior (2.174 DCIS, 501 IC, 36 ADH).
+
+**Acurácia: 23,9% (649/2.711) — pior que o baseline ingênuo de sempre prever a classe majoritária (80,2%, já que DCIS domina a amostra).**
+
+Matriz de confusão (linha = real, coluna = predita):
+
+| real \ predita | ADH | DCIS | IC |
+|---|---|---|---|
+| ADH (n=36) | 3 | 18 | 15 |
+| DCIS (n=2174) | 1103 | 544 | 527 |
+| IC (n=501) | 314 | 85 | 102 |
+
+O banco de **ADH vence o argmax na maioria das vezes**, mesmo pra patches que são DCIS ou IC de verdade (1.103/2.174 DCIS reais caem em ADH; 314/501 IC reais também). É o mesmo viés de calibração já visto nos testes anteriores — só que agora manifestado entre bancos de classe inteiros, não entre frases individuais de um banco só. Separar por classe não eliminou o viés, só mudou o nível em que ele aparece.
+
+**Isso é evidência mais forte ainda de que o problema é o modelo (QuiltNet-B-32) ou a abordagem zero-shot em si, não a forma de organizar/calibrar as frases.** Já são 5 variações testadas (bruto, normalizado, ensemble, ensemble+normalizado, banco-por-classe) — todas com o mesmo tipo de falha de fundo.
+
 ## Em aberto
 
-- **Banco de frases por classe**, não genérico — frases que descrevam especificamente o que diferencia DCIS de IC (ex. arquitetura intraductal preservada vs. invasão do estroma), não um banco único "suspeito" pra tudo.
-- **Testar se o problema é o modelo, não o banco/agregação** — repetir com CONCH ou KEEP (mais fortes que QuiltNet-B-32, já catalogados na aba Modelos Locais) e ver se discriminam melhor DCIS de IC com o mesmo método.
+- ~~Banco de frases por classe~~ — testado acima, piorou (23,9% vs. baseline de 80,2%). Descartado como solução isolada.
+- **Testar se o problema é o modelo, não o banco/agregação** — repetir com CONCH ou KEEP (mais fortes que QuiltNet-B-32, já catalogados na aba Modelos Locais) e ver se discriminam melhor DCIS/IC/ADH com o mesmo método de classificação por argmax. Essa é agora a hipótese mais provável, depois de 5 variações de banco/agregação terem falhado do mesmo jeito.
 - **Aceitar que patch isolado pode não ser suficiente** — talvez a discriminação real só apareça olhando o padrão agregado de vários patches (arquitetura, não achado pontual), não um patch de cada vez. Conecta com a questão de "independência espacial" já registrada em `docs/pipelines.md`, e com a ideia de hierarquia (benigno/maligno → evidência) que o Prof. João também sugeriu — ainda não implementada.
 - Também bloqueado pelo mesmo motivo de sempre: só uma lâmina local, não dá pra saber se esse resultado é específico da BRACS_748.
