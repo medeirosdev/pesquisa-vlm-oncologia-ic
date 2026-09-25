@@ -86,9 +86,30 @@ Mesmo teste (`categoria_descritor.py`, descritor bruto, todos os tiles rotulados
 
 Ganho na média é pequeno (51% → 52%), mas a pior categoria saiu de 33% pra 43% — pra triagem, deixar de não enxergar o maligno pesa mais. Mantida essa versão (`SUBSTITUICOES_DO_DESCRITOR` em `comum/bancos.py`).
 
+### Mesmo truque nas outras frases, uma de cada vez
+
+Registro completo, frase por frase: [../validacao/experimento_frases.md](../validacao/experimento_frases.md) (script `validacao/experimento_frases.py`, que reusa os embeddings do cache, então cada teste leva segundos).
+
+**Regra fixada antes de rodar:** uma troca só fica se a média das 3 categorias subir ≥ 0,5 ponto. Guloso: cada troca é testada em cima das já aceitas. 14 candidatas testadas, **2 aceitas**:
+
+| Troca | Benigno | Atípico | Maligno | Média |
+|---|---|---|---|---|
+| Partida (lóbulo específico) | 52% | 61% | 43% | 52,0% |
+| + "focal atypical epithelial proliferation" → "focal atypical proliferation involving part of a duct" | 53% | 58% | 54% | 54,7% |
+| + "high nuclear pleomorphism" → "large pleomorphic nuclei with prominent nucleoli" | 53% | 57% | 59% | **56,5%** |
+
+Confirmado rodando a pipeline inteira de novo (mesmos números). Tiles malignos chamados de atípicos: 1.239 → 781; de benignos: 651 → 563.
+
+- **O que funcionou foi, de novo, tirar um atrator:** "focal atypical epithelial proliferation" puxava tile de DCIS pra atípico (no top-32 da lâmina de DCIS, 21 de 32 saíam atípicos; agora 4). A versão nova diz que é *parte* do ducto — o que o DCIS não é.
+- **O que não funcionou:** reescrever o nome da própria classe piorou nos dois casos testados ("ductal carcinoma in situ" → "duct completely filled by atypical cells": maligno 43% → 37%; "atypical ductal hyperplasia" → "atypical cells partially filling a duct": atípico 61% → 36%). O nome da classe parece ser a âncora mais forte que o modelo tem.
+- **Várias trocas deram Δ = 0,00:** a frase velha e a nova nunca ganham em nenhum tile — são frases "mortas" no banco. Trocar só ajuda onde a frase já está ganhando.
+- **Custo:** o atípico caiu 61% → 57%, e no top-32 da lâmina FEA os patches atípicos caíram de 21 pra 15.
+- **Ressalva:** as frases foram escolhidas olhando as mesmas 8 lâminas em que são avaliadas. O ganho de 52% → 56,5% precisa ser conferido em lâminas novas antes de valer como resultado.
+
 ## Em aberto
 
-- O erro que sobrou é maligno → atípico (1.239 tiles). Separar DCIS de ADH/UDH é, de novo, questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `validacao/problemas_e_metrica.md`.
-- O mesmo truque (descrever o que *diferencia*, não o nome da estrutura) pode valer pras outras frases do banco — testar uma de cada vez, medindo com `categoria_descritor.py`.
+- Conferir o banco atual em lâminas que não foram usadas pra escolher as frases.
+- O erro que sobrou ainda é maligno → atípico (781 tiles). Separar DCIS de ADH/UDH é questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `validacao/problemas_e_metrica.md`.
+- Achar quais frases estão "mortas" (nunca ganham) e se vale tirar ou trocar.
 - Investigar por que "necrosis", "stromal invasion" e "nuclear crowding" têm desvio-padrão tão baixo — são achados genuinamente raros, ou o encoder não tem boa resolução pra eles?
 - Ainda sem H&E/densidade nuclear — só entram se a curva pedir, como documentado.

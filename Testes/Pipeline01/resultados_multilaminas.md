@@ -1,6 +1,6 @@
 # Pipeline 01 em várias lâminas — consistência
 
-Gerado por `scripts/rodar_todas_laminas.py` em 25/09/2026 17:20. Números por lâmina; detalhes em `resultados/<lamina>/`.
+Gerado por `scripts/rodar_todas_laminas.py` em 25/09/2026 17:28. Números por lâmina; detalhes em `resultados/<lamina>/`.
 
 ## Estágio 1 — filtro de tecido (recall contra RoIs anotados)
 
@@ -34,14 +34,14 @@ Categorias = quantos patches o descritor chamou de benigno / atípico / maligno.
 
 | Lâmina | Rótulo | Bruto: categorias | Bruto: achado dominante (% patches) | Normalizado: categorias | Normalizado: achado dominante (% patches) |
 |---|---|---|---|---|---|
-| BRACS_1003677 | IC | 0 / 11 / 21 | atypical ductal hyperplasia, micropapillary architecture (47%) | 1 / 4 / 27 | desmoplastic stroma, micropapillary architecture (19%) |
-| BRACS_1003718 | N | 11 / 10 / 1 | fibroadenoma, normal breast tissue (14%) | 3 / 7 / 12 | columnar cell lesion with atypia, solid growth pattern (4%) |
-| BRACS_1271 | ADH | 1 / 16 / 15 | atypical ductal hyperplasia, micropapillary architecture (31%) | 0 / 16 / 16 | irregular slit-like fenestrations, micropapillary architecture (12%) |
-| BRACS_1370 | PB | 14 / 7 / 11 | high nuclear pleomorphism, normal breast tissue (22%) | 0 / 15 / 17 | irregular slit-like fenestrations, mild nuclear atypia (9%) |
-| BRACS_1489 | DCIS | 0 / 21 / 11 | focal atypical epithelial proliferation, mitotic figures (44%) | 0 / 8 / 24 | comedonecrosis, mitotic figures (12%) |
-| BRACS_1592 | UDH | 7 / 14 / 11 | high nuclear pleomorphism, partial duct involvement by atypical cells (25%) | 9 / 10 / 13 | micropapillary architecture, overlapping nuclei without atypia (6%) |
-| BRACS_1774 | FEA | 0 / 21 / 11 | focal atypical epithelial proliferation, high nuclear pleomorphism (25%) | 0 / 15 / 17 | mild nuclear atypia, overlapping nuclei without atypia (12%) |
-| BRACS_748 | IC | 0 / 9 / 23 | high nuclear pleomorphism, irregular slit-like fenestrations (62%) | 0 / 25 / 7 | irregular slit-like fenestrations, solid growth pattern (25%) |
+| BRACS_1003677 | IC | 0 / 9 / 23 | atypical ductal hyperplasia, micropapillary architecture (47%) | 1 / 2 / 29 | desmoplastic stroma, micropapillary architecture (19%) |
+| BRACS_1003718 | N | 12 / 9 / 1 | fibroadenoma, normal breast tissue (14%) | 3 / 8 / 11 | columnar cell lesion with atypia, solid growth pattern (4%) |
+| BRACS_1271 | ADH | 0 / 16 / 16 | atypical ductal hyperplasia, micropapillary architecture (31%) | 0 / 16 / 16 | irregular slit-like fenestrations, micropapillary architecture (12%) |
+| BRACS_1370 | PB | 14 / 8 / 10 | large pleomorphic nuclei with prominent nucleoli, normal breast tissue (16%) | 0 / 18 / 14 | irregular slit-like fenestrations, mild nuclear atypia (9%) |
+| BRACS_1489 | DCIS | 0 / 4 / 28 | large pleomorphic nuclei with prominent nucleoli, mitotic figures (44%) | 0 / 4 / 28 | large pleomorphic nuclei with prominent nucleoli, mitotic figures (38%) |
+| BRACS_1592 | UDH | 9 / 14 / 9 | normal breast tissue, partial duct involvement by atypical cells (16%) | 8 / 9 / 15 | micropapillary architecture, overlapping nuclei without atypia (6%) |
+| BRACS_1774 | FEA | 0 / 15 / 17 | infiltrating tumor cells within stroma, micropapillary architecture (12%) | 0 / 15 / 17 | mild nuclear atypia, overlapping nuclei without atypia (19%) |
+| BRACS_748 | IC | 0 / 6 / 26 | irregular slit-like fenestrations, large pleomorphic nuclei with prominent nucleoli (62%) | 0 / 25 / 7 | irregular slit-like fenestrations, solid growth pattern (25%) |
 
 ## Validação — o descritor acerta a categoria (benigno / atípico / maligno)?
 
@@ -49,14 +49,14 @@ Todos os tiles que caem dentro de RoIs anotados, não só o top-k. Baseline = se
 
 | Lâmina | Categorias reais (b / a / m) | Bruto: acurácia | Bruto: previstas (b / a / m) | Normalizado: acurácia | Normalizado: previstas (b / a / m) | Baseline |
 |---|---|---|---|---|---|---|
-| BRACS_1003677 | 0 / 0 / 25 (n=25) | 12% | 12 / 10 / 3 | 4% | 24 / 0 / 1 | 100% |
+| BRACS_1003677 | 0 / 0 / 25 (n=25) | 20% | 11 / 9 / 5 | 12% | 22 / 0 / 3 | 100% |
 | BRACS_1003718 | 1 / 0 / 0 (n=1) | 0% | 0 / 1 / 0 | 0% | 0 / 0 / 1 | 100% |
-| BRACS_1271 | 33 / 135 / 0 (n=168) | 63% | 29 / 132 / 7 | 39% | 19 / 72 / 77 | 80% |
-| BRACS_1370 | 94 / 0 / 0 (n=94) | 83% | 78 / 9 / 7 | 33% | 31 / 23 / 40 | 100% |
-| BRACS_1489 | 0 / 0 / 626 (n=626) | 27% | 24 / 432 / 170 | 46% | 149 / 191 / 286 | 100% |
-| BRACS_1592 | 15 / 7 / 0 (n=22) | 36% | 2 / 19 / 1 | 27% | 4 / 11 / 7 | 68% |
-| BRACS_1774 | 16 / 47 / 0 (n=63) | 44% | 7 / 41 / 15 | 22% | 11 / 20 / 32 | 75% |
-| BRACS_748 | 0 / 36 / 2656 (n=2692) | 46% | 636 / 797 / 1259 | 38% | 299 / 1359 / 1034 | 99% |
+| BRACS_1271 | 33 / 135 / 0 (n=168) | 63% | 29 / 133 / 6 | 40% | 16 / 76 / 76 | 80% |
+| BRACS_1370 | 94 / 0 / 0 (n=94) | 83% | 78 / 9 / 7 | 33% | 31 / 25 / 38 | 100% |
+| BRACS_1489 | 0 / 0 / 626 (n=626) | 55% | 35 / 245 / 346 | 48% | 144 / 180 / 302 | 100% |
+| BRACS_1592 | 15 / 7 / 0 (n=22) | 41% | 3 / 17 / 2 | 27% | 4 / 11 / 7 | 68% |
+| BRACS_1774 | 16 / 47 / 0 (n=63) | 32% | 7 / 28 / 28 | 21% | 11 / 19 / 33 | 75% |
+| BRACS_748 | 0 / 36 / 2656 (n=2692) | 60% | 537 / 527 / 1628 | 39% | 265 / 1361 / 1066 | 99% |
 
 ## Validação — classificação por banco de frases de classe
 

@@ -4,7 +4,7 @@ Estado em 25/09/2026. Datas tiradas do histórico de commits.
 
 ## Em uma frase
 
-Estamos testando a **Pipeline Ideia 01**: transformar uma lâmina histopatológica gigante numa descrição textual curta que um modelo local pequeno consiga ler — filtrando o fundo, escolhendo os poucos patches que importam, descrevendo cada um em texto e deixando o modelo sintetizar. Desde 25/09 tudo roda em 8 lâminas do BRACS, não só uma. O estágio 1 se confirma nas 8; o roteador (estágio 2) só funciona em lâmina maligna; o descritor (estágio 3) agora consegue dizer "benigno" e fica acima do acaso (51% contra 33%), mas erra muito o maligno.
+Estamos testando a **Pipeline Ideia 01**: transformar uma lâmina histopatológica gigante numa descrição textual curta que um modelo local pequeno consiga ler — filtrando o fundo, escolhendo os poucos patches que importam, descrevendo cada um em texto e deixando o modelo sintetizar. Desde 25/09 tudo roda em 8 lâminas do BRACS, não só uma. O estágio 1 se confirma nas 8; o roteador (estágio 2) só funciona em lâmina maligna; o descritor (estágio 3) agora consegue dizer "benigno" e fica acima do acaso (56,5% contra 33%), mas ainda confunde maligno com atípico.
 
 ## Linha do tempo
 
@@ -82,10 +82,11 @@ Teste: o achado do patch discrimina as classes reais do RoI (DCIS vs. IC)?
 | 25/09 | Pista da borda **não** se repete de forma consistente nas outras lâminas (poucos RoIs por lâmina, 2 a 16) |
 | 25/09 | Viés pró-"benigno": tirar a frase genérica "normal breast tissue" piorou (51% → 45%), revertido. O atrator real era "normal terminal duct lobular unit" (o DCIS cresce dentro de lóbulos) |
 | 25/09 | Frase do lóbulo trocada por "normal lobule with open lumina and two cell layers": média 52%, maligno 33% → 43%, benigno 65% → 52%. Erro que sobra: maligno → atípico |
+| 25/09 | Mesmo truque nas outras frases, uma de cada vez (14 testadas, regra de aceite fixada antes: média +0,5 ponto). 2 aceitas: média 52% → 56,5%, maligno 43% → 59%, atípico 61% → 57%. Reescrever o nome da própria classe piorou. Ver `Testes/Pipeline01/validacao/experimento_frases.md` |
 
 ## Onde paramos
 
-1. **O descritor separa benigno / atípico / maligno acima do acaso (52%, acaso = 33%)**, com as três categorias entre 43% e 61%. O erro que sobra é maligno chamado de atípico — de novo uma questão de arquitetura (ducto inteiro preenchido ou não).
+1. **O descritor separa benigno / atípico / maligno acima do acaso (56,5%, acaso = 33%)**, com as três categorias entre 53% e 59%. As frases foram ajustadas nas mesmas 8 lâminas em que são avaliadas — falta conferir em lâminas novas. O erro que sobra é maligno chamado de atípico — de novo uma questão de arquitetura (ducto inteiro preenchido ou não).
 2. **O roteador só funciona em lâmina maligna.** Numa lâmina benigna ou atípica ele escolhe patches no nível do acaso.
 3. **DCIS vs. IC continua sem solução**, e a pista da borda, que funcionou na `BRACS_748`, não se repetiu nas outras lâminas.
 4. **O QuiltNet-B-32 pode ser fraco demais** — o teste com KEEP ficou pela metade.
@@ -98,7 +99,8 @@ Teste: o achado do patch discrimina as classes reais do RoI (DCIS vs. IC)?
 **Estágios 2 e 3:**
 
 - [x] Reduzir o viés pró-"benigno" do descritor — maligno de 33% pra 43% trocando a frase do lóbulo normal
-- [ ] Reduzir a confusão maligno → atípico (medido com `validacao/categoria_descritor.py`)
+- [ ] Reduzir a confusão maligno → atípico (medido com `validacao/categoria_descritor.py`) — caiu de 1.239 pra 781 tiles com a troca de frases
+- [ ] Conferir o banco de frases atual em lâminas que não foram usadas pra escolher as frases
 - [ ] Roteador que funcione também em lâmina benigna/atípica (hoje o banco v2 só procura "suspeito")
 - [ ] Terminar o teste do KEEP — de preferência num venv separado, pra não quebrar o do QuiltNet
 - [ ] Implementar a hierarquia sugerida pelo Prof. João: primeiro benigno/maligno, depois a evidência — o descritor por categoria já é um primeiro passo nessa direção

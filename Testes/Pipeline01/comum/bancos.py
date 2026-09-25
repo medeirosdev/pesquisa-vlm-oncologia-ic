@@ -111,16 +111,23 @@ def _sem_repetir(*listas):
 # benignos — o DCIS cresce dentro de ductos/lóbulos, então a estrutura geral parece um lóbulo normal.
 # Trocada por uma versão que descreve o que o DCIS não tem (luz aberta, duas camadas de células).
 # (Tirar "normal breast tissue" foi testado antes e piorou: 51% -> 45% — ver resultados.md do estágio 3.)
+# As outras duas vieram do teste de uma troca por vez (validacao/experimento_frases.md).
 SUBSTITUICOES_DO_DESCRITOR = {
     "normal terminal duct lobular unit": "normal lobule with open lumina and two cell layers",
+    "focal atypical epithelial proliferation": "focal atypical proliferation involving part of a duct",
+    "high nuclear pleomorphism": "large pleomorphic nuclei with prominent nucleoli",
 }
 
+
+def _substituir(frases):
+    return [SUBSTITUICOES_DO_DESCRITOR.get(f, f) for f in frases]
+
+
 BANCO_DESCRITOR = {
-    "benigno": [SUBSTITUICOES_DO_DESCRITOR.get(f, f)
-                for f in _sem_repetir(BANCO_POR_CLASSE["N"], BANCO_POR_CLASSE["PB"],
-                                      ["adipose tissue", "benign fibrous stroma"])],
-    "atipico": _sem_repetir(BANCO_POR_CLASSE["UDH"], BANCO_POR_CLASSE["FEA"], BANCO_POR_CLASSE["ADH"]),
-    "maligno": _sem_repetir(BANCO_V2["suspeito"], BANCO_POR_CLASSE["DCIS"], BANCO_POR_CLASSE["IC"]),
+    "benigno": _substituir(_sem_repetir(BANCO_POR_CLASSE["N"], BANCO_POR_CLASSE["PB"],
+                                        ["adipose tissue", "benign fibrous stroma"])),
+    "atipico": _substituir(_sem_repetir(BANCO_POR_CLASSE["UDH"], BANCO_POR_CLASSE["FEA"], BANCO_POR_CLASSE["ADH"])),
+    "maligno": _substituir(_sem_repetir(BANCO_V2["suspeito"], BANCO_POR_CLASSE["DCIS"], BANCO_POR_CLASSE["IC"])),
 }
 
 # Ensemble de prompts (sugestão do Prof. João): várias formulações por frase, média dos embeddings.
