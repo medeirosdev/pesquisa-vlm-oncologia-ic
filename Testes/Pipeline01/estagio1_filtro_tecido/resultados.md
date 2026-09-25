@@ -15,7 +15,7 @@
 | 05 | Triangle na saturação | 40.98% | 316 ms |
 | 06 | Distância euclidiana ao branco (RGB), baseline ingênuo | 41.54% | 680 ms |
 
-Ver [outputs/BRACS_748/comparacao_grid.png](../outputs/BRACS_748/comparacao_grid.png) para a grade visual e `outputs/BRACS_748/estatisticas.json` para os números brutos.
+Ver [resultados/BRACS_748/estagio1/comparacao_grid.png](../resultados/BRACS_748/estagio1/comparacao_grid.png) para a grade visual e `resultados/BRACS_748/estagio1/estatisticas.json` para os números brutos.
 
 ## Achado
 
@@ -50,9 +50,9 @@ BRACS_748 tem 98 RoIs anotados por patologista. O `.qpdata` original (projeto Qu
 | 01 Otsu-S | 98/98 | 0.95 | 100% | 84% |
 | 02 Otsu-S + morfologia | 98/98 | 0.96 | 100% | 87% |
 
-Todos os 98 recortes foram localizados com alta confiança (correlação média bem acima de 0.5, muitos ≥0.9). Ver [outputs/BRACS_748/roi_overlay.png](../outputs/BRACS_748/roi_overlay.png) (boxes amarelos) e detalhe por RoI em `outputs/BRACS_748/recall_roi.csv`.
+Todos os 98 recortes foram localizados com alta confiança (correlação média bem acima de 0.5, muitos ≥0.9). Ver [resultados/BRACS_748/estagio1/roi_overlay.png](../resultados/BRACS_748/estagio1/roi_overlay.png) (boxes amarelos) e detalhe por RoI em `resultados/BRACS_748/estagio1/recall_roi.csv`.
 
-**Confirmação visual:** no overlay, os 98 boxes caem exclusivamente na região roxo-densa — nenhum RoI anotado cai na região clara à esquerda. Um zoom em alta resolução dessa região clara ([outputs/BRACS_748/zoom_regiao_clara_page3.png](../outputs/BRACS_748/zoom_regiao_clara_page3.png)) mostra feixes de colágeno ondulados, tecido conjuntivo fibroso, sem estruturas glandulares/ductais e sem núcleos aglomerados — não é o tecido celular que o roteador do estágio 2 precisa (não é exatamente gordura clássica com vacúolos redondos, mas é claramente estroma não-epitelial).
+**Confirmação visual:** no overlay, os 98 boxes caem exclusivamente na região roxo-densa — nenhum RoI anotado cai na região clara à esquerda. Um zoom em alta resolução dessa região clara ([resultados/BRACS_748/estagio1/zoom_regiao_clara_page3.png](../resultados/BRACS_748/estagio1/zoom_regiao_clara_page3.png)) mostra feixes de colágeno ondulados, tecido conjuntivo fibroso, sem estruturas glandulares/ductais e sem núcleos aglomerados — não é o tecido celular que o roteador do estágio 2 precisa (não é exatamente gordura clássica com vacúolos redondos, mas é claramente estroma não-epitelial).
 
 ## Conclusão
 
@@ -62,4 +62,4 @@ Recall alto (100% ≥50%, ~85% ≥90%) confirma: **"perder a região clara" é c
 
 - Repetir o recall em 2–3 lâminas de classes diferentes, pra ver se o padrão de recall alto se mantém fora da BRACS_748 (único item que ainda vale rodar — não investir mais em variante de Otsu).
   - **Bloqueado por dado:** só há uma `.svs` baixada localmente (`BRACS_748`). O dataset `BRACS_RoI` já tem recortes de outras 317 lâminas, mas sem a WSI original não dá pra gerar máscara de tecido nem localizar os RoIs nela — falta baixar mais `.svs` do BRACS.
-  - Os dois scripts já aceitam `--svs /caminho/lamina.svs` (saída organizada em `outputs/<nome_da_lamina>/`), então assim que outra `.svs` estiver disponível o teste é só rodar `filtro_tecido.py --svs ... && recall_roi.py --svs ...`.
+  - Os dois scripts já aceitam `--svs /caminho/lamina.svs` (saída organizada em `resultados/<nome_da_lamina>/`), então assim que outra `.svs` estiver disponível o teste é só rodar `filtro_tecido.py --svs ... && recall_roi.py --svs ...`.

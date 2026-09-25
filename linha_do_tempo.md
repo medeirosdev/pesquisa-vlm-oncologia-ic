@@ -4,7 +4,7 @@ Estado em 25/09/2026. Datas tiradas do histórico de commits.
 
 ## Em uma frase
 
-Estamos testando a **Pipeline Ideia 01**: transformar uma lâmina histopatológica gigante numa descrição textual curta que um modelo local pequeno consiga ler — filtrando o fundo, escolhendo os poucos patches que importam, descrevendo cada um em texto e deixando o modelo sintetizar. Os estágios 1 e 2 funcionam; o 3 (descrever o patch) travou num problema que ainda não resolvemos.
+Estamos testando a **Pipeline Ideia 01**: transformar uma lâmina histopatológica gigante numa descrição textual curta que um modelo local pequeno consiga ler — filtrando o fundo, escolhendo os poucos patches que importam, descrevendo cada um em texto e deixando o modelo sintetizar. Desde 25/09 tudo roda em 8 lâminas do BRACS, não só uma. O estágio 1 se confirma nas 8; o roteador (estágio 2) só funciona em lâmina maligna; o descritor (estágio 3) agora consegue dizer "benigno" e fica acima do acaso (51% contra 33%), mas erra muito o maligno.
 
 ## Linha do tempo
 
@@ -67,22 +67,39 @@ Teste: o achado do patch discrimina as classes reais do RoI (DCIS vs. IC)?
 | 23/09 | Trocar QuiltNet por KEEP (modelo mais forte) | **não concluído** — conflitos de versão (`timm`, `transformers`) |
 | 25/09 | BRACS documentado na aba Datasets | — |
 
+### 25/09 — várias lâminas e reorganização
+
+| Data | O que foi feito |
+|---|---|
+| 25/09 | Baixadas 7 lâminas do BRACS pelo FTP oficial (uma por classe: N, PB, UDH, FEA, ADH, DCIS, IC) + as anotações `.qpdata` originais |
+| 25/09 | `Testes/Pipeline01` reorganizado: uma pasta por estágio, código compartilhado em `comum/`, resultados por lâmina em `resultados/` |
+| 25/09 | Scripts corrigidos pra lâminas com pirâmide diferente (nível escolhido pelo fator de redução, não pela posição) |
+| 25/09 | Pipeline inteira rodada nas 8 lâminas — ver `Testes/Pipeline01/resultados_multilaminas.md` |
+| 25/09 | Estágio 1 se confirma nas 8 (cobertura dos RoIs entre 74% e 100%; a exceção, 38% na lâmina normal, é efeito da caixa retangular em volta de um lóbulo pequeno) |
+| 25/09 | Estágio 2 **não** se confirma: só fica claramente acima do acaso na lâmina de DCIS — o banco procura "suspeito", não acha lesão benigna/atípica |
+| 25/09 | Estágio 3: descritor só tinha frases suspeitas (descrevia tecido normal como "stromal invasion"). Banco refeito com o espectro inteiro (benigno / atípico / maligno) |
+| 25/09 | Resultado do descritor novo nas 8 lâminas: acerta a categoria em 51% (acaso = 33%) — benigno 65%, atípico 53%, maligno 33%. Normalização por z-score descartada (fica no acaso) |
+| 25/09 | Pista da borda **não** se repete de forma consistente nas outras lâminas (poucos RoIs por lâmina, 2 a 16) |
+
 ## Onde paramos
 
-1. **Pergunta aberta principal:** por que nenhuma forma de descrever um patch isolado consegue separar DCIS de IC?
-2. **Hipótese mais forte hoje:** a diferença entre DCIS e IC está na **borda** da lesão (camada mioepitelial intacta ou rompida), não na aparência da célula. Um patch do meio da lesão não carrega essa informação — o teste da borda (36,7% contra 10% do interior) apoia isso.
-3. **Hipótese ainda não descartada:** o QuiltNet-B-32 é fraco demais. O teste com KEEP ficou pela metade.
-4. **Problema de métrica registrado:** a classe é rótulo da lesão inteira, não do patch — ver `Testes/Pipeline01/estagio4teste/problemas_e_metrica.md`.
+1. **O descritor já separa benigno / atípico / maligno acima do acaso (51%)**, mas tem viés pró-"benigno": chama muito tecido maligno de benigno. Esse é o próximo problema a atacar.
+2. **O roteador só funciona em lâmina maligna.** Numa lâmina benigna ou atípica ele escolhe patches no nível do acaso.
+3. **DCIS vs. IC continua sem solução**, e a pista da borda, que funcionou na `BRACS_748`, não se repetiu nas outras lâminas.
+4. **O QuiltNet-B-32 pode ser fraco demais** — o teste com KEEP ficou pela metade.
+5. **Problema de métrica registrado:** a classe é rótulo da lesão inteira, não do patch — ver `Testes/Pipeline01/validacao/problemas_e_metrica.md`. As anotações `.qpdata` recém-baixadas têm o contorno real das lesões, mas precisam do QuPath pra serem lidas.
 
-**Estado técnico a saber:** no venv de `Testes/Pipeline01/.venv` foram instalados `transformers==4.34.0` e `timm==1.0.17` na tentativa do KEEP. O QuiltNet não depende do `transformers`, mas vale conferir que ele ainda roda antes do próximo teste.
+**Estado técnico a saber:** no venv de `Testes/Pipeline01/.venv` foram instalados `transformers==4.34.0` e `timm==1.0.17` na tentativa do KEEP. Conferido em 25/09: o QuiltNet continua rodando.
 
 ## O que precisa ser feito
 
-**Pra fechar a pergunta do estágio 3:**
+**Estágios 2 e 3:**
 
+- [ ] Reduzir o viés pró-"benigno" do descritor (medido com `validacao/categoria_descritor.py`)
+- [ ] Roteador que funcione também em lâmina benigna/atípica (hoje o banco v2 só procura "suspeito")
 - [ ] Terminar o teste do KEEP — de preferência num venv separado, pra não quebrar o do QuiltNet
-- [ ] Aprofundar a pista da borda: testar margens diferentes, pesar a borda em vez de usar só ela
-- [ ] Implementar a hierarquia sugerida pelo Prof. João: primeiro benigno/maligno, depois a evidência
+- [ ] Implementar a hierarquia sugerida pelo Prof. João: primeiro benigno/maligno, depois a evidência — o descritor por categoria já é um primeiro passo nessa direção
+- [ ] Ler as anotações `.qpdata` (via QuPath) pra ter o contorno real das lesões em vez de caixas
 
 **Frentes paradas há mais tempo:**
 
@@ -91,18 +108,20 @@ Teste: o achado do patch discrimina as classes reais do RoI (DCIS vs. IC)?
 
 **Limitações que afetam tudo:**
 
-- [ ] Baixar mais lâminas do BRACS — hoje só há uma (`BRACS_748`), então nenhum resultado foi confirmado em outra amostra
-- [ ] Responder ao Prof. João sobre o resultado do ensemble e da borda
+- [x] Baixar mais lâminas do BRACS — 8 lâminas desde 25/09, uma por classe
+- [ ] Mais lâminas por classe — com 1 lâmina por classe, e 2 a 16 RoIs em várias delas, os números por lâmina ainda são pequenos
+- [ ] Responder ao Prof. João sobre o ensemble, a borda e os resultados em várias lâminas
 
 ## Onde está cada coisa
 
 | O quê | Onde |
 |---|---|
 | Documentação pública | `docs/` (site MkDocs) |
-| Descrição da Pipeline 01 | `docs/pipelines.md`, `Testes/Pipeline01/IDEIA01Pipeline.md` |
-| Estágio 1 | `Testes/Pipeline01/estagio1/` |
-| Estágio 2 | `Testes/Pipeline01/estagio2/` |
-| Estágio 3 | `Testes/Pipeline01/estagio3/` |
-| Estágio 4 | `Testes/Pipeline01/estagio4/` |
-| Testes de validação do estágio 3 | `Testes/Pipeline01/estagio4teste/` |
-| Caminhos da lâmina, RoIs e modelos | `Caminhos/caminhos.md` |
+| Como rodar os testes, estrutura das pastas | `Testes/Pipeline01/README.md` |
+| Descrição da Pipeline 01 | `docs/pipelines.md`, `Testes/Pipeline01/ideia/` |
+| Código compartilhado | `Testes/Pipeline01/comum/` |
+| Estágios 1 a 4 | `Testes/Pipeline01/estagio1_filtro_tecido/` … `estagio4_agregacao/` |
+| Testes de validação do estágio 3 | `Testes/Pipeline01/validacao/` |
+| Resultados em todas as lâminas | `Testes/Pipeline01/resultados_multilaminas.md` |
+| Baixar lâminas, rodar tudo | `Testes/Pipeline01/scripts/` |
+| Caminhos das lâminas, RoIs e modelos | `Caminhos/caminhos.md` |

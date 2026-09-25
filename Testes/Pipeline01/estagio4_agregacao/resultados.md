@@ -38,7 +38,7 @@ Achado dominante: mitotic figures (88% dos patches)
 
 Mesmos 32 patches, mesmas coordenadas, mesmas imagens-âncora — dois "achados dominantes" praticamente opostos (`high nuclear pleomorphism` em 100% dos patches no bruto vira 3% no normalizado). Isso não é um detalhe cosmético: é o tipo de frase que iria direto pra um pré-laudo gerado por uma VLM no estágio 5. **A pendência do estágio 3 deixou de ser uma nota de rodapé técnica — ela decide o que o sistema alegaria ter encontrado.**
 
-As âncoras visuais (mesmas 3 coordenadas nos dois casos, porque a seleção vem do roteador do estágio 2, que não muda entre bruto/normalizado) estão em `outputs/BRACS_748/estagio4_prompt_k32{,_norm}_ancoras/`.
+As âncoras visuais (mesmas 3 coordenadas nos dois casos, porque a seleção vem do roteador do estágio 2, que não muda entre bruto/normalizado) estão em `resultados/BRACS_748/estagio4/estagio4_prompt_k32{,_norm}_ancoras/`.
 
 ## Em aberto
 

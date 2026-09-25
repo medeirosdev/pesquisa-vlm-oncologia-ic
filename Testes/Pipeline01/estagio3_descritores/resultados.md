@@ -48,9 +48,29 @@ Adicionei `--normalizar` ao script: calcula média/desvio de cada frase sobre os
 
 **Correção de leitura (registrada pra não repetir o erro):** a primeira hipótese — que "solid growth pattern" dominaria por ter *baixa* variância — estava invertida. É a frase de *maior* desvio-padrão do banco inteiro, junto com "comedonecrosis". Ou seja, normalizar não está inflando uma frase quase-constante; está privilegiando as duas frases que **de fato variam** patch a patch (potencialmente as mais informativas), em detrimento de frases quase-constantes como "necrosis" e "stromal invasion" (std ~0,006–0,009, quase ruído). Se isso é correto (as frases de maior variância carregam mais sinal real) ou é exagero da normalização (variância alta podendo ser artefato de outra coisa) — não dá pra saber sem checar contra classe real do patch.
 
+## 25/09 — o descritor não conseguia dizer "normal"; corrigido e testado em 8 lâminas
+
+Rodando a pipeline em 8 lâminas (ver [../resultados_multilaminas.md](../resultados_multilaminas.md)), apareceu uma falha de desenho: o banco do descritor só tinha frases suspeitas, então até a lâmina de tecido normal (`BRACS_1003718`) saía descrita como "desmoplastic stroma, stromal invasion". Não existia frase que permitisse dizer "normal".
+
+**Correção:** o descritor passou a usar `BANCO_DESCRITOR` (em `comum/bancos.py`), com o espectro inteiro organizado nas três categorias oficiais do BRACS — benigno (N, PB + gordura e estroma fibroso, 12 frases), atípico (UDH, FEA, ADH, 15 frases) e maligno (o antigo banco suspeito + DCIS e IC, 19 frases). Cada patch recebe também uma **categoria sugerida**: a categoria cuja frase mais parecida tem a maior similaridade.
+
+**Teste** ([../validacao/categoria_descritor.py](../validacao/categoria_descritor.py)): a categoria sugerida bate com a categoria real do RoI? Todos os tiles rotulados das 8 lâminas, somados:
+
+| Categoria real | Bruto: acerto | Normalizado: acerto |
+|---|---|---|
+| Benigno (159 tiles) | 65% | 24% |
+| Atípico (225 tiles) | 53% | 37% |
+| Maligno (3.307 tiles) | 33% | 39% |
+| **Média das 3** | **51%** | **33%** |
+
+Chute aleatório entre 3 categorias = 33%.
+
+- **Bruto: primeiro sinal acima do acaso** nos testes do estágio 3 (51% contra 33%), e agora ele diz "normal": na lâmina PB, o achado dominante virou "normal breast tissue, normal terminal duct lobular unit" e 88% dos tiles benignos foram reconhecidos.
+- **O viés de calibração não sumiu, mudou de direção.** Antes "high nuclear pleomorphism" ganhava sempre; agora "normal breast tissue" puxa muito — 1.367 dos 3.307 tiles malignos foram chamados de benignos. O ponto fraco agora é reconhecer o maligno.
+- **Normalizado fica exatamente no acaso (33%) — descartado pra essa tarefa.** O z-score é calculado dentro da própria lâmina, então numa lâmina toda benigna "benigno" vira o normal dela e deixa de se destacar. A normalização apaga o sinal absoluto que interessa aqui. Isso resolve a pendência "bruto ou normalizado" que estava em aberto desde o teste de k=128.
+
 ## Em aberto
 
-- Decidir entre similaridade bruta (viés de frase confirmado, mas estável) e normalizada por z-score (mais variada, mas concentra em torno das 2 frases de maior desvio-padrão) — precisa de checagem contra classe real do patch pra desempatar, não só argumento teórico.
-- Investigar por que "necrosis", "stromal invasion" e "nuclear crowding" têm desvio-padrão tão baixo — são achados genuinamente raros nesta lâmina, ou o encoder não tem boa resolução pra eles?
-- Adicionar frase neutra tipo "non-specific epithelium" ao banco, pra dar uma saída pra patches que não casam bem com nenhum achado específico.
+- Reduzir o viés pró-"benigno" do bruto: testar tirar "normal breast tissue" (a frase mais genérica, provável atrator) ou pesar as categorias — medindo com o mesmo `categoria_descritor.py`.
+- Investigar por que "necrosis", "stromal invasion" e "nuclear crowding" têm desvio-padrão tão baixo — são achados genuinamente raros, ou o encoder não tem boa resolução pra eles?
 - Ainda sem H&E/densidade nuclear — só entram se a curva pedir, como documentado.

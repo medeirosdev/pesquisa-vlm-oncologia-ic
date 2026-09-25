@@ -26,6 +26,7 @@ site/
 
 # Testes: scripts ficam versionados, outputs (imagens) não
 Testes/**/outputs/
+Testes/Pipeline01/resultados/
 
 # Artigos (PDFs ficam só locais — ver artigos/artigosDataset/ArtigosLink.md)
 artigos/**/*.pdf

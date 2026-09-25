@@ -28,11 +28,11 @@ Ground-truth: os mesmos 98 RoIs anotados usados na validação do estágio 1. Um
 | 512 | 512 | 3.38% | 0.35 | 0.82 | 80/98 | ~23.040 |
 | 1024 | 1024 | 6.76% | 0.33 | 0.92 | 90/98 | ~46.080 |
 
-(Estimativa de tokens: ~45 tokens/patch, meio da faixa de 30–60 documentada para o estágio 3. Curva completa em `outputs/BRACS_748/estagio2_curva.json`.)
+(Estimativa de tokens: ~45 tokens/patch, meio da faixa de 30–60 documentada para o estágio 3. Curva completa em `resultados/BRACS_748/estagio2/estagio2_curva.json`.)
 
 **Baseline aleatório** (200 amostras de k tiles aleatórios entre os 15.138 candidatos, mesma métrica): precisão média **0.18** para qualquer k testado — o roteador fica **~2–3x acima do acaso** em toda a faixa testada.
 
-Ver overlays: [k=64](outputs/BRACS_748/estagio2_topk_overlay.png) · [k=512](outputs/BRACS_748/estagio2_topk512_overlay.png) · [k=1024](outputs/BRACS_748/estagio2_topk1024_overlay.png).
+Ver overlays: [k=64](../resultados/BRACS_748/estagio2/estagio2_topk_overlay.png) · [k=512](../resultados/BRACS_748/estagio2/estagio2_topk512_overlay.png) · [k=1024](../resultados/BRACS_748/estagio2/estagio2_topk1024_overlay.png).
 
 ## Leitura honesta do resultado
 
@@ -74,7 +74,7 @@ Os embeddings de imagem já calculados na rodada v1 foram reaproveitados (salvos
 | 512 | 0.35 / 0.82 | 0.44 / 0.84 |
 | 1024 | 0.33 / 0.92 | 0.34 / 0.97 |
 
-Overlay: [k=1024, banco v2](outputs/BRACS_748/estagio2_topk_overlay_v2.png).
+Overlay: [k=1024, banco v2](../resultados/BRACS_748/estagio2/estagio2_topk_overlay_v2.png).
 
 **Não é vitória limpa — é um trade-off diferente, não estritamente melhor:**
 
