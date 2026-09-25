@@ -53,11 +53,10 @@ CANDIDATAS = [
 ]
 
 
-def carregar_dados():
-    """Embeddings dos tiles rotulados de todas as lâminas + categoria real de cada um."""
+def carregar_dados(stems=None):
+    """Embeddings dos tiles rotulados das lâminas (padrão: todas) + categoria real de cada um."""
     vetores, reais, laminas = [], [], []
-    for svs in listar_laminas():
-        stem = svs.stem
+    for stem in stems or [p.stem for p in listar_laminas()]:
         if not (RESULTADOS_DIR / stem / "estagio1" / "recall_roi.csv").exists():
             continue
         embs, xy = carregar_embeddings_cacheados(dir_resultados(stem, "estagio2"))

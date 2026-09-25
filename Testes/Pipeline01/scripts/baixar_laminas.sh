@@ -7,6 +7,7 @@
 # Uso:
 #   bash baixar_laminas.sh                    # primeira leva recomendada (1 por classe)
 #   bash baixar_laminas.sh train/Group_MT/Type_IC/BRACS_1003677.svs ...   # lâminas específicas
+#   bash baixar_laminas.sh --segunda-leva     # 8 lâminas novas pra teste fora da amostra
 #   bash baixar_laminas.sh --anotacoes        # só as anotações oficiais (~2,4 MB)
 
 set -euo pipefail
@@ -30,6 +31,22 @@ RECOMENDADAS=(
   "train/Group_MT/Type_DCIS/BRACS_1489.svs"    # 1,16 GB | RoIs: DCIS 18
   "train/Group_MT/Type_IC/BRACS_1003677.svs"   # 0,18 GB | RoIs: IC 1
 )
+
+# Segunda leva: lâminas pra conferir o banco de frases ajustado na primeira (teste fora da amostra).
+# Todas com recorte de RoI local, de pacientes que não aparecem na primeira leva nem entre si.
+# Uma por classe + uma N extra (benigno é a categoria com menos tiles).
+SEGUNDA_LEVA=(
+  "train/Group_BT/Type_N/BRACS_1507.svs"       # paciente 54  | RoIs: N 10
+  "train/Group_BT/Type_N/BRACS_1641.svs"       # paciente 69  | RoIs: N 4
+  "train/Group_BT/Type_PB/BRACS_1320.svs"      # paciente 31  | RoIs: PB 18, N 2
+  "train/Group_BT/Type_UDH/BRACS_1617.svs"     # paciente 44  | RoIs: UDH 11, PB 3, N 2
+  "train/Group_AT/Type_FEA/BRACS_743.svs"      # paciente 102 | RoIs: FEA 8, PB 19, N 1
+  "train/Group_AT/Type_ADH/BRACS_1494.svs"     # paciente 49  | RoIs: ADH 11, UDH 36, PB 5, N 2, FEA 1
+  "train/Group_MT/Type_DCIS/BRACS_1512.svs"    # paciente 48  | RoIs: DCIS 25
+  "train/Group_MT/Type_IC/BRACS_297.svs"       # paciente 114 | RoIs: IC 22, N 7, PB 2
+)
+
+if [[ "${1:-}" == "--segunda-leva" ]]; then set -- "${SEGUNDA_LEVA[@]}"; fi
 
 if [[ "${1:-}" == "--anotacoes" ]]; then
   mkdir -p "$DESTINO_ANOT"
