@@ -10,6 +10,38 @@ He et al., 2020 — *PathVQA: 30000+ Questions for Medical Visual Question Answe
 - Repositório oficial: [github.com/UCSD-AI4H/PathVQA](https://github.com/UCSD-AI4H/PathVQA)
 - HuggingFace: [flaviagiammarino/path-vqa](https://huggingface.co/datasets/flaviagiammarino/path-vqa)
 
+## Dataset em uso nos testes da Pipeline 01: BRACS
+
+**BRACS** (*BReAst Carcinoma Subtyping*) — dataset de histopatologia de mama em H&E, anotado por consenso de três patologistas. É o dataset usado em todos os testes da Pipeline Ideia 01 até agora (estágios 1 a 4).
+
+Brancati et al., 2022 — *BRACS: A Dataset for BReAst Carcinoma Subtyping in H&E Histology Images*, publicado na revista *Database* (Oxford Academic).
+
+- Artigo: [arXiv 2111.04740](https://arxiv.org/abs/2111.04740)
+- Site oficial: [bracs.icar.cnr.it](https://www.bracs.icar.cnr.it/) (distribuído pelo ICAR-CNR, Itália)
+
+**Tamanho:** 547 lâminas inteiras (WSI) de 189 pacientes, e 4.537 regiões de interesse (RoIs) recortadas a partir de 387 dessas lâminas (151 pacientes).
+
+**Duas partes, usadas de formas diferentes no projeto:**
+
+- **WSI** — lâminas inteiras em `.svs`, formato piramidal. Usadas pra testar a pipeline de ponta a ponta (filtro de tecido, roteador, descritores).
+- **BRACS_RoI** — recortes já extraídos pelo próprio dataset, um por região anotada, organizados por classe. Usados como verdade de campo (ground-truth) pra validar os estágios da pipeline.
+
+**Sete classes, agrupadas em três categorias** (classificação oficial do BRACS):
+
+| Categoria | Classe | Sigla |
+|---|---|---|
+| Benigno | Normal | N |
+| Benigno | Patológico benigno | PB |
+| Atípico | Hiperplasia ductal usual | UDH |
+| Atípico | Atipia epitelial plana | FEA |
+| Atípico | Hiperplasia ductal atípica | ADH |
+| Maligno | Carcinoma ductal *in situ* | DCIS |
+| Maligno | Carcinoma invasivo | IC |
+
+> **Atenção à sigla "IC":** aqui significa *Invasive Carcinoma* (carcinoma invasivo), a classe mais grave do espectro — não tem relação com "IC" de Iniciação Científica.
+
+**Uso atual no projeto:** até agora, só uma lâmina do BRACS está baixada localmente — `BRACS_748.svs` —, com 98 RoIs anotados nela (84 DCIS, 10 IC, 4 ADH — só três das sete classes aparecem nesta lâmina especificamente). Caminhos locais registrados em `Caminhos/caminhos.md`. Repetir os testes em mais lâminas depende de baixar mais `.svs` do dataset.
+
 ## Outras fontes (para o futuro)
 
 | Dataset | Tamanho | Link | Descrição |
