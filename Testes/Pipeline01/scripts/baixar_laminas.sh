@@ -12,7 +12,11 @@
 
 set -euo pipefail
 
-: "${BRACS_FTP_USER:?exporte BRACS_FTP_USER}"
+# Alternativa ao export: um arquivo fora do repositório com as duas linhas export acima.
+CREDENCIAIS="$HOME/.config/bracs_ftp.env"
+if [[ -z "${BRACS_FTP_USER:-}" && -f "$CREDENCIAIS" ]]; then source "$CREDENCIAIS"; fi
+
+: "${BRACS_FTP_USER:?exporte BRACS_FTP_USER (ou crie ~/.config/bracs_ftp.env)}"
 : "${BRACS_FTP_PASS:?exporte BRACS_FTP_PASS}"
 
 FTP="ftp://histoimage.na.icar.cnr.it"
