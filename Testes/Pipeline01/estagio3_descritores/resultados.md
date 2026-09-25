@@ -69,8 +69,26 @@ Chute aleatório entre 3 categorias = 33%.
 - **O viés de calibração não sumiu, mudou de direção.** Antes "high nuclear pleomorphism" ganhava sempre; agora "normal breast tissue" puxa muito — 1.367 dos 3.307 tiles malignos foram chamados de benignos. O ponto fraco agora é reconhecer o maligno.
 - **Normalizado fica exatamente no acaso (33%) — descartado pra essa tarefa.** O z-score é calculado dentro da própria lâmina, então numa lâmina toda benigna "benigno" vira o normal dela e deixa de se destacar. A normalização apaga o sinal absoluto que interessa aqui. Isso resolve a pendência "bruto ou normalizado" que estava em aberto desde o teste de k=128.
 
+### Atacando o viés pró-"benigno" — três versões comparadas
+
+Mesmo teste (`categoria_descritor.py`, descritor bruto, todos os tiles rotulados das 8 lâminas):
+
+| Categoria | Original | Sem "normal breast tissue" | **Lóbulo específico** (atual) |
+|---|---|---|---|
+| Benigno | 65% | 47% | 52% |
+| Atípico | 53% | 54% | 61% |
+| Maligno | 33% | 35% | 43% |
+| **Média** | 51% | 45% | **52%** |
+
+1. **Tirar a frase mais genérica ("normal breast tissue") piorou** (51% → 45%). Ela ajudava a reconhecer benigno de verdade e não era ela que puxava o maligno: na lâmina de DCIS continuaram exatamente os mesmos 444 tiles malignos chamados de benignos. Hipótese errada, revertida.
+2. **O atrator real era "normal terminal duct lobular unit"**: ganhava em 440 dos 444 erros da lâmina de DCIS e em 825 dos 865 da `BRACS_748`. Faz sentido — o DCIS cresce *dentro* de ductos e lóbulos, então a arquitetura geral parece a de um lóbulo normal, só que cheio de células. O modelo reconhece a estrutura e não o conteúdo; é o mesmo problema de fundo do DCIS vs. IC.
+3. **Versão atual:** a frase foi trocada por "normal lobule with open lumina and two cell layers" — descreve justamente o que o DCIS não tem. Maligno subiu de 33% pra 43% (tiles malignos chamados de benignos: 1.367 → 651; na lâmina de DCIS, 444 → 24). Mas parte do erro só mudou de lugar: 432 tiles da lâmina de DCIS agora saem como atípicos (erro "vizinho" no espectro, ADH → DCIS, mas ainda erro). E o benigno caiu (65% → 52%), principalmente na lâmina de UDH.
+
+Ganho na média é pequeno (51% → 52%), mas a pior categoria saiu de 33% pra 43% — pra triagem, deixar de não enxergar o maligno pesa mais. Mantida essa versão (`SUBSTITUICOES_DO_DESCRITOR` em `comum/bancos.py`).
+
 ## Em aberto
 
-- Reduzir o viés pró-"benigno" do bruto: testar tirar "normal breast tissue" (a frase mais genérica, provável atrator) ou pesar as categorias — medindo com o mesmo `categoria_descritor.py`.
+- O erro que sobrou é maligno → atípico (1.239 tiles). Separar DCIS de ADH/UDH é, de novo, questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `validacao/problemas_e_metrica.md`.
+- O mesmo truque (descrever o que *diferencia*, não o nome da estrutura) pode valer pras outras frases do banco — testar uma de cada vez, medindo com `categoria_descritor.py`.
 - Investigar por que "necrosis", "stromal invasion" e "nuclear crowding" têm desvio-padrão tão baixo — são achados genuinamente raros, ou o encoder não tem boa resolução pra eles?
 - Ainda sem H&E/densidade nuclear — só entram se a curva pedir, como documentado.

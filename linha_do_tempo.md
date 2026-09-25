@@ -80,10 +80,12 @@ Teste: o achado do patch discrimina as classes reais do RoI (DCIS vs. IC)?
 | 25/09 | Estágio 3: descritor só tinha frases suspeitas (descrevia tecido normal como "stromal invasion"). Banco refeito com o espectro inteiro (benigno / atípico / maligno) |
 | 25/09 | Resultado do descritor novo nas 8 lâminas: acerta a categoria em 51% (acaso = 33%) — benigno 65%, atípico 53%, maligno 33%. Normalização por z-score descartada (fica no acaso) |
 | 25/09 | Pista da borda **não** se repete de forma consistente nas outras lâminas (poucos RoIs por lâmina, 2 a 16) |
+| 25/09 | Viés pró-"benigno": tirar a frase genérica "normal breast tissue" piorou (51% → 45%), revertido. O atrator real era "normal terminal duct lobular unit" (o DCIS cresce dentro de lóbulos) |
+| 25/09 | Frase do lóbulo trocada por "normal lobule with open lumina and two cell layers": média 52%, maligno 33% → 43%, benigno 65% → 52%. Erro que sobra: maligno → atípico |
 
 ## Onde paramos
 
-1. **O descritor já separa benigno / atípico / maligno acima do acaso (51%)**, mas tem viés pró-"benigno": chama muito tecido maligno de benigno. Esse é o próximo problema a atacar.
+1. **O descritor separa benigno / atípico / maligno acima do acaso (52%, acaso = 33%)**, com as três categorias entre 43% e 61%. O erro que sobra é maligno chamado de atípico — de novo uma questão de arquitetura (ducto inteiro preenchido ou não).
 2. **O roteador só funciona em lâmina maligna.** Numa lâmina benigna ou atípica ele escolhe patches no nível do acaso.
 3. **DCIS vs. IC continua sem solução**, e a pista da borda, que funcionou na `BRACS_748`, não se repetiu nas outras lâminas.
 4. **O QuiltNet-B-32 pode ser fraco demais** — o teste com KEEP ficou pela metade.
@@ -95,7 +97,8 @@ Teste: o achado do patch discrimina as classes reais do RoI (DCIS vs. IC)?
 
 **Estágios 2 e 3:**
 
-- [ ] Reduzir o viés pró-"benigno" do descritor (medido com `validacao/categoria_descritor.py`)
+- [x] Reduzir o viés pró-"benigno" do descritor — maligno de 33% pra 43% trocando a frase do lóbulo normal
+- [ ] Reduzir a confusão maligno → atípico (medido com `validacao/categoria_descritor.py`)
 - [ ] Roteador que funcione também em lâmina benigna/atípica (hoje o banco v2 só procura "suspeito")
 - [ ] Terminar o teste do KEEP — de preferência num venv separado, pra não quebrar o do QuiltNet
 - [ ] Implementar a hierarquia sugerida pelo Prof. João: primeiro benigno/maligno, depois a evidência — o descritor por categoria já é um primeiro passo nessa direção

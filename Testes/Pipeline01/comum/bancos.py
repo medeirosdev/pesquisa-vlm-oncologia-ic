@@ -107,9 +107,18 @@ def _sem_repetir(*listas):
 # Banco do descritor (estágio 3): o espectro inteiro, pra que um patch de tecido normal possa
 # ser descrito como normal. Antes o descritor só tinha frases suspeitas (BANCO_V2["suspeito"])
 # e descrevia até tecido normal como "desmoplastic stroma, stromal invasion".
+# "normal terminal duct lobular unit" era o atrator: ganhava em ~95% dos tiles malignos chamados de
+# benignos — o DCIS cresce dentro de ductos/lóbulos, então a estrutura geral parece um lóbulo normal.
+# Trocada por uma versão que descreve o que o DCIS não tem (luz aberta, duas camadas de células).
+# (Tirar "normal breast tissue" foi testado antes e piorou: 51% -> 45% — ver resultados.md do estágio 3.)
+SUBSTITUICOES_DO_DESCRITOR = {
+    "normal terminal duct lobular unit": "normal lobule with open lumina and two cell layers",
+}
+
 BANCO_DESCRITOR = {
-    "benigno": _sem_repetir(BANCO_POR_CLASSE["N"], BANCO_POR_CLASSE["PB"],
-                            ["adipose tissue", "benign fibrous stroma"]),
+    "benigno": [SUBSTITUICOES_DO_DESCRITOR.get(f, f)
+                for f in _sem_repetir(BANCO_POR_CLASSE["N"], BANCO_POR_CLASSE["PB"],
+                                      ["adipose tissue", "benign fibrous stroma"])],
     "atipico": _sem_repetir(BANCO_POR_CLASSE["UDH"], BANCO_POR_CLASSE["FEA"], BANCO_POR_CLASSE["ADH"]),
     "maligno": _sem_repetir(BANCO_V2["suspeito"], BANCO_POR_CLASSE["DCIS"], BANCO_POR_CLASSE["IC"]),
 }
