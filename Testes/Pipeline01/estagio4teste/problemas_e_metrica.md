@@ -38,6 +38,18 @@ Se a informação discriminativa está no **padrão agregado**, não no patch po
 
 **Isso refina a hipótese registrada acima:** não é só "1 patch tem pouca informação, muitos patches têm mais" — é que o tipo de agregação importa, e agregação que preserva estrutura espacial (ex. olhar especificamente os patches na borda da região, não o interior) provavelmente é necessária, não qualquer agregação.
 
+## Agregação por borda — primeira melhora real
+
+[agregacao_por_borda.py](agregacao_por_borda.py): separei os patches de cada RoI em "borda" (dentro de 512px do limite da caixa) e "interior" (resto), classificando cada grupo separado (mesma classificação por argmax de média de embedding).
+
+| Grupo | Acurácia | RoIs avaliados |
+|---|---|---|
+| Interior | 10,0% | 7/70 |
+| Todos juntos | 27,6% | 27/98 |
+| **Borda** | **36,7%** | **36/98** |
+
+**Borda supera tanto o interior quanto a mistura dos dois.** Ainda longe do baseline de 85,7%, mas é a primeira melhora real depois de 6 tentativas — e bate com a hipótese: o sinal que discrimina DCIS de IC parece mesmo mais concentrado perto do limite da lesão do que no meio dela. Ressalva importante: "borda da caixa retangular" é só uma aproximação de "borda real do tecido" — só temos bounding box, não o contorno de verdade da lesão, então parte do "interior" classificado como borda (ou vice-versa) é erro de aproximação geométrica, não do método em si.
+
 ## Itens que continuam em aberto, independente do resultado do próximo teste
 
 - Testar CONCH/KEEP no lugar do QuiltNet-B-32 — ainda vale descartar "modelo fraco" como explicação, mesmo que a explicação principal seja a formulação da tarefa.
