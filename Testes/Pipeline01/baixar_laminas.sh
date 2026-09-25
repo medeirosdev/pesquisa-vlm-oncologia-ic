@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Baixa lâminas (WSI .svs) do BRACS pelo FTP oficial do ICAR-CNR.
+# Baixa lâminas (WSI .svs) do BRACS pelo FTP oficial do dataset.
 #
 # Credenciais NÃO ficam aqui (repositório público): exporte antes de rodar
 #   export BRACS_FTP_USER=...  BRACS_FTP_PASS=...
