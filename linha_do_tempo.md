@@ -88,6 +88,7 @@ Teste: o achado do patch discrimina as classes reais do RoI (DCIS vs. IC)?
 | 25/09 | Teste fora da amostra, nas 8 lâminas novas: a troca do lóbulo se confirma (44,8% → 53,2%); as 2 trocas do experimento frase a frase não (53,2% → 52,7%) e foram retiradas |
 | 25/09 | Estágios 1 e 2 nas lâminas novas: filtro de tecido se confirma (cobertura dos RoIs 83–99%). Roteador acima do acaso em 4 das 8 novas, inclusive benignas/atípicas (PB, N, ADH, IC), e no acaso ou abaixo em DCIS e FEA — a conclusão "só funciona em lâmina maligna" não se sustenta |
 | 25/09 | DCIS vs. IC com os 8 vizinhos do patch (média dos embeddings 3×3): ganho pequeno (na `BRACS_748`, única com as duas classes, 52% → 55,5%; 5×5: 58%), só no IC. O acerto em DCIS não muda (~37%). Ver `Testes/Pipeline01/estagio3_descritores/resultados.md` |
+| 25/09 | DCIS vs. IC com os vizinhos como contexto (tipo de tecido em volta): na `BRACS_748` o IC está cercado de tumor (77%), não de estroma — o contrário da hipótese; a relação não se repete entre lâminas e a regra/logística ficam abaixo do acaso. Hipótese nova ("tumor cercado de tumor → IC") precisa de lâminas novas com DCIS e IC juntos |
 
 ## Onde paramos
 

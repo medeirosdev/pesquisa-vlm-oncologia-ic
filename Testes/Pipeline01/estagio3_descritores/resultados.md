@@ -143,6 +143,38 @@ Ideia: a diferença entre DCIS e IC é de *localização* (células dentro do du
 - **Amostra pequena:** os tiles vizinhos são muito correlacionados; na 748 o IC vem de só 10 RoIs. Os 3–5 pontos de ganho não dão pra distinguir de ruído.
 - **Leitura:** o gargalo não é o campo de visão, é o zero-shot não reconhecer DCIS (a frase de IC ganha na maioria dos patches de DCIS). Olhar mais vizinhos não resolve isso com a média dos embeddings do CLIP, que dilui a arquitetura em vez de descrevê-la.
 
+### DCIS vs. IC usando os vizinhos como contexto
+
+A média acima mistura os vizinhos; a ideia original era outra: **olhar o que está em volta** do patch. Hipótese: no DCIS o tumor está dentro do ducto (em volta: mais tumor e parede de ducto); no IC está no meio do estroma (em volta: estroma). Script: [../validacao/dcis_ic_contexto.py](../validacao/dcis_ic_contexto.py), com tudo fixado antes de rodar:
+
+1. Cada tile recebe um tipo de tecido por zero-shot (tumor / estroma / ducto / gordura; vizinho fora da grade de tecido = "sem tecido").
+2. Descritivo: composição dos 8 vizinhos dos tiles DCIS vs. IC.
+3. Regra fixa: IC se ≥ metade dos vizinhos com tecido for estroma.
+4. Regressão logística com [score DCIS−IC do patch + composição dos vizinhos], treinada deixando uma lâmina de fora por vez.
+
+**Composição dos vizinhos — o contrário da hipótese:**
+
+| Vizinhos de um tile de… | Tumor | Estroma | Ducto | Sem tecido |
+|---|---|---|---|---|
+| DCIS (todas) | 32% | 19% | 40% | 8% |
+| IC (todas) | 36% | 11% | 51% | 2% |
+| DCIS (`BRACS_748`) | 36% | 29% | 31% | 4% |
+| IC (`BRACS_748`) | **77%** | 7% | 10% | 7% |
+
+**Acurácia balanceada (acaso = 50%):**
+
+| Método | Todas somadas | `BRACS_748` |
+|---|---|---|
+| Patch sozinho (zero-shot) | 69,2% | 52,4% |
+| Regra fixa (estroma em volta → IC) | 44,7% | 39,0% |
+| Logística só com o score do patch | 75,0% | 52,4% |
+| Logística com patch + contexto | 33,4% | 31,9% |
+
+- **Na `BRACS_748` o contexto é bem diferente entre DCIS e IC, mas ao contrário do esperado:** o IC está cercado de *tumor* (77%), e o DCIS é que tem estroma em volta. Provável razão: os RoIs de IC dessa lâmina são massas sólidas de tumor, e a caixa de um RoI de DCIS pega o estroma entre os ductos. E um tile tem ~128 µm — a infiltração do IC no estroma acontece numa escala menor, *dentro* do tile, não entre tiles.
+- **A relação não se repete entre lâminas:** nas lâminas somadas a diferença quase some. Por isso a logística com contexto, treinada nas outras lâminas, fica abaixo do acaso na lâmina deixada de fora — o que ela aprende numa lâmina não vale na outra.
+- **O classificador de tipo de tecido é fraco:** metade dos tiles de IC (1.603 de 3.096) é chamada de "ducto". Com o tipo de tecido errado, o contexto vira ruído.
+- **Hipótese nova, que precisa de lâminas novas pra ser testada:** "tile de tumor cercado de tumor → IC" separa bem na `BRACS_748`, mas foi vista *depois* de olhar os dados — não vale como resultado. Teste justo: lâminas com DCIS e IC juntos que ainda não foram usadas (ex.: `BRACS_773`, DCIS 36 + IC 78 RoIs; `BRACS_295`, DCIS 45 + IC 17), com a regra fixada antes.
+
 ## Em aberto
 
 - O erro que sobrou ainda é maligno → atípico, e se repete nas lâminas novas. Separar DCIS de ADH/UDH é questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `validacao/problemas_e_metrica.md`.
