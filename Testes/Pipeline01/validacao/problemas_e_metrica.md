@@ -50,6 +50,26 @@ Se a informação discriminativa está no **padrão agregado**, não no patch po
 
 **Borda supera tanto o interior quanto a mistura dos dois.** Ainda longe do baseline de 85,7%, mas é a primeira melhora real depois de 6 tentativas — e bate com a hipótese: o sinal que discrimina DCIS de IC parece mesmo mais concentrado perto do limite da lesão do que no meio dela. Ressalva importante: "borda da caixa retangular" é só uma aproximação de "borda real do tecido" — só temos bounding box, não o contorno de verdade da lesão, então parte do "interior" classificado como borda (ou vice-versa) é erro de aproximação geométrica, não do método em si.
 
+## 26/09 — contornos oficiais (.qpdata): a maioria é retângulo
+
+As anotações originais do BRACS (projetos do QuPath, `.qpdata`) foram lidas com o próprio QuPath (via `paquo`) e exportadas pra GeoJSON: [../scripts/exportar_anotacoes.py](../scripts/exportar_anotacoes.py). 387 de 387 lâminas, sem falha. Os nomes de classe vêm inconsistentes ("Malignant-sure", "MALIGNANT", "Pathologica benign"…), mas agrupando as variações os totais batem com o artigo (N 485, PB 836, UDH 517, FEA 756, ADH 506, DCIS 790, IC 649). As coordenadas batem com as caixas localizadas por template matching (IoU mediana 0,989 na `BRACS_748`).
+
+**Mas a maioria das anotações é o próprio retângulo**, não o contorno da lesão:
+
+| Classe | Retângulo | Contorno livre | Nas 18 lâminas baixadas (ret. / cont.) |
+|---|---|---|---|
+| N | 371 | 114 | 29 / 7 |
+| PB | 659 | 177 | 44 / 12 |
+| UDH | 206 | 311 | 7 / 48 |
+| FEA | 457 | 299 | 13 / 10 |
+| ADH | 259 | 247 | 12 / 7 |
+| DCIS | 534 | 256 | 160 / 48 |
+| IC | 450 | 199 | 127 / 1 |
+
+- O rótulo do BRACS é da **região** que o patologista escolheu (com ductos e estroma juntos), não de cada célula — por desenho do dataset. O "contorno real" que se esperava resolver isso só existe em parte das anotações (e quase nunca no IC das nossas lâminas).
+- Pra limpar o rótulo no nível do tile, o que funcionou melhor foi o filtro pelos núcleos (tile com ≥ 20 núcleos neoplásicos, CellViT) — ver `estagio3_descritores/resultados.md`.
+- Os contornos continuam úteis onde existem (UDH, parte do FEA/ADH/DCIS): o atípico, que é o ponto fraco, é justamente onde há mais contorno livre.
+
 ## Itens que continuam em aberto, independente do resultado do próximo teste
 
 - Testar CONCH/KEEP no lugar do QuiltNet-B-32 — ainda vale descartar "modelo fraco" como explicação, mesmo que a explicação principal seja a formulação da tarefa.

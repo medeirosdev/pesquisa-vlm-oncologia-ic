@@ -94,6 +94,7 @@ Teste: o achado do patch discrimina as classes reais do RoI (DCIS vs. IC)?
 | 26/09 | UNI2-h baixado. Teste 1 do plano UNI2-h (DCIS vs. IC, treina em 2 lâminas e testa na 3ª): UNI2-h + logística AUC 0,96 / 0,96 / 0,99; QuiltNet + a mesma logística 0,83 / 0,95 / 0,84 — contra 0,50 do QuiltNet com frases. O gargalo era comparar a imagem com texto, não o encoder |
 | 26/09 | Teste 2 do plano UNI2-h (benigno / atípico / maligno, 16 lâminas, treina em 15): 55,2% nas 8 novas contra 53,2% das frases — diferença dentro do ruído (controle embaralhado: 42%). Maligno 93%, atípico 17% |
 | 26/09 | Teste 3 do plano UNI2-h (UNI2-h + núcleos juntos, DCIS vs. IC): não acrescenta nada — AUC igual ao UNI2-h sozinho |
+| 26/09 | Anotações `.qpdata` lidas com o QuPath (via `paquo`) e exportadas pra GeoJSON, 387 de 387 lâminas. Totais por classe batem com o artigo. Mas a maioria é o próprio retângulo, não o contorno da lesão — o rótulo do BRACS é da região. Push dos commits pro GitHub |
 
 ## Onde paramos
 
@@ -115,7 +116,8 @@ Teste: o achado do patch discrimina as classes reais do RoI (DCIS vs. IC)?
 - [ ] Entender quando o roteador funciona — nas 16 lâminas ele fica acima do acaso em metade, sem padrão por classe (hoje o banco v2 só procura "suspeito")
 - [ ] Terminar o teste do KEEP — de preferência num venv separado, pra não quebrar o do QuiltNet
 - [ ] Implementar a hierarquia sugerida pelo Prof. João: primeiro benigno/maligno, depois a evidência — o descritor por categoria já é um primeiro passo nessa direção
-- [ ] Ler as anotações `.qpdata` (via QuPath) pra ter o contorno real das lesões em vez de caixas
+- [x] Ler as anotações `.qpdata` (via QuPath) — exportadas pra GeoJSON (387/387), mas a maioria é retângulo (DCIS 160 de 208 e IC 127 de 128 nas nossas lâminas); contorno livre sobretudo no UDH. Ver `Testes/Pipeline01/validacao/problemas_e_metrica.md`
+- [ ] Usar os contornos livres (UDH, parte do FEA/ADH) pra rotular melhor o atípico
 
 **DCIS vs. IC (núcleos):**
 
