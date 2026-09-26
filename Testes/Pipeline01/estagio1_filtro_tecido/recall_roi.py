@@ -28,6 +28,33 @@ from comum.tecido import mascara_tecido
 
 LIMIAR_CONFIANCA = 0.5  # correlação mínima do template matching pra confiar na posição
 
+# Pixels do nível 0 por pixel do recorte de RoI. Quase sempre 1, mas algumas lâminas (ex.: BRACS_297)
+# têm nível 0 com o dobro da resolução dos recortes. A escala é escolhida por lâmina, testando nos
+# maiores recortes.
+ESCALAS_CANDIDATAS = (1, 2, 0.5)
+
+
+def localizar(busca, ds_busca, recorte, escala):
+    """Template matching do recorte no nível de busca. Retorna (correlação, x, y, w, h) no nível 0,
+    ou None se o recorte não cabe no nível de busca."""
+    f = escala / ds_busca
+    templ = cv2.cvtColor(cv2.resize(recorte, None, fx=f, fy=f, interpolation=cv2.INTER_AREA), cv2.COLOR_RGB2GRAY)
+    if templ.shape[0] >= busca.shape[0] or templ.shape[1] >= busca.shape[1] or min(templ.shape) < 8:
+        return None
+    _, correlacao, _, (xb, yb) = cv2.minMaxLoc(cv2.matchTemplate(busca, templ, cv2.TM_CCOEFF_NORMED))
+    h, w = templ.shape
+    return float(correlacao), xb * ds_busca, yb * ds_busca, w * ds_busca, h * ds_busca
+
+
+def escolher_escala(busca, ds_busca, recortes):
+    maiores = sorted(recortes, key=lambda c: -np.prod(Image.open(c).size))[:3]
+    imgs = [np.array(Image.open(c).convert("RGB")) for c in maiores]
+    media = {}
+    for escala in ESCALAS_CANDIDATAS:
+        res = [localizar(busca, ds_busca, img, escala) for img in imgs]
+        media[escala] = np.mean([r[0] if r else 0.0 for r in res])
+    return max(media, key=media.get), media
+
 
 def rodar(svs=None) -> dict:
     lamina = Lamina(resolver_svs(svs))
@@ -41,18 +68,20 @@ def rodar(svs=None) -> dict:
     rgb, ds_thumb = lamina.thumbnail(32)
     mask = mascara_tecido(rgb)
 
+    escala, correlacao_por_escala = escolher_escala(busca, ds_busca, recortes)
+    if escala != 1:
+        print(f"  escala recorte -> nível 0 = {escala} (correlação média por escala: "
+              f"{ {e: round(float(c), 3) for e, c in correlacao_por_escala.items()} })")
+
     linhas = []
     overlay = rgb.copy()
     for caminho in recortes:
         recorte = np.array(Image.open(caminho).convert("RGB"))
-        templ = cv2.cvtColor(cv2.resize(recorte, None, fx=1 / ds_busca, fy=1 / ds_busca,
-                                        interpolation=cv2.INTER_AREA), cv2.COLOR_RGB2GRAY)
-        if templ.shape[0] >= busca.shape[0] or templ.shape[1] >= busca.shape[1] or min(templ.shape) < 8:
+        achado = localizar(busca, ds_busca, recorte, escala)
+        if achado is None:
             print(f"  {caminho.stem}: recorte incompatível com o nível de busca, ignorado")
             continue
-        _, correlacao, _, (xb, yb) = cv2.minMaxLoc(cv2.matchTemplate(busca, templ, cv2.TM_CCOEFF_NORMED))
-        h, w = templ.shape
-        x, y, w, h = xb * ds_busca, yb * ds_busca, w * ds_busca, h * ds_busca  # nível 0
+        correlacao, x, y, w, h = achado  # nível 0
 
         tx0, ty0 = int(x / ds_thumb), int(y / ds_thumb)
         tx1, ty1 = int((x + w) / ds_thumb), int((y + h) / ds_thumb)
@@ -77,6 +106,7 @@ def rodar(svs=None) -> dict:
     resumo = {
         "lamina": lamina.stem,
         "niveis_piramide": [round(d) for d in lamina.downsamples],
+        "escala_recorte": escala,
         "rois_total": len(recortes),
         "rois_localizados": len(confiaveis),
         "classes": {c: sum(1 for l in linhas if l["classe"] == c) for c in sorted({l["classe"] for l in linhas})},

@@ -96,7 +96,7 @@ def escrever_tabela(resultados: list[dict]):
         classes = ", ".join(f"{c} {n}" for c, n in rc["classes"].items())
         linhas.append(f"| {r['lamina']} | {r['rotulo']} | {'/'.join(map(str, rc['niveis_piramide']))}x | "
                       f"{rc['rois_localizados']}/{rc['rois_total']} | {classes} | "
-                      f"{pct(rc['cobertura_media'])} | {rc['pct_rois_cobertura_ge_50']:.0f}% |")
+                      f"{pct(rc['cobertura_media'])} | {pct((rc['pct_rois_cobertura_ge_50'] or 0) / 100 if rc['cobertura_media'] is not None else None)} |")
 
     linhas += ["", "## Estágio 2 — roteador (banco v2)", "",
                "| Lâmina | Candidatos | Precisão k=32 (aleatório) | Recall k=32 | Precisão k=256 (aleatório) | Recall k=256 |",

@@ -106,10 +106,30 @@ Confirmado rodando a pipeline inteira de novo (mesmos números). Tiles malignos 
 - **Custo:** o atípico caiu 61% → 57%, e no top-32 da lâmina FEA os patches atípicos caíram de 21 pra 15.
 - **Ressalva:** as frases foram escolhidas olhando as mesmas 8 lâminas em que são avaliadas. O ganho de 52% → 56,5% precisa ser conferido em lâminas novas antes de valer como resultado.
 
+### Teste fora da amostra: 8 lâminas novas
+
+As trocas acima foram escolhidas olhando as mesmas 8 lâminas em que foram medidas. Pra saber se o ganho vale, foram baixadas mais 8 lâminas (uma por classe + uma N extra), todas de **pacientes que não aparecem na primeira leva** (lista em `scripts/baixar_laminas.sh --segunda-leva`), e o banco foi medido nelas **sem mexer em nenhuma frase** ([../validacao/teste_fora_da_amostra.py](../validacao/teste_fora_da_amostra.py)).
+
+| Banco | 8 lâminas do ajuste | **8 lâminas novas** |
+|---|---|---|
+| Sem trocas | 50,7% | 44,8% |
+| Só a troca do lóbulo | 52,0% | **53,2%** |
+| Lóbulo + as 2 trocas do experimento | 56,5% | 52,7% |
+
+Lâminas novas: 6.571 tiles rotulados (benigno 2.482, atípico 747, maligno 3.342).
+
+Banco final (só lóbulo) nas 16 lâminas somadas: benigno 57%, atípico 46%, maligno 52%, **média 51,6%**.
+
+- **A troca do lóbulo se confirma:** nas lâminas novas a média sobe de 44,8% pra 53,2% (maligno 46% → 61%). É a única mudança do banco que se sustenta fora da amostra.
+- **As duas trocas do experimento frase a frase não se confirmam:** nas lâminas novas a média cai (53,2% → 52,7%); o maligno sobe (61% → 66%), mas o atípico cai (41% → 33%). O ganho de 52% → 56,5% era em boa parte ajuste às 8 lâminas. Pela regra fixada antes (+0,5 ponto), **foram retiradas**; o banco voltou a ter só a troca do lóbulo.
+- **Lição de método:** com 1 lâmina por classe, escolher frases olhando o resultado superajusta rápido. Qualquer ajuste futuro do banco precisa ser conferido em lâminas separadas antes de ser mantido.
+- **Os mesmos erros aparecem nas lâminas novas:** DCIS chamado de atípico (`BRACS_1512`: 331 de 772 tiles) e UDH chamado de benigno (`BRACS_1617`: 111 de 150).
+
+Correção no caminho: na `BRACS_297` nenhum RoI era localizado (0/31) — o nível 0 dessa lâmina tem o dobro da resolução dos recortes de RoI. `recall_roi.py` agora escolhe a escala recorte → lâmina por lâmina (31/31 localizados).
+
 ## Em aberto
 
-- Conferir o banco atual em lâminas que não foram usadas pra escolher as frases.
-- O erro que sobrou ainda é maligno → atípico (781 tiles). Separar DCIS de ADH/UDH é questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `validacao/problemas_e_metrica.md`.
+- O erro que sobrou ainda é maligno → atípico, e se repete nas lâminas novas. Separar DCIS de ADH/UDH é questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `validacao/problemas_e_metrica.md`.
 - Achar quais frases estão "mortas" (nunca ganham) e se vale tirar ou trocar.
 - Investigar por que "necrosis", "stromal invasion" e "nuclear crowding" têm desvio-padrão tão baixo — são achados genuinamente raros, ou o encoder não tem boa resolução pra eles?
 - Ainda sem H&E/densidade nuclear — só entram se a curva pedir, como documentado.
