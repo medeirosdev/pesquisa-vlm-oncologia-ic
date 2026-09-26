@@ -262,6 +262,19 @@ Nas 16 lâminas somadas: UNI2-h 51,3% (57 / 15 / 82), QuiltNet + logística 38,9
 - **QuiltNet + logística fica pior que QuiltNet com frases** nas 3 categorias — o contrário do DCIS vs. IC. Com poucas lâminas por categoria, a camada treinada pode aprender o "jeito" das lâminas de treino em vez da lesão.
 - **Leitura:** a camada treinada resolve bem perguntas binárias com dado de treino suficiente (DCIS vs. IC, maligno vs. resto), mas não o atípico. Pro atípico, falta dado: mais lâminas ADH/FEA/UDH ou os contornos reais das lesões (`.qpdata`).
 
+### Plano UNI2-h, teste 3: UNI2-h + núcleos juntos (DCIS vs. IC)
+
+Script: [../validacao/dcis_ic_uni_nucleos.py](../validacao/dcis_ic_uni_nucleos.py). **Fixado antes** (commit `70cb244`): stacking — nas 2 lâminas de treino, o UNI2-h treinado numa pontua a outra; uma logística de 2 entradas (pontuação do UNI2-h + fração de neoplásicos encostados em conjuntivo) aprende a combinar; aplicado na lâmina de teste. Critério: combinação > UNI2-h sozinho nas três lâminas.
+
+| Lâmina de teste | UNI2-h | Núcleos | Juntos | Correlação UNI2-h × núcleos |
+|---|---|---|---|---|
+| `BRACS_748` | 0,961 | 0,724 | 0,956 | 0,52 |
+| `BRACS_773` | 0,959 | 0,839 | 0,960 | 0,63 |
+| `BRACS_295` | 0,990 | 0,656 | 0,990 | 0,26 |
+
+- **Não passou:** juntar os núcleos não muda nada (diferenças de ±0,005). Nessas lâminas o UNI2-h já está perto do teto e já carrega boa parte do que a medida dos núcleos mede (correlação 0,5–0,6 em duas lâminas).
+- A medida dos núcleos continua útil por outro motivo: é um número interpretável e sem treino, bom pra virar texto no descritor — não por somar acerto ao UNI2-h.
+
 ## Em aberto
 
 - O erro que sobrou ainda é maligno → atípico, e se repete nas lâminas novas. Separar DCIS de ADH/UDH é questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `validacao/problemas_e_metrica.md`.

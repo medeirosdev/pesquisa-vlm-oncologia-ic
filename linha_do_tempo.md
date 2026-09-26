@@ -93,6 +93,7 @@ Teste: o achado do patch discrimina as classes reais do RoI (DCIS vs. IC)?
 | 26/09 | CellViT-256 instalado (ambiente separado no HD). DCIS vs. IC pela posição dos núcleos — fração de núcleos neoplásicos encostados em núcleos conjuntivos (≤ 20 µm), fixada antes: AUC 0,72 / 0,84 / 0,66 nas três lâminas com DCIS e IC, contra 0,50 / 0,58 / 0,50 do QuiltNet nos mesmos tiles. Primeiro sinal consistente pra DCIS vs. IC |
 | 26/09 | UNI2-h baixado. Teste 1 do plano UNI2-h (DCIS vs. IC, treina em 2 lâminas e testa na 3ª): UNI2-h + logística AUC 0,96 / 0,96 / 0,99; QuiltNet + a mesma logística 0,83 / 0,95 / 0,84 — contra 0,50 do QuiltNet com frases. O gargalo era comparar a imagem com texto, não o encoder |
 | 26/09 | Teste 2 do plano UNI2-h (benigno / atípico / maligno, 16 lâminas, treina em 15): 55,2% nas 8 novas contra 53,2% das frases — diferença dentro do ruído (controle embaralhado: 42%). Maligno 93%, atípico 17% |
+| 26/09 | Teste 3 do plano UNI2-h (UNI2-h + núcleos juntos, DCIS vs. IC): não acrescenta nada — AUC igual ao UNI2-h sozinho |
 
 ## Onde paramos
 
@@ -128,7 +129,8 @@ Pesos em `Modelos/UNI2H/` (26/09); carregam no timm do venv do projeto; 681 M pa
 
 - [x] **Teste 1 — DCIS vs. IC nos mesmos tiles do teste do CellViT** (`BRACS_748`, `BRACS_773`, `BRACS_295`): UNI2-h + logística contra QuiltNet + logística (mesma logística) e contra a medida dos núcleos (AUC 0,72 / 0,84 / 0,66). **Resultado (26/09):** UNI2-h 0,96 / 0,96 / 0,99; QuiltNet + logística 0,83 / 0,95 / 0,84; controle com rótulos embaralhados ~0,4. O gargalo era o zero-shot com frases, não o encoder de imagem
 - [x] **Teste 2 — benigno / atípico / maligno nas 16 lâminas**: UNI2-h + logística, deixando uma lâmina de fora; comparar com os 53% do QuiltNet nas lâminas novas. **Resultado (26/09):** 55,2% nas 8 novas (benigno 56, atípico 17, maligno 93) — passa no critério por 2 pontos, dentro do ruído (controle com rótulos embaralhados: 42%). Maligno melhora muito, atípico despenca por falta de dado
-- [ ] **Teste 3 — UNI2-h + medida dos núcleos juntos** no DCIS vs. IC: um complementa o outro?
+- [x] **Teste 3 — UNI2-h + medida dos núcleos juntos** no DCIS vs. IC: um complementa o outro? **Resultado (26/09):** não — AUC igual ao UNI2-h sozinho (0,96 / 0,96 / 0,99); o UNI2-h já carrega o que os núcleos medem
+- [ ] **Teste 4 — generalização pra outra instituição (BACH):** classificador DCIS vs. IC treinado no BRACS, aplicado sem retreino nas imagens *in situ* vs. invasivo do BACH
 
 **Frentes paradas há mais tempo:**
 
