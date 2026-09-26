@@ -119,7 +119,14 @@ Teste: o achado do patch discrimina as classes reais do RoI (DCIS vs. IC)?
 - [x] Instalar o CellViT e testar "núcleos neoplásicos encostados em conjuntivo" — AUC 0,72 / 0,84 / 0,66 em 3 lâminas
 - [ ] Confirmar a medida, congelada como está (20 µm), em outras lâminas com DCIS e IC juntos
 - [ ] Transformar a medida em descritor textual pro estágio 3 (ex.: "tumor em contato direto com o estroma em 80% dos núcleos")
-- [ ] Testar o UNI2-h — pesos baixados em `Modelos/UNI2H/` (26/09), carregam no timm do venv do projeto; 681 M parâmetros, ~0,04 s/tile e 1,8 GB de GPU em fp16. Não tem encoder de texto: exige treinar uma camada simples em cima, avaliada deixando uma lâmina de fora
+
+**Plano UNI2-h (26/09) — atualizar a cada teste:**
+
+Pesos em `Modelos/UNI2H/` (26/09); carregam no timm do venv do projeto; 681 M parâmetros, ~0,04 s/tile e 1,8 GB de GPU em fp16. Não tem encoder de texto, então não usa banco de frases: em cima dos embeddings entra uma regressão logística, **treinada sem a lâmina testada** (deixa uma de fora por vez). Mesmo pré-processamento do QuiltNet (tile de 512 px em 40x → 256 px → 224 px), pra comparação justa. Cada teste tem regra e critério fixados e commitados antes de rodar.
+
+- [ ] **Teste 1 — DCIS vs. IC nos mesmos tiles do teste do CellViT** (`BRACS_748`, `BRACS_773`, `BRACS_295`): UNI2-h + logística contra QuiltNet + logística (mesma logística) e contra a medida dos núcleos (AUC 0,72 / 0,84 / 0,66)
+- [ ] **Teste 2 — benigno / atípico / maligno nas 16 lâminas**: UNI2-h + logística, deixando uma lâmina de fora; comparar com os 53% do QuiltNet nas lâminas novas
+- [ ] **Teste 3 — UNI2-h + medida dos núcleos juntos** no DCIS vs. IC: um complementa o outro?
 
 **Frentes paradas há mais tempo:**
 
