@@ -127,6 +127,22 @@ Banco final (só lóbulo) nas 16 lâminas somadas: benigno 57%, atípico 46%, ma
 
 Correção no caminho: na `BRACS_297` nenhum RoI era localizado (0/31) — o nível 0 dessa lâmina tem o dobro da resolução dos recortes de RoI. `recall_roi.py` agora escolhe a escala recorte → lâmina por lâmina (31/31 localizados).
 
+### DCIS vs. IC olhando os 8 vizinhos do patch
+
+Ideia: a diferença entre DCIS e IC é de *localização* (células dentro do ducto vs. no estroma), então um patch sozinho pode não mostrar, mas o patch com os vizinhos em volta pode. Script: [../validacao/dcis_ic_vizinhanca.py](../validacao/dcis_ic_vizinhanca.py). Zero-shot só entre os bancos DCIS e IC; variantes fixadas antes de rodar. Tiles rotulados das 16 lâminas: DCIS 3.553, IC 3.096. Métrica: acurácia balanceada, acaso = 50%.
+
+| Variante | Todas somadas (DCIS / IC / balanceada) | `BRACS_748` — DCIS e IC na mesma lâmina |
+|---|---|---|
+| A — só o patch | 50% / 89% / 69,2% | 38% / 67% / 52,4% |
+| B — média do patch + 8 vizinhos | 49% / 94% / 71,7% | 36% / 75% / 55,5% |
+| C — voto dos 9 | 46% / 95% / 70,1% | 28% / 74% / 51,2% |
+| D — média 5×5 (24 vizinhos) | 51% / 95% / 72,9% | 39% / 77% / 57,9% |
+
+- **A vizinhança ajuda pouco, e só no IC.** A média 3×3 sobe 2,5 pontos no total e 3 na `BRACS_748`, mas o acerto em DCIS não se mexe (~50% no total, ~37% na 748). O modelo puxa pra IC, e a vizinhança reforça o que ele já acha.
+- **O número "todas somadas" engana.** Quase todas as lâminas têm só uma das duas classes, e numa lâmina de uma classe só, suavizar pela vizinhança ajuda sempre que a lâmina já pende pro lado certo — não é sinal de localização. O teste justo é a `BRACS_748`, onde as duas convivem: lá, o patch sozinho está no acaso (52%) e a vizinhança leva a no máximo 58%.
+- **Amostra pequena:** os tiles vizinhos são muito correlacionados; na 748 o IC vem de só 10 RoIs. Os 3–5 pontos de ganho não dão pra distinguir de ruído.
+- **Leitura:** o gargalo não é o campo de visão, é o zero-shot não reconhecer DCIS (a frase de IC ganha na maioria dos patches de DCIS). Olhar mais vizinhos não resolve isso com a média dos embeddings do CLIP, que dilui a arquitetura em vez de descrevê-la.
+
 ## Em aberto
 
 - O erro que sobrou ainda é maligno → atípico, e se repete nas lâminas novas. Separar DCIS de ADH/UDH é questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `validacao/problemas_e_metrica.md`.
