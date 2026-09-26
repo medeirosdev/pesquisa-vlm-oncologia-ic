@@ -119,7 +119,7 @@ Teste: o achado do patch discrimina as classes reais do RoI (DCIS vs. IC)?
 - [x] Instalar o CellViT e testar "núcleos neoplásicos encostados em conjuntivo" — AUC 0,72 / 0,84 / 0,66 em 3 lâminas
 - [ ] Confirmar a medida, congelada como está (20 µm), em outras lâminas com DCIS e IC juntos
 - [ ] Transformar a medida em descritor textual pro estágio 3 (ex.: "tumor em contato direto com o estroma em 80% dos núcleos")
-- [ ] Testar o UNI — precisa pedir acesso em huggingface.co/MahmoodLab/UNI e fazer login no Hugging Face; não tem encoder de texto, então exige treinar uma camada simples em cima
+- [ ] Testar o UNI2-h — pesos baixados em `Modelos/UNI2H/` (26/09), carregam no timm do venv do projeto; 681 M parâmetros, ~0,04 s/tile e 1,8 GB de GPU em fp16. Não tem encoder de texto: exige treinar uma camada simples em cima, avaliada deixando uma lâmina de fora
 
 **Frentes paradas há mais tempo:**
 
