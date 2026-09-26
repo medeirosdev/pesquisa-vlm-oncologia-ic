@@ -44,6 +44,18 @@ def _preparar(img_512):
     return ((img.astype(np.float32) / 255 - MEDIA_IMAGENET) / DESVIO_IMAGENET).transpose(2, 0, 1)
 
 
+def embeddings_uni2h_de_recortes(recortes) -> np.ndarray:
+    """Embeddings de recortes RGB avulsos (fora de uma .svs, ex.: imagens do BACH). Cada recorte deve
+    cobrir a mesma área física de um tile da pipeline (128 µm); é reduzido pra 256 e depois 224."""
+    modelo = carregar_uni2h()
+    embs = []
+    for i in range(0, len(recortes), LOTE):
+        x = torch.from_numpy(np.stack([_preparar(r) for r in recortes[i:i + LOTE]])).to(dispositivo())
+        with torch.no_grad():
+            embs.append(modelo(x.half() if dispositivo() == "cuda" else x).float().cpu().numpy())
+    return np.concatenate(embs) if embs else np.zeros((0, 1536), np.float32)
+
+
 def embeddings_uni2h(lamina, xy, nome: str) -> np.ndarray:
     """Embeddings (não normalizados, 1536-d) dos tiles `xy`. Salvos em resultados/<lamina>/uni2h/<nome>.npy;
     se o arquivo existir com a mesma lista de tiles, só lê."""
