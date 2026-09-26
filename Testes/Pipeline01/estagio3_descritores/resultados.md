@@ -275,6 +275,30 @@ Script: [../validacao/dcis_ic_uni_nucleos.py](../validacao/dcis_ic_uni_nucleos.p
 - **Não passou:** juntar os núcleos não muda nada (diferenças de ±0,005). Nessas lâminas o UNI2-h já está perto do teto e já carrega boa parte do que a medida dos núcleos mede (correlação 0,5–0,6 em duas lâminas).
 - A medida dos núcleos continua útil por outro motivo: é um número interpretável e sem treino, bom pra virar texto no descritor — não por somar acerto ao UNI2-h.
 
+### Ensemble de frases refeito com as métricas atuais (26/09)
+
+O teste de 16/09 (sugestão do Prof. João: cada frase em 5 versões, média dos embeddings) foi numa lâmina só, com a métrica "achado dominante". Refeito com as métricas atuais: [../validacao/ensemble_frases.py](../validacao/ensemble_frases.py), fixado antes (commit `cac7c18`).
+
+**A. DCIS vs. IC** (AUC; mesmos tiles dos testes do CellViT/UNI2-h; critério: sobe nas três lâminas):
+
+| Lâmina | Sem ensemble | Com ensemble |
+|---|---|---|
+| `BRACS_748` | 0,50 | 0,55 |
+| `BRACS_773` | 0,58 | 0,57 |
+| `BRACS_295` | 0,50 | 0,54 |
+
+**B. Benigno / atípico / maligno** (critério: média nas 8 lâminas novas sobe ≥ 0,5 ponto):
+
+| | Benigno | Atípico | Maligno | Média |
+|---|---|---|---|---|
+| 8 novas, sem ensemble | 57% | 41% | 61% | 53,2% |
+| 8 novas, com ensemble | 60% | 27% | 71% | 52,7% |
+| 16 lâminas, sem ensemble | 57% | 46% | 52% | 51,6% |
+| 16 lâminas, com ensemble | 59% | 33% | 63% | 51,5% |
+
+- **Não passou em nenhum dos dois.** No DCIS vs. IC continua perto do acaso (0,54–0,57). Nas categorias, a média não muda: o ensemble desloca acerto do atípico (41% → 27%) pro maligno (61% → 71%).
+- Confirma a conclusão de 16/09 com mais lâminas e métricas melhores: a média das versões estabiliza cada frase, mas não resolve o problema de fundo da comparação com texto.
+
 ## Em aberto
 
 - O erro que sobrou ainda é maligno → atípico, e se repete nas lâminas novas. Separar DCIS de ADH/UDH é questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `validacao/problemas_e_metrica.md`.
