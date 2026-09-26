@@ -28,3 +28,9 @@ Ponto de partida: benigno 52.2%, atípico 60.9%, maligno 42.8%, **média 51.98%*
 **Final:** benigno 52.8%, atípico 57.3%, maligno 59.4%, **média 56.51%** (partida: 51.98%).
 
 Trocas aceitas (2): "focal atypical epithelial proliferation" → "focal atypical proliferation involving part of a duct"; "high nuclear pleomorphism" → "large pleomorphic nuclei with prominent nucleoli"
+
+## Depois: teste fora da amostra (25/09)
+
+As 2 trocas aceitas aqui **não se confirmaram** nas 8 lâminas da segunda leva (pacientes diferentes): média 53,2% só com a troca do lóbulo contra 52,7% com as 2 trocas (atípico 41% → 33%). Foram retiradas do banco. Ver `validacao/teste_fora_da_amostra.py` e `estagio3_descritores/resultados.md`.
+
+Observação: este arquivo é regerado por `experimento_frases.py` — rodar de novo sobrescreve esta nota.

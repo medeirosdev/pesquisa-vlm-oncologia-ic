@@ -104,7 +104,7 @@ Confirmado rodando a pipeline inteira de novo (mesmos números). Tiles malignos 
 - **O que não funcionou:** reescrever o nome da própria classe piorou nos dois casos testados ("ductal carcinoma in situ" → "duct completely filled by atypical cells": maligno 43% → 37%; "atypical ductal hyperplasia" → "atypical cells partially filling a duct": atípico 61% → 36%). O nome da classe parece ser a âncora mais forte que o modelo tem.
 - **Várias trocas deram Δ = 0,00:** a frase velha e a nova nunca ganham em nenhum tile — são frases "mortas" no banco. Trocar só ajuda onde a frase já está ganhando.
 - **Custo:** o atípico caiu 61% → 57%, e no top-32 da lâmina FEA os patches atípicos caíram de 21 pra 15.
-- **Ressalva:** as frases foram escolhidas olhando as mesmas 8 lâminas em que são avaliadas. O ganho de 52% → 56,5% precisa ser conferido em lâminas novas antes de valer como resultado.
+- **Ressalva:** as frases foram escolhidas olhando as mesmas 8 lâminas em que são avaliadas. O ganho de 52% → 56,5% precisa ser conferido em lâminas novas antes de valer como resultado. **Conferido logo abaixo: não se confirmou.**
 
 ### Teste fora da amostra: 8 lâminas novas
 

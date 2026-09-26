@@ -4,7 +4,7 @@ Estado em 25/09/2026. Datas tiradas do histórico de commits.
 
 ## Em uma frase
 
-Estamos testando a **Pipeline Ideia 01**: transformar uma lâmina histopatológica gigante numa descrição textual curta que um modelo local pequeno consiga ler — filtrando o fundo, escolhendo os poucos patches que importam, descrevendo cada um em texto e deixando o modelo sintetizar. Desde 25/09 tudo roda em 8 lâminas do BRACS, não só uma. O estágio 1 se confirma nas 8; o roteador (estágio 2) só funciona em lâmina maligna; o descritor (estágio 3) agora consegue dizer "benigno" e fica acima do acaso (53% nas 8 lâminas novas, contra 33%), mas ainda confunde maligno com atípico.
+Estamos testando a **Pipeline Ideia 01**: transformar uma lâmina histopatológica gigante numa descrição textual curta que um modelo local pequeno consiga ler — filtrando o fundo, escolhendo os poucos patches que importam, descrevendo cada um em texto e deixando o modelo sintetizar. Desde 25/09 tudo roda em 16 lâminas do BRACS (duas levas de 8, pacientes diferentes), não só uma. O estágio 1 se confirma nas 16; o roteador (estágio 2) fica acima do acaso em metade das lâminas, sem padrão claro por classe; o descritor (estágio 3) agora consegue dizer "benigno" e fica acima do acaso (53% nas 8 lâminas novas, contra 33%), mas ainda confunde maligno com atípico.
 
 ## Linha do tempo
 
@@ -86,11 +86,12 @@ Teste: o achado do patch discrimina as classes reais do RoI (DCIS vs. IC)?
 | 25/09 | Baixadas mais 8 lâminas (uma por classe + uma N extra), de pacientes que não aparecem na primeira leva — 16 lâminas no total |
 | 25/09 | `recall_roi.py` passa a escolher a escala recorte → lâmina (na `BRACS_297` o nível 0 tem o dobro da resolução dos recortes; 0/31 → 31/31 RoIs localizados) |
 | 25/09 | Teste fora da amostra, nas 8 lâminas novas: a troca do lóbulo se confirma (44,8% → 53,2%); as 2 trocas do experimento frase a frase não (53,2% → 52,7%) e foram retiradas |
+| 25/09 | Estágios 1 e 2 nas lâminas novas: filtro de tecido se confirma (cobertura dos RoIs 83–99%). Roteador acima do acaso em 4 das 8 novas, inclusive benignas/atípicas (PB, N, ADH, IC), e no acaso ou abaixo em DCIS e FEA — a conclusão "só funciona em lâmina maligna" não se sustenta |
 
 ## Onde paramos
 
 1. **O descritor separa benigno / atípico / maligno acima do acaso: 53% em 8 lâminas que não foram usadas pra escolher as frases (acaso = 33%).** Só a troca da frase do lóbulo se sustentou fora da amostra; o atípico é a categoria mais fraca nas lâminas novas (41%). O erro que sobra é maligno chamado de atípico — de novo uma questão de arquitetura (ducto inteiro preenchido ou não).
-2. **O roteador só funciona em lâmina maligna.** Numa lâmina benigna ou atípica ele escolhe patches no nível do acaso.
+2. **O roteador é inconsistente.** Nas 16 lâminas, fica claramente acima do acaso em 8 e no nível do acaso ou abaixo nas outras, sem padrão por classe (a conclusão anterior, "só funciona em lâmina maligna", vinha das 8 primeiras e não se repetiu). A precisão mede "cai dentro de algum RoI anotado", de qualquer classe.
 3. **DCIS vs. IC continua sem solução**, e a pista da borda, que funcionou na `BRACS_748`, não se repetiu nas outras lâminas.
 4. **O QuiltNet-B-32 pode ser fraco demais** — o teste com KEEP ficou pela metade.
 5. **Problema de métrica registrado:** a classe é rótulo da lesão inteira, não do patch — ver `Testes/Pipeline01/validacao/problemas_e_metrica.md`. As anotações `.qpdata` recém-baixadas têm o contorno real das lesões, mas precisam do QuPath pra serem lidas.
@@ -104,7 +105,7 @@ Teste: o achado do patch discrimina as classes reais do RoI (DCIS vs. IC)?
 - [x] Reduzir o viés pró-"benigno" do descritor — maligno de 33% pra 43% trocando a frase do lóbulo normal
 - [ ] Reduzir a confusão maligno → atípico (medido com `validacao/categoria_descritor.py`) — se repete nas lâminas novas
 - [x] Conferir o banco de frases em lâminas que não foram usadas pra escolhê-las — 8 lâminas novas; só a troca do lóbulo se sustentou
-- [ ] Roteador que funcione também em lâmina benigna/atípica (hoje o banco v2 só procura "suspeito")
+- [ ] Entender quando o roteador funciona — nas 16 lâminas ele fica acima do acaso em metade, sem padrão por classe (hoje o banco v2 só procura "suspeito")
 - [ ] Terminar o teste do KEEP — de preferência num venv separado, pra não quebrar o do QuiltNet
 - [ ] Implementar a hierarquia sugerida pelo Prof. João: primeiro benigno/maligno, depois a evidência — o descritor por categoria já é um primeiro passo nessa direção
 - [ ] Ler as anotações `.qpdata` (via QuPath) pra ter o contorno real das lesões em vez de caixas
