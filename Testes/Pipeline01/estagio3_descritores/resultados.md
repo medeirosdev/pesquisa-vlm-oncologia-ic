@@ -219,6 +219,28 @@ Scripts: [../validacao/nucleos_cellvit.py](../validacao/nucleos_cellvit.py) (seg
 - **Filtro de tumor pesa:** quase metade dos tiles "DCIS" não tem 20 núcleos neoplásicos — é estroma entre ductos dentro da caixa do RoI. Na pipeline, a medida só faz sentido depois de achar onde há tumor.
 - **Ressalvas:** tiles vizinhos são correlacionados (a AUC por tile superestima a confiança); a `BRACS_295` separa menos (0,66); 20 µm foi escolhido por critério histológico, não ajustado — e não deve ser ajustado olhando estas lâminas. A camada mioepitelial não é medida diretamente, só inferida.
 
+### Plano UNI2-h, teste 1: DCIS vs. IC com uma camada treinada em cima dos embeddings
+
+O UNI2-h (MahmoodLab, 681 M parâmetros) não tem encoder de texto, então não usa banco de frases: em cima dos embeddings entra uma regressão logística treinada. Script: [../validacao/dcis_ic_uni.py](../validacao/dcis_ic_uni.py); carregador em `comum/uni.py` (mesmo pré-processamento do QuiltNet: 512 px em 40x → 256 → 224).
+
+**Fixado antes de rodar** (commit `71f506e`): mesmos tiles do teste do CellViT; a mesma logística pros dois encoders (padronizada, pesos balanceados, L2 equivalente a C = 1 do scikit-learn, sem ajuste); treina em duas lâminas e testa na terceira; critério = UNI2-h > QuiltNet nas três.
+
+| Lâmina deixada de fora | QuiltNet + logística | UNI2-h + logística | Núcleos (sem treino) | QuiltNet zero-shot (frases) |
+|---|---|---|---|---|
+| `BRACS_748` | 0,83 | **0,96** | 0,72 | 0,50 |
+| `BRACS_773` | 0,95 | **0,96** | 0,84 | 0,58 |
+| `BRACS_295` | 0,84 | **0,99** | 0,66 | 0,50 |
+
+(AUC; acaso = 0,5.)
+
+**Controles** (feitos depois, pra checar o resultado): embeddings todos válidos e distintos; com os rótulos de treino embaralhados, a AUC cai pra 0,38–0,46 em média — não há vazamento. Mas um único sorteio embaralhado chegou a 0,71 numa lâmina: com tiles vizinhos correlacionados, a AUC de uma lâmina varia muito por acaso.
+
+- **Passou no critério:** o UNI2-h supera o QuiltNet nas três lâminas, e fica em 0,96–0,99.
+- **O achado maior é outro: o gargalo era o texto, não a imagem.** Os mesmos embeddings do QuiltNet que ficam no acaso com frases (0,50) chegam a 0,83–0,95 com uma camada treinada. A informação que separa DCIS de IC já estava no embedding; o que falhava era compará-lo com frases.
+- **Os núcleos ficam abaixo dos embeddings treinados**, mas não precisam de treino nem de rótulo e dão um número interpretável ("X% dos núcleos tumorais encostam no estroma") — o que conversa melhor com um descritor em texto.
+- **Ressalvas:** só 3 lâminas, treino com ~600 tiles de 2 lâminas; tiles correlacionados. Precisa de mais lâminas com DCIS e IC juntos antes de valer como resultado.
+- **Consequência pra pipeline:** o estágio 3 pode trocar o zero-shot por camadas treinadas em cima do encoder, que devolvem um rótulo — e o rótulo vira texto pro modelo final. Isso muda a ideia original (descritor 100% zero-shot) e precisa ser discutido.
+
 ## Em aberto
 
 - O erro que sobrou ainda é maligno → atípico, e se repete nas lâminas novas. Separar DCIS de ADH/UDH é questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `validacao/problemas_e_metrica.md`.
