@@ -175,6 +175,31 @@ A média acima mistura os vizinhos; a ideia original era outra: **olhar o que es
 - **O classificador de tipo de tecido é fraco:** metade dos tiles de IC (1.603 de 3.096) é chamada de "ducto". Com o tipo de tecido errado, o contexto vira ruído.
 - **Hipótese nova, que precisa de lâminas novas pra ser testada:** "tile de tumor cercado de tumor → IC" separa bem na `BRACS_748`, mas foi vista *depois* de olhar os dados — não vale como resultado. Teste justo: lâminas com DCIS e IC juntos que ainda não foram usadas (ex.: `BRACS_773`, DCIS 36 + IC 78 RoIs; `BRACS_295`, DCIS 45 + IC 17), com a regra fixada antes.
 
+### Teste da hipótese "tumor cercado de tumor → IC" em lâminas novas
+
+A hipótese saiu da `BRACS_748` depois de olhar os dados, então foi testada em duas lâminas novas com DCIS e IC juntos (`BRACS_773`, `BRACS_295`, pacientes novos). A regra e o critério foram fixados e commitados **antes do download** ([../validacao/dcis_ic_regra_tumor.py](../validacao/dcis_ic_regra_tumor.py)): IC se ≥ 50% dos 8 vizinhos forem tumor; "funcionou" = supera o patch sozinho nas duas lâminas.
+
+| Lâmina | Patch sozinho (DCIS / IC / balanceada) | Regra do tumor (DCIS / IC / balanceada) |
+|---|---|---|
+| `BRACS_773` (DCIS 610, IC 4.529 tiles) | 15% / 88% / 51,7% | 75% / 34% / 54,7% |
+| `BRACS_295` (DCIS 806, IC 1.268 tiles) | 46% / 52% / 48,9% | 96% / 14% / 55,1% |
+| Somadas | 33% / 80% / 56,3% | 87% / 30% / 58,4% |
+
+Vizinhos que são tumor, em média:
+
+| Lâmina | DCIS | IC |
+|---|---|---|
+| `BRACS_748` (onde a hipótese surgiu) | 36% | 77% |
+| `BRACS_773` | 28% | 33% |
+| `BRACS_295` | 10% | 18% |
+
+- **Pelo critério fixado antes, passou** (+3 e +6 pontos, nas duas lâminas). E a direção se repete: nas duas, os tiles de IC têm mais tumor em volta que os de DCIS.
+- **Mas o efeito é fraco:** a diferença entre DCIS e IC (5–8 pontos) é muito menor que na 748 (41 pontos). O limiar de 50% veio da 748; nas lâminas novas quase nenhum tile passa dele, então a regra troca o viés — de "quase tudo IC" pra "quase tudo DCIS" — e a balanceada fica em ~55%, perto do acaso.
+- **A quantidade de "tumor" muda muito entre lâminas** (10% a 77% dos vizinhos), o que aponta de novo pro classificador de tipo de tecido e pra diferenças de lâmina, não só pra biologia.
+- **Leitura:** há um sinal de contexto na direção certa, mas pequeno e dependente da lâmina; como regra com limiar fixo, não serve. Usar *a diferença relativa dentro da lâmina* (em vez de limiar absoluto) seria o próximo teste — e precisaria de outras lâminas novas, já que estas duas agora foram vistas.
+
+Correção no caminho: um recorte de RoI do dataset local está truncado (`BRACS_773_UDH_20.png`); `recall_roi.py` agora pula recortes ilegíveis com aviso.
+
 ## Em aberto
 
 - O erro que sobrou ainda é maligno → atípico, e se repete nas lâminas novas. Separar DCIS de ADH/UDH é questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `validacao/problemas_e_metrica.md`.

@@ -46,6 +46,15 @@ def localizar(busca, ds_busca, recorte, escala):
     return float(correlacao), xb * ds_busca, yb * ds_busca, w * ds_busca, h * ds_busca
 
 
+def legivel(caminho) -> bool:
+    try:
+        Image.open(caminho).convert("RGB")
+        return True
+    except OSError as e:  # ex.: BRACS_773_UDH_20.png está truncado no dataset local
+        print(f"  {caminho.stem}: recorte ilegível ({e}), ignorado")
+        return False
+
+
 def escolher_escala(busca, ds_busca, recortes):
     maiores = sorted(recortes, key=lambda c: -np.prod(Image.open(c).size))[:3]
     imgs = [np.array(Image.open(c).convert("RGB")) for c in maiores]
@@ -59,7 +68,7 @@ def escolher_escala(busca, ds_busca, recortes):
 def rodar(svs=None) -> dict:
     lamina = Lamina(resolver_svs(svs))
     saida = dir_resultados(lamina.stem, "estagio1")
-    recortes = listar_recortes_roi(lamina.stem)
+    recortes = [c for c in listar_recortes_roi(lamina.stem) if legivel(c)]
     if not recortes:
         raise FileNotFoundError(f"Nenhum recorte de RoI local para {lamina.stem}")
 
