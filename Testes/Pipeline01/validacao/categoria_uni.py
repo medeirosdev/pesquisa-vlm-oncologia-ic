@@ -42,8 +42,9 @@ CATEGORIAS = ["benigno", "atipico", "maligno"]
 REFERENCIA_ZERO_SHOT_NOVAS = 53.17
 
 
-def logistica_multinomial(X_treino, y_treino, X_teste, k=3):
-    """Softmax com pesos balanceados por classe e L2 equivalente a C=1 do scikit-learn."""
+def logistica_multinomial(X_treino, y_treino, X_teste, k=3, probabilidades=False):
+    """Softmax com pesos balanceados por classe e L2 equivalente a C=1 do scikit-learn.
+    Devolve a classe prevista de cada tile de teste, ou as probabilidades [n, k]."""
     mu, sd = X_treino.mean(0), X_treino.std(0) + 1e-8
     Xt = torch.tensor((X_treino - mu) / sd, dtype=torch.float64)
     yt = torch.tensor(y_treino)
@@ -63,7 +64,8 @@ def logistica_multinomial(X_treino, y_treino, X_teste, k=3):
 
     opt.step(perda)
     with torch.no_grad():
-        return (torch.tensor((X_teste - mu) / sd, dtype=torch.float64) @ W + b).argmax(1).numpy()
+        logits = torch.tensor((X_teste - mu) / sd, dtype=torch.float64) @ W + b
+        return torch.softmax(logits, 1).numpy() if probabilidades else logits.argmax(1).numpy()
 
 
 def dados(stem):
