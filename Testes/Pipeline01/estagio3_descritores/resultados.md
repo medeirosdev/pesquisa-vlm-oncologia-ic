@@ -241,6 +241,27 @@ O UNI2-h (MahmoodLab, 681 M parâmetros) não tem encoder de texto, então não 
 - **Ressalvas:** só 3 lâminas, treino com ~600 tiles de 2 lâminas; tiles correlacionados. Precisa de mais lâminas com DCIS e IC juntos antes de valer como resultado.
 - **Consequência pra pipeline:** o estágio 3 pode trocar o zero-shot por camadas treinadas em cima do encoder, que devolvem um rótulo — e o rótulo vira texto pro modelo final. Isso muda a ideia original (descritor 100% zero-shot) e precisa ser discutido.
 
+### Plano UNI2-h, teste 2: benigno / atípico / maligno nas 16 lâminas
+
+Script: [../validacao/categoria_uni.py](../validacao/categoria_uni.py). **Fixado antes** (commit `2528b44`): todos os tiles rotulados das 16 lâminas; logística multinomial (mesma regularização do teste 1) em cima do UNI2-h e do QuiltNet; treina em 15 lâminas e prevê a 16ª; critério = nas 8 lâminas novas, UNI2-h > 53,2% (frases) e > QuiltNet + logística; controle com os rótulos de treino embaralhados.
+
+8 lâminas novas (benigno 2.482, atípico 747, maligno 3.342 tiles):
+
+| Método | Benigno | Atípico | Maligno | Média |
+|---|---|---|---|---|
+| QuiltNet, frases (referência) | 57% | 41% | 61% | 53,2% |
+| QuiltNet + logística | 41% | 18% | 62% | 40,5% |
+| **UNI2-h + logística** | 56% | 17% | **93%** | **55,2%** |
+| Controle: UNI2-h, rótulos embaralhados | 30% | 26% | 70% | 42,4% |
+
+Nas 16 lâminas somadas: UNI2-h 51,3% (57 / 15 / 82), QuiltNet + logística 38,9%, controle 37,0%.
+
+- **Passou no critério, mas por pouco (+2 pontos sobre as frases) — dentro do ruído.** O controle com rótulos embaralhados chega a 42%, não a 33%: com tiles de uma lâmina muito parecidos entre si, uma lâmina grande classificada inteira de um jeito (ex.: `BRACS_297`, 2.570 tiles malignos) move a média sozinha. Diferenças de poucos pontos nesta métrica não significam muito.
+- **Maligno melhora muito** (61% → 93%), coerente com o teste 1.
+- **Atípico despenca** (41% → 17%): pouco dado de treino (972 tiles, concentrados em 3 lâminas) e é a categoria "do meio"; o rótulo do RoI atípico também inclui epitélio normal em volta.
+- **QuiltNet + logística fica pior que QuiltNet com frases** nas 3 categorias — o contrário do DCIS vs. IC. Com poucas lâminas por categoria, a camada treinada pode aprender o "jeito" das lâminas de treino em vez da lesão.
+- **Leitura:** a camada treinada resolve bem perguntas binárias com dado de treino suficiente (DCIS vs. IC, maligno vs. resto), mas não o atípico. Pro atípico, falta dado: mais lâminas ADH/FEA/UDH ou os contornos reais das lesões (`.qpdata`).
+
 ## Em aberto
 
 - O erro que sobrou ainda é maligno → atípico, e se repete nas lâminas novas. Separar DCIS de ADH/UDH é questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `validacao/problemas_e_metrica.md`.
