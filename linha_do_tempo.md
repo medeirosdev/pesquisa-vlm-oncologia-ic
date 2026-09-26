@@ -90,12 +90,13 @@ Teste: o achado do patch discrimina as classes reais do RoI (DCIS vs. IC)?
 | 25/09 | DCIS vs. IC com os 8 vizinhos do patch (média dos embeddings 3×3): ganho pequeno (na `BRACS_748`, única com as duas classes, 52% → 55,5%; 5×5: 58%), só no IC. O acerto em DCIS não muda (~37%). Ver `Testes/Pipeline01/estagio3_descritores/resultados.md` |
 | 25/09 | DCIS vs. IC com os vizinhos como contexto (tipo de tecido em volta): na `BRACS_748` o IC está cercado de tumor (77%), não de estroma — o contrário da hipótese; a relação não se repete entre lâminas e a regra/logística ficam abaixo do acaso. Hipótese nova ("tumor cercado de tumor → IC") precisa de lâminas novas com DCIS e IC juntos |
 | 26/09 | Hipótese "tumor cercado de tumor → IC" testada em 2 lâminas novas com DCIS e IC (`BRACS_773`, `BRACS_295`), regra fixada antes do download: passa no critério (+3 e +6 pontos), mas o efeito é fraco (balanceada ~55%) e o limiar não transfere entre lâminas |
+| 26/09 | CellViT-256 instalado (ambiente separado no HD). DCIS vs. IC pela posição dos núcleos — fração de núcleos neoplásicos encostados em núcleos conjuntivos (≤ 20 µm), fixada antes: AUC 0,72 / 0,84 / 0,66 nas três lâminas com DCIS e IC, contra 0,50 / 0,58 / 0,50 do QuiltNet nos mesmos tiles. Primeiro sinal consistente pra DCIS vs. IC |
 
 ## Onde paramos
 
 1. **O descritor separa benigno / atípico / maligno acima do acaso: 53% em 8 lâminas que não foram usadas pra escolher as frases (acaso = 33%).** Só a troca da frase do lóbulo se sustentou fora da amostra; o atípico é a categoria mais fraca nas lâminas novas (41%). O erro que sobra é maligno chamado de atípico — de novo uma questão de arquitetura (ducto inteiro preenchido ou não).
 2. **O roteador é inconsistente.** Nas 16 lâminas, fica claramente acima do acaso em 8 e no nível do acaso ou abaixo nas outras, sem padrão por classe (a conclusão anterior, "só funciona em lâmina maligna", vinha das 8 primeiras e não se repetiu). A precisão mede "cai dentro de algum RoI anotado", de qualquer classe.
-3. **DCIS vs. IC continua sem solução**, e a pista da borda, que funcionou na `BRACS_748`, não se repetiu nas outras lâminas.
+3. **DCIS vs. IC: primeiro sinal consistente veio dos núcleos, não dos embeddings.** Com o CellViT, a fração de núcleos neoplásicos encostados em núcleos conjuntivos separa DCIS de IC nas três lâminas com as duas classes (AUC 0,66–0,84), onde o QuiltNet fica no acaso. A pista da borda e o contexto por embeddings não se repetiram.
 4. **O QuiltNet-B-32 pode ser fraco demais** — o teste com KEEP ficou pela metade.
 5. **Problema de métrica registrado:** a classe é rótulo da lesão inteira, não do patch — ver `Testes/Pipeline01/validacao/problemas_e_metrica.md`. As anotações `.qpdata` recém-baixadas têm o contorno real das lesões, mas precisam do QuPath pra serem lidas.
 

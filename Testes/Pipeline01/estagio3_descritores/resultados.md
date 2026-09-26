@@ -200,6 +200,25 @@ Vizinhos que são tumor, em média:
 
 Correção no caminho: um recorte de RoI do dataset local está truncado (`BRACS_773_UDH_20.png`); `recall_roi.py` agora pula recortes ilegíveis com aviso.
 
+### DCIS vs. IC pela posição dos núcleos (CellViT) — primeiro sinal forte
+
+O CellViT (CellViT-256, pesos oficiais x40, tipos de núcleo do PanNuke) segmenta e classifica cada núcleo: neoplásico, inflamatório, conjuntivo, morto, epitelial. Não tem classe "mioepitelial", então a camada é inferida pelo arranjo: no DCIS o tumor tem **uma fronteira lisa** com o estroma (membrana basal e camada mioepitelial no meio), e poucos núcleos neoplásicos encostam em núcleos conjuntivos; no IC o tumor se infiltra e os dois se misturam em pequena escala.
+
+Scripts: [../validacao/nucleos_cellvit.py](../validacao/nucleos_cellvit.py) (segmentação, janela de 1024 px centrada no tile) e [../validacao/dcis_ic_nucleos.py](../validacao/dcis_ic_nucleos.py) (teste). Roda num ambiente separado no HD (`venvs/cellvit`), porque o CellViT exige numpy < 2 e opencv fixo. ~1 s por tile na RTX 3050 (1,5 GB de GPU).
+
+**Fixado antes de rodar** (commit `24cde37`): 250 tiles por classe em cada lâmina com DCIS e IC juntos (`BRACS_748`, `BRACS_773`, `BRACS_295`); só entram tiles com ≥ 20 núcleos neoplásicos; medida = fração dos núcleos neoplásicos com um núcleo conjuntivo a ≤ 20 µm; critério = AUC > 0,5 (IC maior) nas três lâminas.
+
+| Lâmina | Tiles com tumor (DCIS / IC) | Mediana DCIS | Mediana IC | **AUC** | AUC do QuiltNet zero-shot, mesmos tiles |
+|---|---|---|---|---|---|
+| `BRACS_748` | 135 / 219 | 0,41 | 0,80 | **0,72** | 0,50 |
+| `BRACS_773` | 127 / 169 | 0,28 | 0,68 | **0,84** | 0,58 |
+| `BRACS_295` | 142 / 212 | 0,48 | 0,59 | **0,66** | 0,50 |
+
+- **Passou no critério nas três lâminas, e é o primeiro método que separa DCIS de IC de forma consistente.** Nos mesmos tiles, o zero-shot do QuiltNet fica no acaso.
+- **O sinal vem do arranjo, não da quantidade:** as medidas secundárias (número de núcleos neoplásicos, fração de conjuntivos no tile) não separam de forma consistente — a AUC delas muda de lado entre lâminas.
+- **Filtro de tumor pesa:** quase metade dos tiles "DCIS" não tem 20 núcleos neoplásicos — é estroma entre ductos dentro da caixa do RoI. Na pipeline, a medida só faz sentido depois de achar onde há tumor.
+- **Ressalvas:** tiles vizinhos são correlacionados (a AUC por tile superestima a confiança); a `BRACS_295` separa menos (0,66); 20 µm foi escolhido por critério histológico, não ajustado — e não deve ser ajustado olhando estas lâminas. A camada mioepitelial não é medida diretamente, só inferida.
+
 ## Em aberto
 
 - O erro que sobrou ainda é maligno → atípico, e se repete nas lâminas novas. Separar DCIS de ADH/UDH é questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `validacao/problemas_e_metrica.md`.
