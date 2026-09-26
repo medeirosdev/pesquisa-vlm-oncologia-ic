@@ -8,6 +8,7 @@
 #   bash baixar_laminas.sh                    # primeira leva recomendada (1 por classe)
 #   bash baixar_laminas.sh train/Group_MT/Type_IC/BRACS_1003677.svs ...   # lâminas específicas
 #   bash baixar_laminas.sh --segunda-leva     # 8 lâminas novas pra teste fora da amostra
+#   bash baixar_laminas.sh --dcis-ic          # 2 lâminas com DCIS e IC juntos
 #   bash baixar_laminas.sh --anotacoes        # só as anotações oficiais (~2,4 MB)
 
 set -euo pipefail
@@ -50,7 +51,15 @@ SEGUNDA_LEVA=(
   "train/Group_MT/Type_IC/BRACS_297.svs"       # paciente 114 | RoIs: IC 22, N 7, PB 2
 )
 
+# DCIS e IC na mesma lâmina, pra testar com regra fixada antes a hipótese "tumor cercado de tumor -> IC"
+# (vista na BRACS_748, a única com as duas classes nas levas anteriores). Pacientes novos.
+DCIS_IC=(
+  "train/Group_MT/Type_IC/BRACS_773.svs"       # paciente 144 | RoIs: IC 78, DCIS 36, N 1, PB 1, UDH 1
+  "train/Group_MT/Type_IC/BRACS_295.svs"       # paciente 125 | RoIs: DCIS 45, IC 17, N 2
+)
+
 if [[ "${1:-}" == "--segunda-leva" ]]; then set -- "${SEGUNDA_LEVA[@]}"; fi
+if [[ "${1:-}" == "--dcis-ic" ]]; then set -- "${DCIS_IC[@]}"; fi
 
 if [[ "${1:-}" == "--anotacoes" ]]; then
   mkdir -p "$DESTINO_ANOT"
