@@ -322,6 +322,23 @@ Script: [../validacao/roteador_uni.py](../validacao/roteador_uni.py), fixado ant
 - **Limite da métrica:** os RoIs do BRACS não marcam todas as lesões da lâmina, só as regiões que o patologista escolheu anotar. Um tile de tumor fora de um RoI conta como erro. Na `BRACS_748` (carcinoma invasivo), o roteador UNI2-h pode estar escolhendo tumor não anotado — hipótese, não verificada.
 - Em lâminas com poucos RoIs de lesão (1 a 8), a precisão com k = 32 é quase sempre 0 pra todos os métodos: a métrica não tem resolução ali.
 
+### Plano UNI2-h, teste 4: generalização pra outra instituição (BACH)
+
+O classificador DCIS vs. IC foi treinado **só no BRACS** (Nápoles) e aplicado **sem retreino** nas imagens de microscopia do BACH (Ipatimup/INEB, Porto; ICIAR 2018; CC BY-NC-ND, Aresta et al. 2019): 100 *InSitu* vs. 100 *Invasive*. Scripts: [../validacao/bach_dcis_ic.py](../validacao/bach_dcis_ic.py) e [../validacao/bach_nucleos.py](../validacao/bach_nucleos.py), fixados antes de os dados chegarem (commit `8f513f9`). Tiles de 128 µm (305 px a 0,42 µm/px — resolução do artigo; os arquivos não trazem), mesmo pré-processamento da pipeline; pontuação da imagem = média dos tiles. Critério: AUC por imagem do UNI2-h ≥ 0,80.
+
+Correções de leitura feitas antes de rodar, sem mudar a regra: as imagens são 8 bits gravados em 16 (divididas por 257); e os modelos rodam um de cada vez na GPU.
+
+| Método | AUC por imagem (BACH) | AUC por tile (BACH) | No BRACS, lâmina fora do treino |
+|---|---|---|---|
+| **UNI2-h + logística** | **0,95** | 0,92 | 0,96–0,99 |
+| Núcleos (CellViT), sem treino | 0,63 (179 imagens com tiles de tumor) | — | 0,66–0,84 |
+| QuiltNet + logística | 0,57 | 0,55 | 0,83–0,95 |
+
+- **O UNI2-h generaliza:** passou no critério com folga, e quase não perde desempenho ao trocar de instituição, scanner e coloração.
+- **O QuiltNet + logística não generaliza:** no BRACS parecia bom (0,83–0,95), mas no BACH fica perto do acaso. O que ele aprendeu era específico das lâminas do BRACS — o teste só no BRACS não mostrava isso.
+- **Os núcleos mantêm um sinal fraco (0,63)**, um pouco abaixo do BRACS. Ressalva: o CellViT-256-x40 espera 0,25 µm/px, e as imagens do BACH foram ampliadas 1,68× pra chegar nessa escala, o que pode piorar a segmentação.
+- Consequência: a escolha do encoder importa mais do que parecia — o QuiltNet serve no BRACS, mas só o UNI2-h mantém o desempenho fora dele.
+
 ## Em aberto
 
 - O erro que sobrou ainda é maligno → atípico, e se repete nas lâminas novas. Separar DCIS de ADH/UDH é questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `validacao/problemas_e_metrica.md`.

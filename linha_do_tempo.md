@@ -96,6 +96,7 @@ Teste: o achado do patch discrimina as classes reais do RoI (DCIS vs. IC)?
 | 26/09 | Teste 3 do plano UNI2-h (UNI2-h + núcleos juntos, DCIS vs. IC): não acrescenta nada — AUC igual ao UNI2-h sozinho |
 | 26/09 | Ensemble de frases refeito com as métricas atuais: DCIS vs. IC continua no acaso (AUC 0,54–0,57); categorias sem mudança na média (52,7% contra 53,2%), com o atípico caindo e o maligno subindo. Não passou |
 | 26/09 | Roteador com UNI2-h (1 − P(benigno)), métrica só com RoIs de lesão: não passou — precisão@32 média 0,20 contra 0,21 do atual (sorteio 0,11), vence em 4 de 11 lâminas. Os RoIs não marcam toda a lesão, o que limita a métrica |
+| 27/09 | Teste 4 do plano UNI2-h: classificador DCIS vs. IC treinado só no BRACS, aplicado sem retreino no BACH (Portugal): UNI2-h AUC 0,95 por imagem — generaliza. QuiltNet + logística cai pra 0,57, núcleos 0,63 |
 | 26/09 | Anotações `.qpdata` lidas com o QuPath (via `paquo`) e exportadas pra GeoJSON, 387 de 387 lâminas. Totais por classe batem com o artigo. Mas a maioria é o próprio retângulo, não o contorno da lesão — o rótulo do BRACS é da região. Push dos commits pro GitHub |
 
 ## Onde paramos
@@ -134,7 +135,7 @@ Pesos em `Modelos/UNI2H/` (26/09); carregam no timm do venv do projeto; 681 M pa
 - [x] **Teste 1 — DCIS vs. IC nos mesmos tiles do teste do CellViT** (`BRACS_748`, `BRACS_773`, `BRACS_295`): UNI2-h + logística contra QuiltNet + logística (mesma logística) e contra a medida dos núcleos (AUC 0,72 / 0,84 / 0,66). **Resultado (26/09):** UNI2-h 0,96 / 0,96 / 0,99; QuiltNet + logística 0,83 / 0,95 / 0,84; controle com rótulos embaralhados ~0,4. O gargalo era o zero-shot com frases, não o encoder de imagem
 - [x] **Teste 2 — benigno / atípico / maligno nas 16 lâminas**: UNI2-h + logística, deixando uma lâmina de fora; comparar com os 53% do QuiltNet nas lâminas novas. **Resultado (26/09):** 55,2% nas 8 novas (benigno 56, atípico 17, maligno 93) — passa no critério por 2 pontos, dentro do ruído (controle com rótulos embaralhados: 42%). Maligno melhora muito, atípico despenca por falta de dado
 - [x] **Teste 3 — UNI2-h + medida dos núcleos juntos** no DCIS vs. IC: um complementa o outro? **Resultado (26/09):** não — AUC igual ao UNI2-h sozinho (0,96 / 0,96 / 0,99); o UNI2-h já carrega o que os núcleos medem
-- [ ] **Teste 4 — generalização pra outra instituição (BACH):** classificador DCIS vs. IC treinado no BRACS, aplicado sem retreino nas imagens *in situ* vs. invasivo do BACH
+- [x] **Teste 4 — generalização pra outra instituição (BACH):** classificador DCIS vs. IC treinado no BRACS, aplicado sem retreino nas imagens *in situ* vs. invasivo do BACH. **Resultado (27/09):** UNI2-h AUC 0,95 por imagem (generaliza); QuiltNet + logística 0,57 (não generaliza); núcleos 0,63
 
 **Frentes paradas há mais tempo:**
 
