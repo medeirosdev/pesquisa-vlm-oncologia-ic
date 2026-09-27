@@ -97,16 +97,17 @@ def main():
         z = np.load(cache, allow_pickle=True)
         uni, quilt, img_idx = z["uni"], z["quilt"], z["img_idx"]
     else:
-        uni, quilt, img_idx = [], [], []
-        for i, (p, _) in enumerate(imagens):
-            recortes, _ = tiles_da_imagem(p)
-            if recortes:
-                uni.append(embeddings_uni2h_de_recortes(recortes))
-                quilt.append(embeddings_quiltnet_de_recortes(recortes))
-                img_idx += [i] * len(recortes)
-            if (i + 1) % 20 == 0:
-                print(f"  {i + 1}/{len(imagens)} imagens", flush=True)
-        uni, quilt, img_idx = np.concatenate(uni), np.concatenate(quilt), np.array(img_idx)
+        # um modelo de cada vez na GPU (4 GB não comportam UNI2-h e QuiltNet juntos com o desktop)
+        from comum.uni import carregar_uni2h
+        recortes_por_img = [tiles_da_imagem(p)[0] for p, _ in imagens]
+        img_idx = np.array([i for i, r in enumerate(recortes_por_img) for _ in r])
+        todos = [t for r in recortes_por_img for t in r]
+        print(f"  {len(todos)} tiles; UNI2-h...", flush=True)
+        uni = embeddings_uni2h_de_recortes(todos)
+        carregar_uni2h.cache_clear()
+        torch.cuda.empty_cache()
+        print("  QuiltNet...", flush=True)
+        quilt = embeddings_quiltnet_de_recortes(todos)
         np.savez(cache, uni=uni, quilt=quilt, img_idx=img_idx)
     y_img = np.array([y for _, y in imagens])
     y_tile = y_img[img_idx]
