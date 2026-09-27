@@ -40,7 +40,7 @@ from dcis_ic_nucleos import LAMINAS, auc
 from dcis_ic_uni import dados, logistica_prob_ic
 
 BACH_DIR = Path("/media/medeiros/HD 1TB/Dados Gerais/BACH")
-MPP_BACH = 0.42        # µm/px das imagens de microscopia do BACH (Aresta et al. 2019); conferido nos metadados
+MPP_BACH = 0.42        # µm/px das imagens de microscopia do BACH (Aresta et al. 2019; os metadados não trazem)
 MPP_PIPELINE = 0.25    # nível 0 do BRACS (40x)
 LADO_UM = TILE_NATIVO * MPP_PIPELINE  # 128 µm
 MIN_TECIDO = 0.5
@@ -53,8 +53,15 @@ def imagens_bach():
     return [(p, CLASSES_BACH[p.parent.name]) for p in imgs]
 
 
+def ler_imagem_bach(caminho):
+    """RGB uint8. Os .tif do BACH são 8 bits gravados em 16 (valores = 257 x original); os metadados
+    não trazem a resolução real (só 96 dpi genérico) — a de 0,42 µm/px vem do artigo."""
+    img = tifffile.imread(caminho)[..., :3]
+    return (img // 257).astype(np.uint8) if img.dtype == np.uint16 else img.astype(np.uint8)
+
+
 def tiles_da_imagem(caminho):
-    rgb = tifffile.imread(caminho)[..., :3]
+    rgb = ler_imagem_bach(caminho)
     lado = round(LADO_UM / MPP_BACH)
     mask = mascara_tecido(cv2.resize(rgb, None, fx=0.25, fy=0.25, interpolation=cv2.INTER_AREA))
     mask = cv2.resize((mask > 0).astype(np.uint8), (rgb.shape[1], rgb.shape[0]), interpolation=cv2.INTER_NEAREST)

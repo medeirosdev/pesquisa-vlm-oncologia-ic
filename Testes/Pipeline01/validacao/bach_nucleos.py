@@ -20,10 +20,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import cv2
 import numpy as np
-import tifffile
 import torch
 
-from bach_dcis_ic import MPP_BACH, MPP_PIPELINE, SAIDA, imagens_bach
+from bach_dcis_ic import MPP_BACH, MPP_PIPELINE, SAIDA, imagens_bach, ler_imagem_bach
 from comum.lamina import TILE_NATIVO
 from dcis_ic_nucleos import medidas_do_tile
 from nucleos_cellvit import JANELA, TIPOS, carregar_modelo, segmentar
@@ -53,7 +52,7 @@ def main():
     for i, (p, _) in enumerate(imagens_bach(), 1):
         if p.name in feito:
             continue
-        nucleos, H, W = nucleos_da_imagem(modelo, media, desvio, tifffile.imread(p)[..., :3], dispositivo)
+        nucleos, H, W = nucleos_da_imagem(modelo, media, desvio, ler_imagem_bach(p), dispositivo)
         valores = []
         for ty in range(0, H - TILE_NATIVO + 1, TILE_NATIVO):
             for tx in range(0, W - TILE_NATIVO + 1, TILE_NATIVO):
