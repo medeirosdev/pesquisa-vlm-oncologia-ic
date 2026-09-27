@@ -299,6 +299,29 @@ O teste de 16/09 (sugestão do Prof. João: cada frase em 5 versões, média dos
 - **Não passou em nenhum dos dois.** No DCIS vs. IC continua perto do acaso (0,54–0,57). Nas categorias, a média não muda: o ensemble desloca acerto do atípico (41% → 27%) pro maligno (61% → 71%).
 - Confirma a conclusão de 16/09 com mais lâminas e métricas melhores: a média das versões estabiliza cada frase, mas não resolve o problema de fundo da comparação com texto.
 
+### Estágio 2 com o UNI2-h: roteador pela probabilidade de não ser benigno
+
+Script: [../validacao/roteador_uni.py](../validacao/roteador_uni.py), fixado antes (commit `1e7cd4b`). Pontuação nova = 1 − P(benigno) da logística do teste 2, treinada nas outras 15 lâminas; mesma ordenação e mesmo gate de diversidade do roteador atual. **Métrica corrigida:** um tile escolhido só acerta se cair num RoI de lesão (UDH, FEA, ADH, DCIS, IC); RoIs N e PB não contam. 11 lâminas com RoI de lesão. Critério: UNI2-h > atual em ≥ 8 das 11 lâminas e média maior (k = 32).
+
+| Lâmina | RoIs de lesão | Atual (frases) | UNI2-h | Sorteio |
+|---|---|---|---|---|
+| `BRACS_1003677` | 1 | 0,00 | 0,00 | 0,05 |
+| `BRACS_1271` | 14 | 0,06 | 0,16 | 0,06 |
+| `BRACS_1489` | 18 | 0,50 | 0,84 | 0,35 |
+| `BRACS_1592` | 1 | 0,06 | 0,00 | 0,03 |
+| `BRACS_1774` | 8 | 0,09 | 0,03 | 0,01 |
+| `BRACS_748` | 98 | 0,56 | 0,16 | 0,19 |
+| `BRACS_1617` | 11 | 0,06 | 0,13 | 0,04 |
+| `BRACS_743` | 8 | 0,00 | 0,00 | 0,00 |
+| `BRACS_1494` | 48 | 0,25 | 0,22 | 0,08 |
+| `BRACS_1512` | 25 | 0,13 | 0,31 | 0,16 |
+| `BRACS_297` | 22 | 0,59 | 0,41 | 0,22 |
+| **Média** | | **0,21** | **0,20** | **0,11** |
+
+- **Não passou:** empate na média (0,20 contra 0,21) e o UNI2-h vence o atual em só 4 das 11 lâminas. Os dois ficam em média com o dobro do sorteio, sem que um seja consistentemente melhor.
+- **Limite da métrica:** os RoIs do BRACS não marcam todas as lesões da lâmina, só as regiões que o patologista escolheu anotar. Um tile de tumor fora de um RoI conta como erro. Na `BRACS_748` (carcinoma invasivo), o roteador UNI2-h pode estar escolhendo tumor não anotado — hipótese, não verificada.
+- Em lâminas com poucos RoIs de lesão (1 a 8), a precisão com k = 32 é quase sempre 0 pra todos os métodos: a métrica não tem resolução ali.
+
 ## Em aberto
 
 - O erro que sobrou ainda é maligno → atípico, e se repete nas lâminas novas. Separar DCIS de ADH/UDH é questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `validacao/problemas_e_metrica.md`.
