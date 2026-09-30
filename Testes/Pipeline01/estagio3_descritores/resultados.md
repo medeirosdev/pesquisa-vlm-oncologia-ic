@@ -339,6 +339,33 @@ Correções de leitura feitas antes de rodar, sem mudar a regra: as imagens são
 - **Os núcleos mantêm um sinal fraco (0,63)**, um pouco abaixo do BRACS. Ressalva: o CellViT-256-x40 espera 0,25 µm/px, e as imagens do BACH foram ampliadas 1,68× pra chegar nessa escala, o que pode piorar a segmentação.
 - Consequência: a escolha do encoder importa mais do que parecia — o QuiltNet serve no BRACS, mas só o UNI2-h mantém o desempenho fora dele.
 
+### Validação do método 3 contra núcleos anotados (NuCLS) — os valores da medida não são confiáveis
+
+Pergunta do Prof. João: a medida dos núcleos dá valores precisos em dados não vistos? Testado no NuCLS (Amgad et al., GigaScience 2022; CC0): 1.744 campos de câncer de mama do TCGA, núcleos classificados por patologista (versão single-rater corrigida). Cópia em zip de terceiros, conferida contra 73 CSVs do Drive oficial (idênticos). Script: [../validacao/nucls_cellvit.py](../validacao/nucls_cellvit.py), fixado antes (commit `b9592a9`).
+
+**Parte 1 — o CellViT encontra os núcleos, mas erra muito o tipo.** Encontra 82–93% dos núcleos anotados (pareamento a ≤ 5 µm). Entre os pareados:
+
+| Anotado como | → neoplásico | → epitelial | → conjuntivo | → inflamatório |
+|---|---|---|---|---|
+| Tumor (18.337) | **46%** | 37% | 13% | 2% |
+| Fibroblasto/endotélio (7.462) | 5% | 10% | **80%** | 4% |
+| Linfócito/plasmócito/macrófago (19.136) | 5% | 31% | 25% | **38%** |
+
+- "Neoplásico": sensibilidade 0,46, valor preditivo 0,86 — quando diz neoplásico quase sempre acerta, mas chama mais de um terço do tumor de "epitelial" (a confusão que já aparecia no DCIS da `BRACS_748`: 73 epiteliais contra 50 neoplásicos no mesmo ducto).
+- "Conjuntivo": sensibilidade 0,80, valor preditivo 0,44 — mais da metade do que ele chama de conjuntivo é linfócito ou tumor.
+
+**Parte 2 — a medida não bate com a dos anotadores** (610 campos com ≥ 10 núcleos de tumor; critério: Spearman ≥ 0,7 e viés ≤ 0,10):
+
+| | Anotação | CellViT |
+|---|---|---|
+| Fração média de tumor com estroma a ≤ 20 µm | 0,10 | 0,34 |
+
+Spearman 0,28, viés +0,24, erro absoluto médio 0,29. **Não passou.** O CellViT superestima o contato tumor–estroma: chama linfócitos e parte do tumor de "conjuntivo".
+
+- **Resposta à pergunta:** a medida tem sinal pra separar DCIS de IC (AUC 0,66–0,84 no BRACS, 0,63 no BACH), mas **os valores em si não são medidas confiáveis** — uma frase como "29% dos núcleos tumorais em contato com o estroma" não deve ir pro texto como número.
+- Ressalvas: os campos do NuCLS são pequenos (~71 µm) e a borda da imagem pode ter núcleos sem anotação; o CellViT foi treinado no PanNuke, também do TCGA.
+- Caminho possível: manter a detecção do CellViT (que funciona) e **treinar a classificação do tipo de núcleo no NuCLS** (divisão treino/teste oficial do dataset), medindo de novo no teste. O pacote do CellViT tem um classificador pronto pro NuCLS, mas não dá pra usá-lo pra avaliar: não se sabe em quais campos ele foi treinado.
+
 ## Em aberto
 
 - O erro que sobrou ainda é maligno → atípico, e se repete nas lâminas novas. Separar DCIS de ADH/UDH é questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `validacao/problemas_e_metrica.md`.
