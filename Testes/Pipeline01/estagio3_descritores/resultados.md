@@ -366,6 +366,26 @@ Spearman 0,28, viés +0,24, erro absoluto médio 0,29. **Não passou.** O CellVi
 - Ressalvas: os campos do NuCLS são pequenos (~71 µm) e a borda da imagem pode ter núcleos sem anotação; o CellViT foi treinado no PanNuke, também do TCGA.
 - Caminho possível: manter a detecção do CellViT (que funciona) e **treinar a classificação do tipo de núcleo no NuCLS** (divisão treino/teste oficial do dataset), medindo de novo no teste. O pacote do CellViT tem um classificador pronto pro NuCLS, mas não dá pra usá-lo pra avaliar: não se sabe em quais campos ele foi treinado.
 
+### Método 3, segunda versão: classificação de núcleos treinada no NuCLS
+
+Mantida a detecção do CellViT; o tipo de cada núcleo passou a vir de uma logística (a do teste 2) treinada nos tokens do CellViT (média dos tokens de 384 números que cobrem a caixa do núcleo), com rótulo do núcleo anotado pareado. Avaliação nos 5 folds oficiais do NuCLS, que separam treino e teste por hospital; cada campo é avaliado no fold em que é teste. Script: [../validacao/nucls_classificador.py](../validacao/nucls_classificador.py), fixado antes (commit `15f6eec`). Critério: o mesmo da primeira versão.
+
+| | CellViT original | Classificador treinado no NuCLS |
+|---|---|---|
+| Tumor → "neoplásico": sensibilidade / valor preditivo | 0,46 / 0,86 | **0,83 / 0,88** |
+| Fibroblasto/endotélio → "conjuntivo": sensibilidade / valor preditivo | 0,80 / 0,44 | 0,72 / 0,52 |
+| Medida: campos avaliados | 610 | 844 |
+| Medida: média (anotação / método) | 0,10 / 0,34 | 0,13 / 0,29 |
+| Medida: Spearman | 0,28 | 0,35 |
+| Medida: viés médio | +0,24 | +0,16 |
+
+- **Não passou** (Spearman ≥ 0,7 e viés ≤ 0,10).
+- **A classificação do tumor ficou boa** (0,83 / 0,88, em hospitais fora do treino). O problema que sobra é o "conjuntivo": metade do que é chamado de conjuntivo ainda não é fibroblasto nem endotélio.
+- **A medida é frágil por construção:** basta um vizinho classificado errado como conjuntivo a ≤ 20 µm pra um núcleo de tumor contar como "encostado". Erros no conjuntivo viram viés pra cima.
+- O número de campos difere (610 contra 844) porque o CellViT original não acha nenhum "neoplásico" em parte dos campos; a comparação não é exatamente nos mesmos campos.
+- Ressalvas: campos pequenos (~71 µm); a anotação pode não marcar todos os núcleos de estroma em volta do tumor, o que puxaria a medida da anotação pra baixo.
+- **Leitura:** treinar a classificação no NuCLS resolve o tipo do tumor, mas não basta pra tornar o valor da medida confiável. O valor continua sem uso como número no texto.
+
 ## Em aberto
 
 - O erro que sobrou ainda é maligno → atípico, e se repete nas lâminas novas. Separar DCIS de ADH/UDH é questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `validacao/problemas_e_metrica.md`.

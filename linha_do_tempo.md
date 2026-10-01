@@ -107,6 +107,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 |---|---|
 | 27/09 | Teste 4: classificador DCIS vs. IC treinado só no BRACS, aplicado sem retreino no BACH (Portugal): UNI2-h AUC 0,95 por imagem — generaliza. QuiltNet + logística cai pra 0,57; núcleos 0,63 |
 | 30/09 | Validação do método 3 no NuCLS (núcleos anotados por patologista), pergunta do Prof. João: o CellViT acha 82–93% dos núcleos, mas chama só 46% do tumor de neoplásico e mais da metade do seu "conjuntivo" é linfócito ou tumor. A medida não bate com a dos anotadores (Spearman 0,28, viés +0,24). Os valores do método 3 não são confiáveis como número |
+| 30/09 | Método 3, segunda versão: classificação do tipo de núcleo treinada no NuCLS (5 folds, hospitais separados). Tumor: sensibilidade 0,46 → 0,83, valor preditivo 0,88. Mas o "conjuntivo" ainda erra metade e a medida não passa (Spearman 0,35, viés +0,16) |
 
 ## Onde paramos
 
@@ -114,7 +115,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 2. **Estágio 2 inconsistente:** os dois roteadores (frases e UNI2-h) escolhem em média o dobro de patches em lesão do que o sorteio, mas nenhum ganha de forma consistente. A métrica é limitada: os RoIs não marcam toda a lesão.
 3. **Estágio 3, benigno / atípico / maligno:** ~53–55% nas lâminas novas (acaso = 33%), com zero-shot ou com UNI2-h; o atípico é o ponto fraco.
 4. **Estágio 3, DCIS vs. IC:** com treino, o UNI2-h separa bem (0,96–0,99 no BRACS, 0,95 no BACH). O QuiltNet com treino parecia bom no BRACS mas não generaliza (0,57 no BACH). O zero-shot com frases fica no acaso.
-5. **Método 3 (núcleos):** tem sinal pra separar DCIS de IC, mas os valores da medida não são confiáveis (validação no NuCLS). Próximo passo: treinar a classificação do tipo de núcleo no NuCLS.
+5. **Método 3 (núcleos):** tem sinal pra separar DCIS de IC, mas os valores da medida não são confiáveis (validação no NuCLS). Treinar a classificação no NuCLS resolveu o tipo do tumor (0,83 / 0,88), mas não a medida (Spearman 0,35): o erro no "conjuntivo" e a própria construção da medida (um vizinho errado já conta) seguram o resultado.
 6. **Problema de métrica registrado:** o rótulo do BRACS é da região marcada, não do patch; a maioria das anotações oficiais é retângulo — ver `Testes/Pipeline01/validacao/problemas_e_metrica.md`.
 
 **Estado técnico a saber:**
@@ -142,7 +143,8 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 
 - [x] Instalar o CellViT e testar "núcleos neoplásicos encostados em conjuntivo" — AUC 0,72 / 0,84 / 0,66 em 3 lâminas
 - [x] Validar contra núcleos anotados (NuCLS) — os valores não são confiáveis (Spearman 0,28)
-- [ ] Treinar a classificação do tipo de núcleo no NuCLS (divisão treino/teste oficial) e medir de novo
+- [x] Treinar a classificação do tipo de núcleo no NuCLS (divisão treino/teste oficial) e medir de novo — tumor ficou bom (0,83 / 0,88); medida não passou (Spearman 0,35)
+- [ ] Decidir o papel do método 3: medida mais robusta (ex.: contar só tumor com vários vizinhos de estroma, ou distância média ao estroma) testada no NuCLS, ou usar os núcleos só como sinal e não como número no texto
 - [ ] Confirmar a medida em outras lâminas com DCIS e IC juntos
 
 **Plano UNI2-h (26/09):**

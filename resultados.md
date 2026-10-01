@@ -95,6 +95,16 @@ Detalhes: `Testes/Pipeline01/estagio3_descritores/resultados.md` (seções do pl
 
 Leitura: a medida tem sinal pra separar DCIS de IC, mas os valores não são confiáveis como número.
 
+**Segunda versão — classificação de núcleos treinada no NuCLS** (detecção do CellViT; tipo por logística nos tokens do CellViT; 5 folds oficiais, treino e teste em hospitais diferentes):
+
+| | CellViT original | Treinado no NuCLS | Passou? |
+|---|---|---|---|
+| Tumor: sensibilidade / valor preditivo | 0,46 / 0,86 | **0,83 / 0,88** | — |
+| Conjuntivo: sensibilidade / valor preditivo | 0,80 / 0,44 | 0,72 / 0,52 | — |
+| Medida: Spearman / viés | 0,28 / +0,24 | 0,35 / +0,16 | **não** |
+
+O tipo do tumor ficou bom; o "conjuntivo" continua errando metade, e a medida (um único vizinho errado a ≤ 20 µm já conta como contato) amplifica esse erro.
+
 ## Anotações oficiais do BRACS
 
 - `.qpdata` lidas com o QuPath e exportadas pra GeoJSON: 387 de 387 lâminas; totais por classe iguais aos do artigo.
@@ -108,4 +118,4 @@ Detalhes: `Testes/Pipeline01/validacao/problemas_e_metrica.md`.
 2. A escolha dos patches é inconsistente, com qualquer das pontuações testadas.
 3. Comparar a imagem com frases (zero-shot) é o gargalo do estágio 3: fica no acaso no DCIS vs. IC, mesmo quando o embedding contém a informação.
 4. Uma camada treinada em cima do UNI2-h separa DCIS de IC e generaliza pra outra instituição; no atípico, falta dado.
-5. A medida dos núcleos separa DCIS de IC, mas os valores dependem de uma classificação de núcleos que, no NuCLS, erra muito.
+5. A medida dos núcleos separa DCIS de IC, mas os valores não são confiáveis: mesmo com a classificação de núcleos treinada no NuCLS (tumor 0,83 / 0,88), a medida não bate com a anotação (Spearman 0,35).
