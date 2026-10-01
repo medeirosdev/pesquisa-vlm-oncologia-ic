@@ -1,10 +1,10 @@
 # Linha do tempo — IC VLMs na Oncologia
 
-Estado em 26/09/2026. Datas tiradas do histórico de commits.
+Estado em 30/09/2026. Datas tiradas do histórico de commits. Resultados de todos os testes, com números e critérios: [resultados.md](resultados.md).
 
 ## Em uma frase
 
-Estamos testando a **Pipeline Ideia 01**: transformar uma lâmina histopatológica gigante numa descrição textual curta que um modelo local pequeno consiga ler — filtrando o fundo, escolhendo os poucos patches que importam, descrevendo cada um em texto e deixando o modelo sintetizar. Desde 25/09 tudo roda em 16 lâminas do BRACS (duas levas de 8, pacientes diferentes), não só uma. O estágio 1 se confirma nas 16; o roteador (estágio 2) fica acima do acaso em metade das lâminas, sem padrão claro por classe; o descritor (estágio 3) agora consegue dizer "benigno" e fica acima do acaso (53% nas 8 lâminas novas, contra 33%), mas ainda confunde maligno com atípico.
+Estamos testando a **Pipeline Ideia 01**: transformar uma lâmina histopatológica gigante numa descrição textual curta que um modelo local pequeno consiga ler — filtrando o fundo, escolhendo os poucos patches que importam, descrevendo cada um em texto e deixando o modelo sintetizar. Tudo roda em 16 lâminas do BRACS (duas levas de 8, pacientes diferentes), mais 2 lâminas com DCIS e IC juntos e um dataset de outra instituição (BACH). O estágio 1 funciona; o estágio 2 (escolha dos patches) fica em média no dobro do acaso, mas é inconsistente entre lâminas; no estágio 3, o zero-shot com frases fica em 53% nas categorias e no acaso no DCIS vs. IC, enquanto uma camada treinada em cima do UNI2-h separa DCIS de IC com AUC 0,95–0,99, inclusive em outra instituição.
 
 ## Linha do tempo
 
@@ -33,17 +33,17 @@ Estamos testando a **Pipeline Ideia 01**: transformar uma lâmina histopatológi
 
 A lâmina tinha 41.001 tiles; o filtro manteve 15.138 (descartou 63% da área, praticamente todo fundo e estroma sem epitélio).
 
-### Estágio 2 — roteador top-k (funciona)
+### Estágio 2 — roteador top-k (primeira lâmina)
 
 | Data | O que foi feito |
 |---|---|
 | 13/09 | Roteador com **QuiltNet-B-32**: pontua os 15.138 tiles contra um banco de frases, escolhe os k melhores |
-| 13/09 | Curva custo × fidelidade de k=8 até k=1024: acerta ~3x mais que o acaso (precisão 0,33–0,62 contra 0,18 aleatório) |
+| 13/09 | Curva custo × fidelidade de k=8 até k=1024 na `BRACS_748`: acerta ~3x mais que o acaso (precisão 0,33–0,62 contra 0,18 aleatório) |
 | 13/09 | Banco v2 (benigno vs. suspeito): troca de precisão por recall, não é melhora limpa |
 
-Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mil tokens — bem longe dos "~1–2k tokens" que o desenho original previa.
+Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mil tokens — bem longe dos "~1–2k tokens" que o desenho original previa. (Em várias lâminas, depois, o roteador se mostrou inconsistente — ver 25/09 e 26/09.)
 
-### Estágio 3 — descrever cada patch (travado)
+### Estágio 3 — descrever cada patch (primeira lâmina)
 
 | Data | O que foi feito |
 |---|---|
@@ -51,9 +51,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 | 13/09 | Causa confirmada: viés de calibração do CLIP — algumas frases "ganham" sempre, independente da imagem |
 | 13/09 | Estágio 4 (agregação) montado: mostrou que o "achado dominante" do pré-laudo muda completamente conforme a versão do estágio 3 usada |
 
-### Tentativas de destravar o estágio 3
-
-Teste: o achado do patch discrimina as classes reais do RoI (DCIS vs. IC)?
+### Tentativas de destravar o estágio 3 (DCIS vs. IC na `BRACS_748`)
 
 | Data | Tentativa | Resultado |
 |---|---|---|
@@ -63,80 +61,96 @@ Teste: o achado do patch discrimina as classes reais do RoI (DCIS vs. IC)?
 | 16/09 | Ensemble + normalização | não discrimina |
 | 18/09 | Banco de frases por classe (critério diagnóstico real) | 23,9% de acurácia — pior que chutar sempre DCIS (80,2%) |
 | 18/09 | Agregação de todos os patches do RoI | 27,6% — melhora marginal |
-| 23/09 | **Agregação só pelos patches da borda do RoI** | **36,7%** — primeira melhora real (interior: 10%) |
+| 23/09 | Agregação só pelos patches da borda do RoI | 36,7% — melhora (interior: 10%); não se repetiu depois em outras lâminas |
 | 23/09 | Trocar QuiltNet por KEEP (modelo mais forte) | **não concluído** — conflitos de versão (`timm`, `transformers`) |
-| 25/09 | BRACS documentado na aba Datasets | — |
 
-### 25/09 — várias lâminas e reorganização
+### 25/09 — várias lâminas, reorganização e banco de frases
 
 | Data | O que foi feito |
 |---|---|
+| 25/09 | BRACS documentado na aba Datasets |
 | 25/09 | Baixadas 7 lâminas do BRACS pelo FTP oficial (uma por classe: N, PB, UDH, FEA, ADH, DCIS, IC) + as anotações `.qpdata` originais |
 | 25/09 | `Testes/Pipeline01` reorganizado: uma pasta por estágio, código compartilhado em `comum/`, resultados por lâmina em `resultados/` |
 | 25/09 | Scripts corrigidos pra lâminas com pirâmide diferente (nível escolhido pelo fator de redução, não pela posição) |
 | 25/09 | Pipeline inteira rodada nas 8 lâminas — ver `Testes/Pipeline01/resultados_multilaminas.md` |
 | 25/09 | Estágio 1 se confirma nas 8 (cobertura dos RoIs entre 74% e 100%; a exceção, 38% na lâmina normal, é efeito da caixa retangular em volta de um lóbulo pequeno) |
-| 25/09 | Estágio 2 **não** se confirma: só fica claramente acima do acaso na lâmina de DCIS — o banco procura "suspeito", não acha lesão benigna/atípica |
+| 25/09 | Estágio 2 nas 8: só claramente acima do acaso na lâmina de DCIS |
 | 25/09 | Estágio 3: descritor só tinha frases suspeitas (descrevia tecido normal como "stromal invasion"). Banco refeito com o espectro inteiro (benigno / atípico / maligno) |
 | 25/09 | Resultado do descritor novo nas 8 lâminas: acerta a categoria em 51% (acaso = 33%) — benigno 65%, atípico 53%, maligno 33%. Normalização por z-score descartada (fica no acaso) |
 | 25/09 | Pista da borda **não** se repete de forma consistente nas outras lâminas (poucos RoIs por lâmina, 2 a 16) |
 | 25/09 | Viés pró-"benigno": tirar a frase genérica "normal breast tissue" piorou (51% → 45%), revertido. O atrator real era "normal terminal duct lobular unit" (o DCIS cresce dentro de lóbulos) |
-| 25/09 | Frase do lóbulo trocada por "normal lobule with open lumina and two cell layers": média 52%, maligno 33% → 43%, benigno 65% → 52%. Erro que sobra: maligno → atípico |
-| 25/09 | Mesmo truque nas outras frases, uma de cada vez (14 testadas, regra de aceite fixada antes: média +0,5 ponto). 2 aceitas: média 52% → 56,5%, maligno 43% → 59%, atípico 61% → 57%. Reescrever o nome da própria classe piorou. Ver `Testes/Pipeline01/validacao/experimento_frases.md` |
+| 25/09 | Frase do lóbulo trocada por "normal lobule with open lumina and two cell layers": média 52%, maligno 33% → 43%, benigno 65% → 52% |
+| 25/09 | Mesmo truque nas outras frases, uma de cada vez (14 testadas, regra fixada antes: média +0,5 ponto). 2 aceitas: média 52% → 56,5%. Reescrever o nome da própria classe piorou. Ver `Testes/Pipeline01/validacao/experimento_frases.md` |
 | 25/09 | Baixadas mais 8 lâminas (uma por classe + uma N extra), de pacientes que não aparecem na primeira leva — 16 lâminas no total |
 | 25/09 | `recall_roi.py` passa a escolher a escala recorte → lâmina (na `BRACS_297` o nível 0 tem o dobro da resolução dos recortes; 0/31 → 31/31 RoIs localizados) |
 | 25/09 | Teste fora da amostra, nas 8 lâminas novas: a troca do lóbulo se confirma (44,8% → 53,2%); as 2 trocas do experimento frase a frase não (53,2% → 52,7%) e foram retiradas |
-| 25/09 | Estágios 1 e 2 nas lâminas novas: filtro de tecido se confirma (cobertura dos RoIs 83–99%). Roteador acima do acaso em 4 das 8 novas, inclusive benignas/atípicas (PB, N, ADH, IC), e no acaso ou abaixo em DCIS e FEA — a conclusão "só funciona em lâmina maligna" não se sustenta |
-| 25/09 | DCIS vs. IC com os 8 vizinhos do patch (média dos embeddings 3×3): ganho pequeno (na `BRACS_748`, única com as duas classes, 52% → 55,5%; 5×5: 58%), só no IC. O acerto em DCIS não muda (~37%). Ver `Testes/Pipeline01/estagio3_descritores/resultados.md` |
-| 25/09 | DCIS vs. IC com os vizinhos como contexto (tipo de tecido em volta): na `BRACS_748` o IC está cercado de tumor (77%), não de estroma — o contrário da hipótese; a relação não se repete entre lâminas e a regra/logística ficam abaixo do acaso. Hipótese nova ("tumor cercado de tumor → IC") precisa de lâminas novas com DCIS e IC juntos |
-| 26/09 | Hipótese "tumor cercado de tumor → IC" testada em 2 lâminas novas com DCIS e IC (`BRACS_773`, `BRACS_295`), regra fixada antes do download: passa no critério (+3 e +6 pontos), mas o efeito é fraco (balanceada ~55%) e o limiar não transfere entre lâminas |
-| 26/09 | CellViT-256 instalado (ambiente separado no HD). DCIS vs. IC pela posição dos núcleos — fração de núcleos neoplásicos encostados em núcleos conjuntivos (≤ 20 µm), fixada antes: AUC 0,72 / 0,84 / 0,66 nas três lâminas com DCIS e IC, contra 0,50 / 0,58 / 0,50 do QuiltNet nos mesmos tiles. Primeiro sinal consistente pra DCIS vs. IC |
-| 26/09 | UNI2-h baixado. Teste 1 do plano UNI2-h (DCIS vs. IC, treina em 2 lâminas e testa na 3ª): UNI2-h + logística AUC 0,96 / 0,96 / 0,99; QuiltNet + a mesma logística 0,83 / 0,95 / 0,84 — contra 0,50 do QuiltNet com frases. O gargalo era comparar a imagem com texto, não o encoder |
-| 26/09 | Teste 2 do plano UNI2-h (benigno / atípico / maligno, 16 lâminas, treina em 15): 55,2% nas 8 novas contra 53,2% das frases — diferença dentro do ruído (controle embaralhado: 42%). Maligno 93%, atípico 17% |
-| 26/09 | Teste 3 do plano UNI2-h (UNI2-h + núcleos juntos, DCIS vs. IC): não acrescenta nada — AUC igual ao UNI2-h sozinho |
-| 26/09 | Ensemble de frases refeito com as métricas atuais: DCIS vs. IC continua no acaso (AUC 0,54–0,57); categorias sem mudança na média (52,7% contra 53,2%), com o atípico caindo e o maligno subindo. Não passou |
-| 26/09 | Roteador com UNI2-h (1 − P(benigno)), métrica só com RoIs de lesão: não passou — precisão@32 média 0,20 contra 0,21 do atual (sorteio 0,11), vence em 4 de 11 lâminas. Os RoIs não marcam toda a lesão, o que limita a métrica |
+| 25/09 | Estágios 1 e 2 nas lâminas novas: filtro se confirma (cobertura 83–99%). Roteador acima do acaso em 4 das 8 novas, sem padrão por classe — a conclusão "só funciona em lâmina maligna" não se sustenta |
+| 25/09 | DCIS vs. IC com os 8 vizinhos do patch (média dos embeddings 3×3): ganho pequeno (na `BRACS_748`, 52% → 55,5%; 5×5: 58%), só no IC |
+| 25/09 | DCIS vs. IC com os vizinhos como contexto (tipo de tecido em volta): na `BRACS_748` o IC está cercado de tumor (77%), o contrário da hipótese; a relação não se repete entre lâminas |
+
+### 26/09 — núcleos (CellViT), UNI2-h e anotações
+
+| Data | O que foi feito |
+|---|---|
+| 26/09 | Hipótese "tumor cercado de tumor → IC" em 2 lâminas novas com DCIS e IC (`BRACS_773`, `BRACS_295`), regra fixada antes do download: passa no critério (+3 e +6 pontos), mas o efeito é fraco (~55%) e o limiar não transfere entre lâminas |
+| 26/09 | CellViT-256 instalado (ambiente separado no HD). DCIS vs. IC pela fração de núcleos neoplásicos encostados em conjuntivos (≤ 20 µm), fixada antes: AUC 0,72 / 0,84 / 0,66, contra 0,50 / 0,58 / 0,50 do QuiltNet nos mesmos tiles |
+| 26/09 | UNI2-h baixado. Teste 1 (DCIS vs. IC, treina em 2 lâminas e testa na 3ª): UNI2-h + logística AUC 0,96 / 0,96 / 0,99; QuiltNet + a mesma logística 0,83 / 0,95 / 0,84. O gargalo era comparar a imagem com texto |
+| 26/09 | Teste 2 (benigno / atípico / maligno, 16 lâminas, treina em 15): 55,2% nas 8 novas contra 53,2% das frases — dentro do ruído (controle embaralhado: 42%). Maligno 93%, atípico 17% |
+| 26/09 | Teste 3 (UNI2-h + núcleos juntos, DCIS vs. IC): não acrescenta nada |
+| 26/09 | Ensemble de frases refeito com as métricas atuais: DCIS vs. IC continua perto do acaso (0,54–0,57); categorias sem mudança (52,7% contra 53,2%). Não passou |
+| 26/09 | Anotações `.qpdata` lidas com o QuPath (via `paquo`) e exportadas pra GeoJSON, 387 de 387 lâminas. Totais por classe batem com o artigo, mas a maioria é o próprio retângulo — o rótulo do BRACS é da região. Push dos commits pro GitHub |
+| 26/09 | Roteador com UNI2-h (1 − P(benigno)), métrica só com RoIs de lesão: não passou — precisão@32 média 0,20 contra 0,21 do atual (sorteio 0,11), vence em 4 de 11 lâminas |
+
+### 27/09 a 30/09 — generalização e validação dos núcleos
+
+| Data | O que foi feito |
+|---|---|
+| 27/09 | Teste 4: classificador DCIS vs. IC treinado só no BRACS, aplicado sem retreino no BACH (Portugal): UNI2-h AUC 0,95 por imagem — generaliza. QuiltNet + logística cai pra 0,57; núcleos 0,63 |
 | 30/09 | Validação do método 3 no NuCLS (núcleos anotados por patologista), pergunta do Prof. João: o CellViT acha 82–93% dos núcleos, mas chama só 46% do tumor de neoplásico e mais da metade do seu "conjuntivo" é linfócito ou tumor. A medida não bate com a dos anotadores (Spearman 0,28, viés +0,24). Os valores do método 3 não são confiáveis como número |
-| 27/09 | Teste 4 do plano UNI2-h: classificador DCIS vs. IC treinado só no BRACS, aplicado sem retreino no BACH (Portugal): UNI2-h AUC 0,95 por imagem — generaliza. QuiltNet + logística cai pra 0,57, núcleos 0,63 |
-| 26/09 | Anotações `.qpdata` lidas com o QuPath (via `paquo`) e exportadas pra GeoJSON, 387 de 387 lâminas. Totais por classe batem com o artigo. Mas a maioria é o próprio retângulo, não o contorno da lesão — o rótulo do BRACS é da região. Push dos commits pro GitHub |
 
 ## Onde paramos
 
-1. **O descritor separa benigno / atípico / maligno acima do acaso: 53% em 8 lâminas que não foram usadas pra escolher as frases (acaso = 33%).** Só a troca da frase do lóbulo se sustentou fora da amostra; o atípico é a categoria mais fraca nas lâminas novas (41%). O erro que sobra é maligno chamado de atípico — de novo uma questão de arquitetura (ducto inteiro preenchido ou não).
-2. **O roteador é inconsistente.** Nas 16 lâminas, fica claramente acima do acaso em 8 e no nível do acaso ou abaixo nas outras, sem padrão por classe (a conclusão anterior, "só funciona em lâmina maligna", vinha das 8 primeiras e não se repetiu). A precisão mede "cai dentro de algum RoI anotado", de qualquer classe.
-3. **DCIS vs. IC tem solução com treino:** uma camada treinada em cima do UNI2-h separa DCIS de IC com AUC 0,96–0,99 em lâmina não vista (QuiltNet + camada: 0,83–0,95). Sem treino, o melhor é a medida dos núcleos (0,66–0,84). O zero-shot com frases fica no acaso. **Antes disso:** Com o CellViT, a fração de núcleos neoplásicos encostados em núcleos conjuntivos separa DCIS de IC nas três lâminas com as duas classes (AUC 0,66–0,84), onde o QuiltNet fica no acaso. A pista da borda e o contexto por embeddings não se repetiram.
-4. **O QuiltNet-B-32 pode ser fraco demais** — no DCIS vs. IC ele fica no acaso nos mesmos tiles em que os núcleos do CellViT separam; o teste com KEEP ficou pela metade e o UNI ainda não foi testado.
-5. **Problema de métrica registrado:** a classe é rótulo da lesão inteira, não do patch — ver `Testes/Pipeline01/validacao/problemas_e_metrica.md`. As anotações `.qpdata` recém-baixadas têm o contorno real das lesões, mas precisam do QuPath pra serem lidas.
+1. **Estágio 1 resolvido:** cobertura dos RoIs de 74–100% nas 16 lâminas.
+2. **Estágio 2 inconsistente:** os dois roteadores (frases e UNI2-h) escolhem em média o dobro de patches em lesão do que o sorteio, mas nenhum ganha de forma consistente. A métrica é limitada: os RoIs não marcam toda a lesão.
+3. **Estágio 3, benigno / atípico / maligno:** ~53–55% nas lâminas novas (acaso = 33%), com zero-shot ou com UNI2-h; o atípico é o ponto fraco.
+4. **Estágio 3, DCIS vs. IC:** com treino, o UNI2-h separa bem (0,96–0,99 no BRACS, 0,95 no BACH). O QuiltNet com treino parecia bom no BRACS mas não generaliza (0,57 no BACH). O zero-shot com frases fica no acaso.
+5. **Método 3 (núcleos):** tem sinal pra separar DCIS de IC, mas os valores da medida não são confiáveis (validação no NuCLS). Próximo passo: treinar a classificação do tipo de núcleo no NuCLS.
+6. **Problema de métrica registrado:** o rótulo do BRACS é da região marcada, não do patch; a maioria das anotações oficiais é retângulo — ver `Testes/Pipeline01/validacao/problemas_e_metrica.md`.
 
-**Estado técnico a saber:** no venv de `Testes/Pipeline01/.venv` foram instalados `transformers==4.34.0` e `timm==1.0.17` na tentativa do KEEP. Conferido em 25/09: o QuiltNet continua rodando. O CellViT roda num ambiente separado no HD (`/media/medeiros/HD 1TB/venvs/cellvit`, exige numpy < 2); pesos em `Modelos/cellvit/` (Zenodo 15094831 — o link do figshare não baixa por script).
+**Estado técnico a saber:**
+- Venv do projeto (`Testes/Pipeline01/.venv`): QuiltNet e UNI2-h; `transformers==4.34.0` e `timm==1.0.17` instalados na tentativa do KEEP.
+- CellViT: ambiente separado no HD (`/media/medeiros/HD 1TB/venvs/cellvit`, exige numpy < 2); pesos em `Modelos/cellvit/` (Zenodo 15094831).
+- QuPath/paquo: ambiente separado no HD (`venvs/paquo`), QuPath 0.5.1 em `Modelos/qupath/`.
+- UNI2-h: pesos em `Modelos/UNI2H/pytorch_model.bin`.
+- GPU de 4 GB: UNI2-h e QuiltNet não cabem juntos com o desktop aberto — rodar um de cada vez.
 
 ## O que precisa ser feito
 
 **Estágios 2 e 3:**
 
 - [x] Reduzir o viés pró-"benigno" do descritor — maligno de 33% pra 43% trocando a frase do lóbulo normal
-- [ ] Reduzir a confusão maligno → atípico (medido com `validacao/categoria_descritor.py`) — se repete nas lâminas novas
-- [x] Conferir o banco de frases em lâminas que não foram usadas pra escolhê-las — 8 lâminas novas; só a troca do lóbulo se sustentou
-- [ ] Entender quando o roteador funciona — nas 16 lâminas ele fica acima do acaso em metade, sem padrão por classe (hoje o banco v2 só procura "suspeito")
-- [ ] Terminar o teste do KEEP — de preferência num venv separado, pra não quebrar o do QuiltNet
-- [ ] Implementar a hierarquia sugerida pelo Prof. João: primeiro benigno/maligno, depois a evidência — o descritor por categoria já é um primeiro passo nessa direção
-- [x] Ler as anotações `.qpdata` (via QuPath) — exportadas pra GeoJSON (387/387), mas a maioria é retângulo (DCIS 160 de 208 e IC 127 de 128 nas nossas lâminas); contorno livre sobretudo no UDH. Ver `Testes/Pipeline01/validacao/problemas_e_metrica.md`
+- [ ] Reduzir a confusão maligno → atípico — se repete nas lâminas novas
+- [x] Conferir o banco de frases em lâminas que não foram usadas pra escolhê-las — só a troca do lóbulo se sustentou
+- [ ] Repensar o estágio 2: checar com o CellViT se os patches escolhidos têm tumor (métrica sem RoI); ou classificar todos os patches com o UNI2-h e escolher os de maior confiança por categoria
+- [ ] Terminar o teste do KEEP — de preferência num venv separado
+- [ ] Implementar a hierarquia sugerida pelo Prof. João: primeiro benigno/maligno, depois a evidência (ex.: categoria pelo UNI2-h → DCIS/IC pelo UNI2-h)
+- [x] Ler as anotações `.qpdata` (via QuPath) — maioria é retângulo; contorno livre sobretudo no UDH
 - [ ] Usar os contornos livres (UDH, parte do FEA/ADH) pra rotular melhor o atípico
+- [ ] Descritor do estágio 3 com a saída do classificador em texto (tabela fixa rótulo → nome)
 
-**DCIS vs. IC (núcleos):**
+**Núcleos (método 3):**
 
 - [x] Instalar o CellViT e testar "núcleos neoplásicos encostados em conjuntivo" — AUC 0,72 / 0,84 / 0,66 em 3 lâminas
-- [ ] Confirmar a medida, congelada como está (20 µm), em outras lâminas com DCIS e IC juntos
-- [ ] Transformar a medida em descritor textual pro estágio 3 (ex.: "tumor em contato direto com o estroma em 80% dos núcleos")
+- [x] Validar contra núcleos anotados (NuCLS) — os valores não são confiáveis (Spearman 0,28)
+- [ ] Treinar a classificação do tipo de núcleo no NuCLS (divisão treino/teste oficial) e medir de novo
+- [ ] Confirmar a medida em outras lâminas com DCIS e IC juntos
 
-**Plano UNI2-h (26/09) — atualizar a cada teste:**
+**Plano UNI2-h (26/09):**
 
-Pesos em `Modelos/UNI2H/` (26/09); carregam no timm do venv do projeto; 681 M parâmetros, ~0,04 s/tile e 1,8 GB de GPU em fp16. Não tem encoder de texto, então não usa banco de frases: em cima dos embeddings entra uma regressão logística, **treinada sem a lâmina testada** (deixa uma de fora por vez). Mesmo pré-processamento do QuiltNet (tile de 512 px em 40x → 256 px → 224 px), pra comparação justa. Cada teste tem regra e critério fixados e commitados antes de rodar.
-
-- [x] **Teste 1 — DCIS vs. IC nos mesmos tiles do teste do CellViT** (`BRACS_748`, `BRACS_773`, `BRACS_295`): UNI2-h + logística contra QuiltNet + logística (mesma logística) e contra a medida dos núcleos (AUC 0,72 / 0,84 / 0,66). **Resultado (26/09):** UNI2-h 0,96 / 0,96 / 0,99; QuiltNet + logística 0,83 / 0,95 / 0,84; controle com rótulos embaralhados ~0,4. O gargalo era o zero-shot com frases, não o encoder de imagem
-- [x] **Teste 2 — benigno / atípico / maligno nas 16 lâminas**: UNI2-h + logística, deixando uma lâmina de fora; comparar com os 53% do QuiltNet nas lâminas novas. **Resultado (26/09):** 55,2% nas 8 novas (benigno 56, atípico 17, maligno 93) — passa no critério por 2 pontos, dentro do ruído (controle com rótulos embaralhados: 42%). Maligno melhora muito, atípico despenca por falta de dado
-- [x] **Teste 3 — UNI2-h + medida dos núcleos juntos** no DCIS vs. IC: um complementa o outro? **Resultado (26/09):** não — AUC igual ao UNI2-h sozinho (0,96 / 0,96 / 0,99); o UNI2-h já carrega o que os núcleos medem
-- [x] **Teste 4 — generalização pra outra instituição (BACH):** classificador DCIS vs. IC treinado no BRACS, aplicado sem retreino nas imagens *in situ* vs. invasivo do BACH. **Resultado (27/09):** UNI2-h AUC 0,95 por imagem (generaliza); QuiltNet + logística 0,57 (não generaliza); núcleos 0,63
+- [x] Teste 1 — DCIS vs. IC: UNI2-h 0,96 / 0,96 / 0,99; QuiltNet + logística 0,83 / 0,95 / 0,84
+- [x] Teste 2 — benigno / atípico / maligno: 55,2% nas 8 novas, dentro do ruído; maligno 93%, atípico 17%
+- [x] Teste 3 — UNI2-h + núcleos juntos: não acrescenta
+- [x] Teste 4 — generalização (BACH): UNI2-h 0,95; QuiltNet 0,57; núcleos 0,63
 
 **Frentes paradas há mais tempo:**
 
@@ -145,21 +159,24 @@ Pesos em `Modelos/UNI2H/` (26/09); carregam no timm do venv do projeto; 681 M pa
 
 **Limitações que afetam tudo:**
 
-- [x] Baixar mais lâminas do BRACS — 16 lâminas desde 25/09, duas por classe (três N)
-- [ ] Mais lâminas por classe — com 2 lâminas por classe, e 2 a 16 RoIs em várias delas, os números por lâmina ainda são pequenos
-- [ ] Responder ao Prof. João sobre o ensemble, a borda e os resultados em várias lâminas
+- [x] Baixar mais lâminas do BRACS — 16 lâminas + 2 com DCIS e IC juntos
+- [ ] Mais lâminas por classe — com 2 lâminas por classe, os números por lâmina ainda são pequenos
+- [x] Responder ao Prof. João sobre o ensemble, a borda e os resultados em várias lâminas — rascunho em `rascunhos/` (não versionado)
 
 ## Onde está cada coisa
 
 | O quê | Onde |
 |---|---|
+| **Resultados de todos os testes** | [resultados.md](resultados.md) |
 | Documentação pública | `docs/` (site MkDocs) |
 | Como rodar os testes, estrutura das pastas | `Testes/Pipeline01/README.md` |
 | Descrição da Pipeline 01 | `docs/pipelines.md`, `Testes/Pipeline01/ideia/` |
 | Código compartilhado | `Testes/Pipeline01/comum/` |
 | Estágios 1 a 4 | `Testes/Pipeline01/estagio1_filtro_tecido/` … `estagio4_agregacao/` |
-| Testes de validação do estágio 3 | `Testes/Pipeline01/validacao/` |
-| Resultados em todas as lâminas | `Testes/Pipeline01/resultados_multilaminas.md` |
-| Baixar lâminas, rodar tudo | `Testes/Pipeline01/scripts/` |
+| Testes de validação | `Testes/Pipeline01/validacao/` |
+| Detalhes de cada teste do estágio 3 | `Testes/Pipeline01/estagio3_descritores/resultados.md` |
+| Resultados por lâmina (gerado) | `Testes/Pipeline01/resultados_multilaminas.md` |
+| Baixar lâminas, rodar tudo, exportar anotações | `Testes/Pipeline01/scripts/` |
 | Caminhos das lâminas, RoIs e modelos | `Caminhos/caminhos.md` |
 | Núcleos segmentados (CellViT) | `Testes/Pipeline01/resultados/<lamina>/nucleos/` |
+| Datasets externos | HD: `Dados Gerais/BACH`, `Dados Gerais/NuCLS`; anotações do BRACS em `BRACS/anotacoes/geojson` |
