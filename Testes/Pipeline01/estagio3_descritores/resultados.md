@@ -386,6 +386,25 @@ Mantida a detecção do CellViT; o tipo de cada núcleo passou a vir de uma log�
 - Ressalvas: campos pequenos (~71 µm); a anotação pode não marcar todos os núcleos de estroma em volta do tumor, o que puxaria a medida da anotação pra baixo.
 - **Leitura:** treinar a classificação no NuCLS resolve o tipo do tumor, mas não basta pra tornar o valor da medida confiável. O valor continua sem uso como número no texto.
 
+### Descritor hierárquico com o UNI2-h (13/10)
+
+Sugestão do Prof. João: primeiro a categoria, depois a evidência. Nível 1: benigno / atípico / maligno (logística no UNI2-h); nível 2, só se maligno: DCIS ou IC (segunda logística, treinada só em tiles DCIS e IC). O resultado vira texto por uma tabela fixa: `[x0,y0] (maligno 0.93) invasive carcinoma 0.88`. As camadas usadas numa lâmina são sempre treinadas nas outras. Código: [descritor_uni.py](descritor_uni.py) (saída `estagio3_descritores_k{k}_uni.json`, mesmo formato do descritor por frases). Teste: [../validacao/hierarquia_uni.py](../validacao/hierarquia_uni.py), fixado antes (commit `b27b222`): 18 lâminas, deixando uma de fora; 4 classes finais; referência = mesma hierarquia com frases; critério = média maior que a das frases.
+
+| Lâminas | Método | Benigno | Atípico | DCIS | IC | Média |
+|---|---|---|---|---|---|---|
+| 18 | frases | 57% | 46% | 16% | 50% | 42,3% |
+| 18 | **UNI2-h** | 58% | 14% | **78%** | **74%** | **55,8%** |
+| 2ª leva (8) | frases | 57% | 41% | 32% | 67% | 49,5% |
+| 2ª leva (8) | UNI2-h | 56% | 17% | 94% | 53% | 55,0% |
+| DCIS+IC (2) | frases | 63% | — | 2% | 43% | 36,0% |
+| DCIS+IC (2) | UNI2-h | 68% | — | 60% | 83% | 70,1% |
+
+(Acaso = 25%. Tiles: benigno 2.681, atípico 972, DCIS 4.969, IC 8.893.)
+
+- **Passou** (55,8% contra 42,3%). O ganho vem do DCIS (16% → 78%) e do IC (50% → 74%).
+- **O atípico cai** (46% → 14%), como no teste 2: pouco dado de treino. Na prática, a hierarquia quase nunca diz "atípico".
+- Malignos: de 4.969 tiles de DCIS, 3.876 saem DCIS e 504 saem IC; de 8.893 de IC, 6.549 saem IC e 2.192 saem DCIS.
+
 ## Em aberto
 
 - O erro que sobrou ainda é maligno → atípico, e se repete nas lâminas novas. Separar DCIS de ADH/UDH é questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `validacao/problemas_e_metrica.md`.

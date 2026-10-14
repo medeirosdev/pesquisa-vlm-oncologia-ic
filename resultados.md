@@ -1,6 +1,6 @@
 # Resultados — Pipeline Ideia 01
 
-Estado em 30/09/2026. Um resumo de cada teste, com números, critério e se passou. Detalhes, tabelas completas e discussão ficam nos arquivos indicados em cada seção. Ordem cronológica dos testes: [linha_do_tempo.md](linha_do_tempo.md).
+Estado em 13/10/2026. Um resumo de cada teste, com números, critério e se passou. Detalhes, tabelas completas e discussão ficam nos arquivos indicados em cada seção. Ordem cronológica dos testes: [linha_do_tempo.md](linha_do_tempo.md).
 
 ## Dados e métricas
 
@@ -83,6 +83,15 @@ Controle com rótulos embaralhados: AUC média 0,38–0,46.
 | QuiltNet + regressão logística | 0,57 | — (não generaliza) |
 
 Detalhes: `Testes/Pipeline01/estagio3_descritores/resultados.md` (seções do plano UNI2-h), scripts em `Testes/Pipeline01/validacao/`.
+
+### Descritor hierárquico (categoria → DCIS/IC → texto), 4 classes finais, 18 lâminas, lâmina de fora
+
+| Método | Benigno | Atípico | DCIS | IC | Média | Passou? |
+|---|---|---|---|---|---|---|
+| Hierarquia com frases (zero-shot) | 57% | 46% | 16% | 50% | 42,3% | referência |
+| **Hierarquia com UNI2-h** | 58% | 14% | **78%** | **74%** | **55,8%** | sim (critério: média maior) |
+
+Acaso = 25%. O atípico continua sendo o ponto fraco. Saída em texto: `[x0,y0] (maligno 0.93) invasive carcinoma 0.88` — código em `Testes/Pipeline01/estagio3_descritores/descritor_uni.py`.
 
 ### Validação do método 3 (núcleos) contra anotação de patologista — NuCLS
 

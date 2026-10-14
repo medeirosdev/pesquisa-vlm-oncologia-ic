@@ -1,6 +1,6 @@
 # Linha do tempo — IC VLMs na Oncologia
 
-Estado em 30/09/2026. Datas tiradas do histórico de commits. Resultados de todos os testes, com números e critérios: [resultados.md](resultados.md).
+Estado em 13/10/2026. Datas tiradas do histórico de commits. Resultados de todos os testes, com números e critérios: [resultados.md](resultados.md).
 
 ## Em uma frase
 
@@ -109,6 +109,13 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 | 30/09 | Validação do método 3 no NuCLS (núcleos anotados por patologista), pergunta do Prof. João: o CellViT acha 82–93% dos núcleos, mas chama só 46% do tumor de neoplásico e mais da metade do seu "conjuntivo" é linfócito ou tumor. A medida não bate com a dos anotadores (Spearman 0,28, viés +0,24). Os valores do método 3 não são confiáveis como número |
 | 30/09 | Método 3, segunda versão: classificação do tipo de núcleo treinada no NuCLS (5 folds, hospitais separados). Tumor: sensibilidade 0,46 → 0,83, valor preditivo 0,88. Mas o "conjuntivo" ainda erra metade e a medida não passa (Spearman 0,35, viés +0,16) |
 
+### Outubro — descritor hierárquico e estágio 2
+
+| Data | O que foi feito |
+|---|---|
+| 13/10 | Caminhos do HD passam a ser descobertos pelo rótulo do volume (o sistema montou o HD como `HD 1TB1`; funciona com os dois nomes). UNI2-h vai pra GPU já em meia precisão |
+| 13/10 | Descritor hierárquico com UNI2-h (sugestão do Prof. João: categoria → DCIS/IC → texto por tabela fixa): 55,8% nas 4 classes finais (18 lâminas, lâmina de fora), contra 42,3% da mesma hierarquia com frases. DCIS 16% → 78%, IC 50% → 74%; atípico 46% → 14% |
+
 ## Onde paramos
 
 1. **Estágio 1 resolvido:** cobertura dos RoIs de 74–100% nas 16 lâminas.
@@ -134,10 +141,11 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 - [x] Conferir o banco de frases em lâminas que não foram usadas pra escolhê-las — só a troca do lóbulo se sustentou
 - [ ] Repensar o estágio 2: checar com o CellViT se os patches escolhidos têm tumor (métrica sem RoI); ou classificar todos os patches com o UNI2-h e escolher os de maior confiança por categoria
 - [ ] Terminar o teste do KEEP — de preferência num venv separado
-- [ ] Implementar a hierarquia sugerida pelo Prof. João: primeiro benigno/maligno, depois a evidência (ex.: categoria pelo UNI2-h → DCIS/IC pelo UNI2-h)
+- [x] Implementar a hierarquia sugerida pelo Prof. João — `estagio3_descritores/descritor_uni.py`: 55,8% contra 42,3% das frases nas 4 classes finais
 - [x] Ler as anotações `.qpdata` (via QuPath) — maioria é retângulo; contorno livre sobretudo no UDH
 - [ ] Usar os contornos livres (UDH, parte do FEA/ADH) pra rotular melhor o atípico
-- [ ] Descritor do estágio 3 com a saída do classificador em texto (tabela fixa rótulo → nome)
+- [x] Descritor do estágio 3 com a saída do classificador em texto (tabela fixa rótulo → nome) — junto com a hierarquia
+- [ ] Rodar o descritor hierárquico em todas as lâminas e passar pro estágio 4
 
 **Núcleos (método 3):**
 
