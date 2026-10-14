@@ -1,5 +1,6 @@
 """Caminhos do projeto, abertura de lâmina e pasta de resultados, usados por todos os estágios."""
 
+import os
 from pathlib import Path
 
 import numpy as np
@@ -9,10 +10,34 @@ import zarr
 PIPELINE_DIR = Path(__file__).resolve().parent.parent
 RAIZ_PROJETO = PIPELINE_DIR.parent.parent
 CAMINHOS_MD = RAIZ_PROJETO / "Caminhos" / "caminhos.md"
+
+# O HD externo é montado com o nome do rótulo do volume ("HD 1TB"), mas se a pasta já existir o
+# sistema usa outro nome ("HD 1TB1"). Os caminhos do caminhos.md são escritos com HD_PADRAO e
+# ajustados pra onde o volume estiver montado de fato.
+HD_ROTULO = "HD 1TB"
+HD_PADRAO = "/media/medeiros/HD 1TB"
 RESULTADOS_DIR = PIPELINE_DIR / "resultados"
 
 TILE_NATIVO = 512    # px no nível 0 da pirâmide
 TILE_TRABALHO = 256  # 512px nativo reduzido pela metade: ~20x numa lâmina escaneada em 40x
+
+
+def raiz_hd() -> str:
+    """Onde o volume com rótulo HD_ROTULO está montado agora (HD_PADRAO se não achar)."""
+    rotulo = Path("/dev/disk/by-label") / HD_ROTULO.replace(" ", "\\x20")
+    if rotulo.exists():
+        dispositivo = os.path.realpath(rotulo)
+        with open("/proc/mounts", encoding="utf-8") as f:
+            for linha in f:
+                origem, alvo = linha.split()[:2]
+                if os.path.realpath(origem) == dispositivo:
+                    return alvo.replace("\\040", " ")
+    return HD_PADRAO
+
+
+def no_hd(caminho: str) -> str:
+    """Troca o prefixo HD_PADRAO pela montagem atual do HD."""
+    return raiz_hd() + caminho[len(HD_PADRAO):] if caminho.startswith(HD_PADRAO + "/") else caminho
 
 
 def ler_caminhos() -> dict:
@@ -20,7 +45,7 @@ def ler_caminhos() -> dict:
     for linha in CAMINHOS_MD.read_text(encoding="utf-8").splitlines():
         if ":" in linha:
             chave, valor = linha.split(":", 1)
-            caminhos[chave.strip()] = valor.strip()
+            caminhos[chave.strip()] = no_hd(valor.strip())
     return caminhos
 
 

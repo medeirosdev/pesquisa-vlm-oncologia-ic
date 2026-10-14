@@ -8,7 +8,7 @@ em janelas de 1024 px, e dividida em tiles de 512 px (128 µm). Pontuação da i
 medida nos tiles com >= 20 núcleos neoplásicos; imagem sem nenhum tile assim fica de fora.
 
 Roda no ambiente do CellViT:
-    "/media/medeiros/HD 1TB/venvs/cellvit/bin/python" validacao/bach_nucleos.py
+    "<HD>/venvs/cellvit/bin/python" validacao/bach_nucleos.py
 """
 
 import json

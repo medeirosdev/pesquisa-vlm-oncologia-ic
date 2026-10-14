@@ -19,7 +19,7 @@ Fixado ANTES de rodar (commit anterior aos resultados):
     tipos novos e a medida com a anotação. Referência: os tipos originais do CellViT nos mesmos campos.
 
 Roda no ambiente do CellViT:
-    "/media/medeiros/HD 1TB/venvs/cellvit/bin/python" validacao/nucls_classificador.py
+    "<HD>/venvs/cellvit/bin/python" validacao/nucls_classificador.py
 """
 
 import csv

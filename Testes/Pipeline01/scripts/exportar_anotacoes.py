@@ -3,8 +3,8 @@ Exporta os contornos das anotações oficiais do BRACS (.qpdata, projetos do QuP
 um arquivo por lâmina, legível sem o QuPath (coordenadas no nível 0).
 
 Precisa do QuPath (via paquo), num ambiente separado no HD:
-    export PAQUO_QUPATH_DIR="/media/medeiros/HD 1TB/Modelos/qupath/QuPath-0.5.1"
-    "/media/medeiros/HD 1TB/venvs/paquo/bin/python" scripts/exportar_anotacoes.py
+    export PAQUO_QUPATH_DIR="<HD>/Modelos/qupath/QuPath-0.5.1"
+    "<HD>/venvs/paquo/bin/python" scripts/exportar_anotacoes.py
 
 Entrada: <laminas_dir>/anotacoes/extraidas/**/*.qpdata (zips train/val/test do FTP, extraídos).
 Saída:   <laminas_dir>/anotacoes/geojson/<lamina>.geojson + resumo_classes.json

@@ -28,7 +28,7 @@ Fixado ANTES de rodar o CellViT (commit anterior aos resultados):
   o NuCLS, o que deixaria o resultado otimista; bordas das imagens podem ter núcleos sem anotação.
 
 Roda no ambiente do CellViT:
-    "/media/medeiros/HD 1TB/venvs/cellvit/bin/python" validacao/nucls_cellvit.py
+    "<HD>/venvs/cellvit/bin/python" validacao/nucls_cellvit.py
 """
 
 import csv
@@ -47,10 +47,10 @@ from PIL import Image
 from scipy.spatial import cKDTree
 from scipy.stats import spearmanr
 
-from comum.lamina import RESULTADOS_DIR
+from comum.lamina import RESULTADOS_DIR, no_hd
 from nucleos_cellvit import JANELA, TIPOS, carregar_modelo, segmentar
 
-NUCLS = Path("/media/medeiros/HD 1TB/Dados Gerais/NuCLS/NuCLS_dataset")
+NUCLS = Path(no_hd("/media/medeiros/HD 1TB/Dados Gerais/NuCLS/NuCLS_dataset"))
 MPP_NUCLS, MPP_CELLVIT = 0.2, 0.25
 RAIO_PAR_UM, RAIO_MEDIDA_UM = 5, 20
 MIN_TUMOR = 10

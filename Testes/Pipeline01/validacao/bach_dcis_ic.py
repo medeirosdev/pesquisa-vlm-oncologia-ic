@@ -32,14 +32,14 @@ import tifffile
 import torch
 from PIL import Image
 
-from comum.lamina import RESULTADOS_DIR, TILE_NATIVO, TILE_TRABALHO
+from comum.lamina import RESULTADOS_DIR, TILE_NATIVO, TILE_TRABALHO, no_hd
 from comum.modelo import carregar_quiltnet, dispositivo
 from comum.tecido import mascara_tecido
 from comum.uni import embeddings_uni2h_de_recortes
 from dcis_ic_nucleos import LAMINAS, auc
 from dcis_ic_uni import dados, logistica_prob_ic
 
-BACH_DIR = Path("/media/medeiros/HD 1TB/Dados Gerais/BACH")
+BACH_DIR = Path(no_hd("/media/medeiros/HD 1TB/Dados Gerais/BACH"))
 MPP_BACH = 0.42        # µm/px das imagens de microscopia do BACH (Aresta et al. 2019; os metadados não trazem)
 MPP_PIPELINE = 0.25    # nível 0 do BRACS (40x)
 LADO_UM = TILE_NATIVO * MPP_PIPELINE  # 128 µm

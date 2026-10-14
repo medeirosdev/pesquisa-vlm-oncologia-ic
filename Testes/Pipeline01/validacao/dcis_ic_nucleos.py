@@ -17,7 +17,7 @@ Fixado ANTES de rodar (commit anterior aos resultados):
   fração de conjuntivos entre os núcleos do tile.
 
 Roda no ambiente do CellViT:
-    "/media/medeiros/HD 1TB/venvs/cellvit/bin/python" validacao/dcis_ic_nucleos.py
+    "<HD>/venvs/cellvit/bin/python" validacao/dcis_ic_nucleos.py
 """
 
 import csv

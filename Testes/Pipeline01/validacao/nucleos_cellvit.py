@@ -6,7 +6,7 @@ neoplásicos estão contornados por uma fileira de outros núcleos (DCIS) ou enc
 no conjuntivo (IC).
 
 Roda num ambiente separado (numpy<2, opencv fixo), no HD:
-    "/media/medeiros/HD 1TB/venvs/cellvit/bin/python" validacao/nucleos_cellvit.py --svs BRACS_748 --n 10
+    "<HD>/venvs/cellvit/bin/python" validacao/nucleos_cellvit.py --svs BRACS_748 --n 10
 
 Pra cada tile, lê uma janela de 1024x1024 (nível 0, 40x) centrada no tile de 512, pra que os
 núcleos da borda do tile tenham vizinhos. Guarda os núcleos da janela inteira (coordenadas no

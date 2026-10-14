@@ -21,7 +21,9 @@ if [[ -z "${BRACS_FTP_USER:-}" && -f "$CREDENCIAIS" ]]; then source "$CREDENCIAI
 : "${BRACS_FTP_PASS:?exporte BRACS_FTP_PASS}"
 
 FTP="ftp://histoimage.na.icar.cnr.it"
-DESTINO="/media/medeiros/HD 1TB/BRACS"
+# HD montado como "HD 1TB" ou "HD 1TB1", conforme o sistema; acha pelo rótulo do volume
+HD="$(findmnt -no TARGET -S LABEL="HD 1TB" 2>/dev/null || true)"
+DESTINO="${HD:-/media/medeiros/HD 1TB}/BRACS"
 DESTINO_ANOT="$DESTINO/anotacoes"
 
 # Primeira leva: 1 lâmina por classe (rótulo da lâmina), só entre as que já têm
