@@ -32,12 +32,21 @@ def carregar_uni2h():
     kw = {"img_size": 224, "patch_size": 14, "depth": 24, "num_heads": 24, "init_values": 1e-5, "embed_dim": 1536,
           "mlp_ratio": 2.66667 * 2, "num_classes": 0, "no_embed_class": True, "mlp_layer": timm.layers.SwiGLUPacked,
           "act_layer": torch.nn.SiLU, "reg_tokens": 8, "dynamic_img_size": True}  # da página do UNI2-h
-    modelo = timm.create_model("vit_giant_patch14_224", pretrained=False, **kw)
-    modelo.load_state_dict(torch.load(pesos_uni2h(), map_location="cpu"), strict=True)
-    modelo = modelo.eval()
-    # converte pra meia precisão ANTES de ir pra GPU: em fp32 o modelo ocupa ~2,7 GB e não cabe
-    # junto com o que o desktop já usa numa placa de 4 GB
-    return (modelo.half() if dispositivo() == "cuda" else modelo).to(dispositivo())
+    # Memória: em fp32 os pesos (2,7 GB) e o modelo (mais 2,7 GB) chegavam a ~5,4 GB de RAM no
+    # carregamento, o que já derrubou o computador junto com outros programas abertos. Agora, na
+    # GPU, o modelo já é criado em meia precisão (~1,4 GB) e os pesos são lidos sob demanda do
+    # disco (mmap) e convertidos parâmetro a parâmetro no load_state_dict.
+    tipo = torch.float16 if dispositivo() == "cuda" else torch.float32
+    padrao = torch.get_default_dtype()
+    torch.set_default_dtype(tipo)
+    try:
+        modelo = timm.create_model("vit_giant_patch14_224", pretrained=False, **kw)
+    finally:
+        torch.set_default_dtype(padrao)
+    pesos = torch.load(pesos_uni2h(), map_location="cpu", mmap=True, weights_only=True)
+    modelo.load_state_dict(pesos, strict=True)
+    del pesos
+    return modelo.eval().to(dispositivo())
 
 
 def _preparar(img_512):
