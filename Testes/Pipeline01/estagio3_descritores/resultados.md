@@ -405,6 +405,20 @@ Sugestão do Prof. João: primeiro a categoria, depois a evidência. Nível 1: b
 - **O atípico cai** (46% → 14%), como no teste 2: pouco dado de treino. Na prática, a hierarquia quase nunca diz "atípico".
 - Malignos: de 4.969 tiles de DCIS, 3.876 saem DCIS e 504 saem IC; de 8.893 de IC, 6.549 saem IC e 2.192 saem DCIS.
 
+### Método 3, terceira rodada: medidas mais robustas (13/10)
+
+A medida atual conta como "encostado" o tumor com um único vizinho de estroma a ≤ 20 µm, e um vizinho mal classificado já muda o resultado. Testadas duas alternativas no NuCLS, com os tipos do classificador treinado no NuCLS (fora do fold): [../validacao/nucls_medidas_robustas.py](../validacao/nucls_medidas_robustas.py), fixado antes (commit `1b7134a`). Critério por medida: Spearman ≥ 0,7 e viés ≤ 0,10 (frações) ou ≤ 5 µm (distância). 844 campos.
+
+| Medida | Anotação (média) | Método (média) | Spearman | Viés | Passou? |
+|---|---|---|---|---|---|
+| M1 — ≥ 1 vizinho de estroma a ≤ 20 µm (atual) | 0,13 | 0,29 | 0,35 | +0,16 | não |
+| M2 — distância mediana ao estroma (≤ 50 µm) | 41,4 µm | 34,5 µm | 0,37 | −6,8 µm | não |
+| M3 — ≥ 3 vizinhos de estroma a ≤ 20 µm | 0,02 | 0,08 | 0,27 | +0,06 | não |
+
+- **Nenhuma passou.** Nenhuma forma de medir o contato tumor–estroma chegou perto de concordar com a anotação.
+- Limite do próprio teste: os campos do NuCLS têm ~71 µm de lado, menos que a distância que se quer medir, e a anotação pode não marcar todo o estroma em volta do tumor (M3 da anotação é só 0,02). O NuCLS pode não ser adequado pra validar uma medida de vizinhança.
+- **Decisão:** os núcleos ficam como sinal (separam DCIS de IC, AUC 0,66–0,84 no BRACS), sem número no texto do descritor. Nenhuma medida volta pro BRACS.
+
 ## Em aberto
 
 - O erro que sobrou ainda é maligno → atípico, e se repete nas lâminas novas. Separar DCIS de ADH/UDH é questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `validacao/problemas_e_metrica.md`.

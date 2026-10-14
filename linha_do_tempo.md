@@ -115,6 +115,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 |---|---|
 | 13/10 | Caminhos do HD passam a ser descobertos pelo rótulo do volume (o sistema montou o HD como `HD 1TB1`; funciona com os dois nomes). UNI2-h vai pra GPU já em meia precisão |
 | 13/10 | Descritor hierárquico com UNI2-h (sugestão do Prof. João: categoria → DCIS/IC → texto por tabela fixa): 55,8% nas 4 classes finais (18 lâminas, lâmina de fora), contra 42,3% da mesma hierarquia com frases. DCIS 16% → 78%, IC 50% → 74%; atípico 46% → 14% |
+| 13/10 | Método 3, medidas mais robustas no NuCLS (distância mediana ao estroma; ≥ 3 vizinhos de estroma): nenhuma passa (Spearman 0,27–0,37). Decisão: núcleos ficam como sinal, sem número no texto |
 
 ## Onde paramos
 
@@ -152,7 +153,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 - [x] Instalar o CellViT e testar "núcleos neoplásicos encostados em conjuntivo" — AUC 0,72 / 0,84 / 0,66 em 3 lâminas
 - [x] Validar contra núcleos anotados (NuCLS) — os valores não são confiáveis (Spearman 0,28)
 - [x] Treinar a classificação do tipo de núcleo no NuCLS (divisão treino/teste oficial) e medir de novo — tumor ficou bom (0,83 / 0,88); medida não passou (Spearman 0,35)
-- [ ] Decidir o papel do método 3: medida mais robusta (ex.: contar só tumor com vários vizinhos de estroma, ou distância média ao estroma) testada no NuCLS, ou usar os núcleos só como sinal e não como número no texto
+- [x] Decidir o papel do método 3 — medidas mais robustas também não passam no NuCLS (Spearman 0,27–0,37); núcleos ficam como sinal, sem número no texto
 - [ ] Confirmar a medida em outras lâminas com DCIS e IC juntos
 
 **Plano UNI2-h (26/09):**

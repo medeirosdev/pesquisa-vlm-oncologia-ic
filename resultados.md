@@ -114,6 +114,16 @@ Leitura: a medida tem sinal pra separar DCIS de IC, mas os valores não são con
 
 O tipo do tumor ficou bom; o "conjuntivo" continua errando metade, e a medida (um único vizinho errado a ≤ 20 µm já conta como contato) amplifica esse erro.
 
+**Terceira rodada — medidas mais robustas** (mesmos tipos, 844 campos; critério: Spearman ≥ 0,7 e viés pequeno):
+
+| Medida | Spearman | Viés | Passou? |
+|---|---|---|---|
+| ≥ 1 vizinho de estroma a ≤ 20 µm (atual) | 0,35 | +0,16 | não |
+| Distância mediana ao estroma | 0,37 | −6,8 µm | não |
+| ≥ 3 vizinhos de estroma a ≤ 20 µm | 0,27 | +0,06 | não |
+
+Decisão: os núcleos ficam como sinal, sem número no texto. Limite: os campos do NuCLS (~71 µm) são pequenos pra uma medida de vizinhança.
+
 ## Anotações oficiais do BRACS
 
 - `.qpdata` lidas com o QuPath e exportadas pra GeoJSON: 387 de 387 lâminas; totais por classe iguais aos do artigo.
