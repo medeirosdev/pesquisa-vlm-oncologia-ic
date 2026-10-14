@@ -34,8 +34,10 @@ def carregar_uni2h():
           "act_layer": torch.nn.SiLU, "reg_tokens": 8, "dynamic_img_size": True}  # da página do UNI2-h
     modelo = timm.create_model("vit_giant_patch14_224", pretrained=False, **kw)
     modelo.load_state_dict(torch.load(pesos_uni2h(), map_location="cpu"), strict=True)
-    modelo = modelo.eval().to(dispositivo())
-    return modelo.half() if dispositivo() == "cuda" else modelo
+    modelo = modelo.eval()
+    # converte pra meia precisão ANTES de ir pra GPU: em fp32 o modelo ocupa ~2,7 GB e não cabe
+    # junto com o que o desktop já usa numa placa de 4 GB
+    return (modelo.half() if dispositivo() == "cuda" else modelo).to(dispositivo())
 
 
 def _preparar(img_512):
