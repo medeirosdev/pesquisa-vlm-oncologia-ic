@@ -419,6 +419,25 @@ A medida atual conta como "encostado" o tumor com um único vizinho de estroma a
 - Limite do próprio teste: os campos do NuCLS têm ~71 µm de lado, menos que a distância que se quer medir, e a anotação pode não marcar todo o estroma em volta do tumor (M3 da anotação é só 0,02). O NuCLS pode não ser adequado pra validar uma medida de vizinhança.
 - **Decisão:** os núcleos ficam como sinal (separam DCIS de IC, AUC 0,66–0,84 no BRACS), sem número no texto do descritor. Nenhuma medida volta pro BRACS.
 
+### Estágio 2, segunda rodada: métrica de tumor sem RoIs e roteador por categoria (13/10)
+
+Os RoIs não marcam toda a lesão, então a precisão "cai num RoI" subestima o roteador. Métrica nova, sem RoIs: fração dos 32 patches escolhidos com tumor (≥ 20 núcleos classificados como neoplásicos — detecção do CellViT + classificação treinada no NuCLS, que deu 0,83 / 0,88 pra tumor em hospitais fora do treino). Roteador novo: classifica todos os patches com o UNI2-h (camada treinada nas outras lâminas) e divide os 32 patches entre as categorias encontradas (≥ 2% dos patches), escolhendo os de maior confiança em cada uma. Scripts: [../validacao/roteador_v2_selecao.py](../validacao/roteador_v2_selecao.py) e [../validacao/roteador_v2_tumor.py](../validacao/roteador_v2_tumor.py), fixados antes (commit `69630a4`). 7 lâminas com RoI maligno. Critério: roteador por categoria > frases em ≥ 5 de 7 e média maior.
+
+| Lâmina | Frases (atual) | UNI2-h "não benigno" | UNI2-h por categoria (novo) | Sorteio |
+|---|---|---|---|---|
+| `BRACS_1003677` | 0,88 | 0,66 | 0,75 | 0,83 |
+| `BRACS_1489` | 0,69 | 0,91 | 0,56 | 0,51 |
+| `BRACS_748` | 0,97 | 0,88 | 0,38 | 0,24 |
+| `BRACS_1512` | 0,78 | 0,91 | 0,56 | 0,49 |
+| `BRACS_297` | 1,00 | 0,91 | 0,59 | 0,37 |
+| `BRACS_773` | 0,97 | 0,94 | 0,41 | 0,62 |
+| `BRACS_295` | 0,75 | 1,00 | 0,50 | 0,59 |
+| **Média** | **0,86** | **0,88** | **0,54** | **0,52** |
+
+- **O roteador por categoria não passou** (média 0,54, igual ao sorteio). Faz sentido pelo desenho: ele gasta parte dos 32 patches de propósito em benigno e atípico, então tem menos tumor. A métrica de tumor não é adequada pra avaliá-lo — o critério foi mal escolhido pra essa estratégia, e isso fica registrado em vez de trocar o critério depois.
+- **Achado principal: os roteadores antigos acham muito tumor.** O por frases (0,86) e o UNI2-h "não benigno" (0,88) ficam bem acima do sorteio (0,52) e vencem o sorteio em 6 de 7 lâminas. Na métrica por RoI eles pareciam fracos (precisão média ~0,2) — confirma que boa parte da "falha" do estágio 2 era da métrica, não do roteador.
+- Ressalvas: só lâminas malignas (em benigna/atípica "ter tumor" não é o objetivo); a classificação de núcleos pode chamar epitélio atípico de neoplásico; 32 patches por lâmina.
+
 ## Em aberto
 
 - O erro que sobrou ainda é maligno → atípico, e se repete nas lâminas novas. Separar DCIS de ADH/UDH é questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `validacao/problemas_e_metrica.md`.

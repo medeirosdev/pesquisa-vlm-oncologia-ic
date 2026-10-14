@@ -116,11 +116,13 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 | 13/10 | Caminhos do HD passam a ser descobertos pelo rótulo do volume (o sistema montou o HD como `HD 1TB1`; funciona com os dois nomes). UNI2-h vai pra GPU já em meia precisão |
 | 13/10 | Descritor hierárquico com UNI2-h (sugestão do Prof. João: categoria → DCIS/IC → texto por tabela fixa): 55,8% nas 4 classes finais (18 lâminas, lâmina de fora), contra 42,3% da mesma hierarquia com frases. DCIS 16% → 78%, IC 50% → 74%; atípico 46% → 14% |
 | 13/10 | Método 3, medidas mais robustas no NuCLS (distância mediana ao estroma; ≥ 3 vizinhos de estroma): nenhuma passa (Spearman 0,27–0,37). Decisão: núcleos ficam como sinal, sem número no texto |
+| 13/10 | RAM cheia travou o computador (o carregamento do UNI2-h chegava a ~5,4 GB). Corrigido: modelo criado em fp16 e pesos lidos por mmap; testes pesados rodam com limite de memória |
+| 13/10 | Estágio 2, métrica sem RoIs (patches com ≥ 20 núcleos tumorais, 7 lâminas malignas): roteador por frases 0,86, UNI2-h "não benigno" 0,88, sorteio 0,52. O roteador novo por categoria não passou (0,54) — por desenho reserva patches pra benigno/atípico. A "falha" do estágio 2 vinha em boa parte da métrica por RoI |
 
 ## Onde paramos
 
 1. **Estágio 1 resolvido:** cobertura dos RoIs de 74–100% nas 16 lâminas.
-2. **Estágio 2 inconsistente:** os dois roteadores (frases e UNI2-h) escolhem em média o dobro de patches em lesão do que o sorteio, mas nenhum ganha de forma consistente. A métrica é limitada: os RoIs não marcam toda a lesão.
+2. **Estágio 2 funciona nas lâminas malignas:** medindo pelos núcleos (sem RoIs), os roteadores por frases e por UNI2-h "não benigno" acham tumor em 86–88% dos patches escolhidos, contra 52% do sorteio. Pela métrica de RoIs pareciam fracos porque os RoIs não marcam toda a lesão. Em lâminas benignas/atípicas ainda não há métrica boa.
 3. **Estágio 3, benigno / atípico / maligno:** ~53–55% nas lâminas novas (acaso = 33%), com zero-shot ou com UNI2-h; o atípico é o ponto fraco.
 4. **Estágio 3, DCIS vs. IC:** com treino, o UNI2-h separa bem (0,96–0,99 no BRACS, 0,95 no BACH). O QuiltNet com treino parecia bom no BRACS mas não generaliza (0,57 no BACH). O zero-shot com frases fica no acaso.
 5. **Método 3 (núcleos):** tem sinal pra separar DCIS de IC, mas os valores da medida não são confiáveis (validação no NuCLS). Treinar a classificação no NuCLS resolveu o tipo do tumor (0,83 / 0,88), mas não a medida (Spearman 0,35): o erro no "conjuntivo" e a própria construção da medida (um vizinho errado já conta) seguram o resultado.
@@ -140,7 +142,8 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 - [x] Reduzir o viés pró-"benigno" do descritor — maligno de 33% pra 43% trocando a frase do lóbulo normal
 - [ ] Reduzir a confusão maligno → atípico — se repete nas lâminas novas
 - [x] Conferir o banco de frases em lâminas que não foram usadas pra escolhê-las — só a troca do lóbulo se sustentou
-- [ ] Repensar o estágio 2: checar com o CellViT se os patches escolhidos têm tumor (métrica sem RoI); ou classificar todos os patches com o UNI2-h e escolher os de maior confiança por categoria
+- [x] Repensar o estágio 2 — pela métrica de tumor (CellViT), os roteadores acham tumor em 86–88% dos patches nas lâminas malignas; o roteador por categoria não passou (0,54)
+- [ ] Métrica pro estágio 2 em lâminas benignas/atípicas
 - [ ] Terminar o teste do KEEP — de preferência num venv separado
 - [x] Implementar a hierarquia sugerida pelo Prof. João — `estagio3_descritores/descritor_uni.py`: 55,8% contra 42,3% das frases nas 4 classes finais
 - [x] Ler as anotações `.qpdata` (via QuPath) — maioria é retângulo; contorno livre sobretudo no UDH

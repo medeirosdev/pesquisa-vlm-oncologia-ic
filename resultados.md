@@ -41,7 +41,23 @@ Detalhes: `Testes/Pipeline01/estagio1_filtro_tecido/resultados.md`, `Testes/Pipe
 
 Limite da métrica: os RoIs não marcam toda a lesão da lâmina — um patch de tumor fora do RoI conta como erro.
 
-Detalhes: `Testes/Pipeline01/estagio2_roteador/`, `Testes/Pipeline01/estagio3_descritores/resultados.md` (seção "Estágio 2 com o UNI2-h").
+**Segunda rodada (13/10) — métrica sem RoIs:** fração dos 32 patches escolhidos com tumor (≥ 20 núcleos neoplásicos, CellViT + classificação treinada no NuCLS), 7 lâminas malignas.
+
+| Lâmina | Frases (atual) | UNI2-h "não benigno" | UNI2-h por categoria (novo) | Sorteio |
+|---|---|---|---|---|
+| `BRACS_1003677` | 0,88 | 0,66 | 0,75 | 0,83 |
+| `BRACS_1489` | 0,69 | 0,91 | 0,56 | 0,51 |
+| `BRACS_748` | 0,97 | 0,88 | 0,38 | 0,24 |
+| `BRACS_1512` | 0,78 | 0,91 | 0,56 | 0,49 |
+| `BRACS_297` | 1,00 | 0,91 | 0,59 | 0,37 |
+| `BRACS_773` | 0,97 | 0,94 | 0,41 | 0,62 |
+| `BRACS_295` | 0,75 | 1,00 | 0,50 | 0,59 |
+| **Média** | **0,86** | **0,88** | **0,54** | **0,52** |
+
+- Roteador novo (UNI2-h por categoria): **não passou** (0,54, igual ao sorteio) — por desenho ele reserva patches pra benigno e atípico, e a métrica de tumor não é adequada pra ele.
+- Os roteadores antigos acham muito tumor (0,86 e 0,88 contra 0,52 do sorteio): a "falha" do estágio 2 vinha em boa parte da métrica por RoI.
+
+Detalhes: `Testes/Pipeline01/estagio2_roteador/`, `Testes/Pipeline01/estagio3_descritores/resultados.md` (seções "Estágio 2 com o UNI2-h" e "Estágio 2, segunda rodada").
 
 ## Estágio 3 — descrição dos patches
 
@@ -134,7 +150,7 @@ Detalhes: `Testes/Pipeline01/validacao/problemas_e_metrica.md`.
 ## Conclusões até aqui
 
 1. O filtro de tecido funciona.
-2. A escolha dos patches é inconsistente, com qualquer das pontuações testadas.
+2. A escolha dos patches parecia inconsistente pela métrica de RoIs, mas, medindo pelos núcleos, os roteadores acham tumor em 86–88% dos patches escolhidos nas lâminas malignas (sorteio: 52%).
 3. Comparar a imagem com frases (zero-shot) é o gargalo do estágio 3: fica no acaso no DCIS vs. IC, mesmo quando o embedding contém a informação.
 4. Uma camada treinada em cima do UNI2-h separa DCIS de IC e generaliza pra outra instituição; no atípico, falta dado.
 5. A medida dos núcleos separa DCIS de IC, mas os valores não são confiáveis: mesmo com a classificação de núcleos treinada no NuCLS (tumor 0,83 / 0,88), a medida não bate com a anotação (Spearman 0,35).
