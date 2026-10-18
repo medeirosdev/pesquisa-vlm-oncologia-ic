@@ -1,6 +1,6 @@
 # Resultados — Pipeline Ideia 01
 
-Estado em 17/10/2026. Um resumo de cada teste, com números, critério e se passou. Detalhes, tabelas completas e discussão ficam nos arquivos indicados em cada seção. Ordem cronológica dos testes: [linha_do_tempo.md](linha_do_tempo.md).
+Estado em 18/10/2026. Um resumo de cada teste, com números, critério e se passou. Detalhes, tabelas completas e discussão ficam nos arquivos indicados em cada seção. Ordem cronológica dos testes: [linha_do_tempo.md](linha_do_tempo.md).
 
 ## Dados e métricas
 
@@ -161,7 +161,17 @@ Classificação final do pré-laudo (benigno / atípico / DCIS / IC) contra o r�
 | 18 lâminas | 6/18 (33%): benigno 1/5, atípico 0/6, DCIS 2/2, IC 3/5 | — | descritivo |
 | 15 lâminas fora das usadas pra criar a regra | 5/15 (33%), IC 3/4 | **10/15 (67%), IC 4/4** | **sim** (critério: mais IC e acurácia não menor) |
 
-Regra (estágio 4): se ≥ 2 patches com carcinoma invasivo e P ≥ 0,90, o prompt diz "componente invasivo presente" e que ele define o diagnóstico; senão, "não detectado". Sem a regra, o modelo chama de maligno 15 de 18 lâminas; com ela, acerta as 4 benignas. O atípico continua errado (1/6), e duas atípicas viram IC. Detalhes: `Testes/Pipeline01/estagio5_sintese/resultados.md`.
+Regra (estágio 4): se ≥ 2 patches com carcinoma invasivo e P ≥ 0,90, o prompt diz "componente invasivo presente" e que ele define o diagnóstico; senão, "não detectado". Sem a regra, o modelo chama de maligno 15 de 18 lâminas; com ela, acerta as 4 benignas. O atípico continua errado (1/6), e duas atípicas viram IC.
+
+**Teste externo** — 57 lâminas do conjunto de teste oficial do BRACS (31 pacientes nunca usados), pipeline congelada:
+
+| | Sem regra | Com regra | Passou? |
+|---|---|---|---|
+| 57 lâminas | 13/57 (23%), IC 5/12 | **16/57 (28%), IC 7/12** | sim, por pouco |
+| Benigno / atípico | 0/13 · 1/24 | 0/13 · 1/24 | — |
+| Respostas malignas | 55 de 57 | 55 de 57 | — |
+
+A regra se confirma no IC, mas a pipeline chama quase tudo de maligno: o acerto total fica perto do acaso de 4 classes (25%). O ganho nas benignas visto no desenvolvimento não se repetiu. A extração da classificação também erra em alguns casos (falta conferência manual). Detalhes: `Testes/Pipeline01/estagio5_sintese/resultados.md`.
 
 ## Anotações oficiais do BRACS
 
@@ -177,4 +187,4 @@ Detalhes: `Testes/Pipeline01/validacao/problemas_e_metrica.md`.
 3. Comparar a imagem com frases (zero-shot) é o gargalo do estágio 3: fica no acaso no DCIS vs. IC, mesmo quando o embedding contém a informação.
 4. Uma camada treinada em cima do UNI2-h separa DCIS de IC e generaliza pra outra instituição; no atípico, falta dado.
 5. A medida dos núcleos separa DCIS de IC, mas os valores não são confiáveis: mesmo com a classificação de núcleos treinada no NuCLS (tumor 0,83 / 0,88), a medida não bate com a anotação (Spearman 0,35).
-6. A pipeline roda de ponta a ponta até o pré-laudo. Com a regra do componente invasivo no estágio 4, a classificação final acerta 10 de 15 lâminas não usadas pra criar a regra (sem a regra: 5 de 15), incluindo as 4 de IC e as 4 benignas; o atípico continua sendo o ponto fraco (1 de 6).
+6. A pipeline roda de ponta a ponta até o pré-laudo, mas em lâminas novas (57 do teste oficial) chama 55 de 57 de malignas: acerta DCIS e IC (com a regra, 8/8 e 7/12) e erra quase todas as benignas e atípicas, ficando em 28% nas 4 classes (acaso = 25%). A regra do componente invasivo ajuda no IC; o problema principal está nos estágios 2 e 3, que mandam evidência maligna de lâminas benignas e atípicas.

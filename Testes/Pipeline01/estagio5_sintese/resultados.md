@@ -62,3 +62,23 @@ Script: [../validacao/prelaudo_avaliacao.py](../validacao/prelaudo_avaliacao.py)
 - **O maior ganho da regra veio das lâminas benignas** (1 → 4 de 4), não só do IC: a linha "componente invasivo não detectado" deixa o modelo menos alarmista. Não era o efeito esperado quando a regra foi escrita.
 - **O atípico continua errado** (1 de 6 com a regra): o descritor quase não reconhece atípico, e duas lâminas atípicas (`BRACS_1617`, `BRACS_1494`) viram carcinoma invasivo — a regra também propaga os falsos positivos de IC do estágio 3.
 - **Ressalvas:** 15 lâminas, uma execução por versão, um só modelo; diferença de 5 lâminas. O rótulo da lâmina no BRACS é o da lesão mais grave anotada, não um laudo completo.
+
+## Teste externo: 57 lâminas do conjunto de teste oficial do BRACS (18/10)
+
+Pipeline congelada, sem nenhum ajuste ([../validacao/prelaudo_teste_externo.py](../validacao/prelaudo_teste_externo.py), fixado antes do download, commit `30059dd`): lâminas do conjunto de teste oficial, de pacientes nunca usados, uma por paciente e por classe — 57 lâminas de 31 pacientes. Critério: com a regra, mais acertos no total e pelo menos tantos IC quanto sem ela.
+
+| | Sem regra (v1) | Com regra (v2) |
+|---|---|---|
+| **57 lâminas** | 13/57 (23%) | **16/57 (28%)** |
+| Benigno (13) | 0 | 0 |
+| Atípico (24) | 1 | 1 |
+| DCIS (8) | 7 | 8 |
+| IC (12) | 5 | 7 |
+| Respostas malignas | 55 de 57 | 55 de 57 |
+| Uma lâmina por paciente (31) | 7/31 | 10/31 |
+
+- **Passou no critério, por pouco** (3 lâminas a mais; IC 5 → 7 de 12).
+- **A pipeline chama quase tudo de maligno:** 55 das 57 respostas são DCIS ou carcinoma invasivo, com e sem regra. Benignas 0 de 13, atípicas 1 de 24. O acerto total (23–28%) fica perto do acaso de 4 classes (25%).
+- **O ganho da regra nas lâminas benignas, visto nas 15 lâminas de desenvolvimento (1 → 4 de 4), não se repetiu** (0 → 0 de 13). O que se manteve foi o ganho no IC.
+- **O problema está antes do modelo de linguagem:** o roteador escolhe os patches que parecem suspeitos e o descritor quase nunca diz "atípico"; o modelo recebe evidência maligna e escreve maligno.
+- **A extração da classificação também erra:** na `BRACS_1641` sem a regra, o texto sugere lesão benigna e a extração em formato restrito devolveu DCIS. Parte das diferenças entre versões pode vir da extração; falta conferir uma amostra à mão.

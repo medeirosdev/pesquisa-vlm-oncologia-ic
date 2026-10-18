@@ -493,13 +493,20 @@ com invasive carcinoma e probabilidade ≥ 0.90; encontrados 0).</pre>
     </div>
     <div class="painel destaque">
       <h3>Teste externo: 57 lâminas do conjunto de teste oficial</h3>
-      <span class="selo parcial">em andamento · parcial em 45 lâminas</span>
+      <span class="selo parcial">passou no critério por pouco · 57 lâminas de 31 pacientes nunca usados</span>
       <div class="barras">
-        <div class="barra"><span class="nome">Com a regra</span><span class="trilho"><i style="width:26.7%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">12/45</span></div>
-        <div class="barra cinza"><span class="nome">Sem a regra</span><span class="trilho"><i style="width:26.7%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">12/45</span></div>
+        <div class="barra"><span class="nome">Com a regra</span><span class="trilho"><i style="width:28.1%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">16/57</span></div>
+        <div class="barra cinza"><span class="nome">Sem a regra</span><span class="trilho"><i style="width:22.8%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">13/57</span></div>
       </div>
       <span class="legenda-acaso">acaso (25%, 4 classes)</span>
-      <p class="nota">Até aqui, a pipeline chama quase tudo de maligno: DCIS 8 de 8 e IC 4 de 6 certos, mas benignas 0 de 10 e atípicas 0 a 1 de 21. O ganho da regra não está se repetindo. O problema vem antes do modelo de linguagem: o roteador busca o que parece suspeito e o descritor quase nunca diz "atípico".</p>
+      <div class="tabela"><table>
+        <thead><tr><th></th><th class="num">Benigno</th><th class="num">Atípico</th><th class="num">DCIS</th><th class="num">IC</th></tr></thead>
+        <tbody>
+          <tr><td>Sem a regra</td><td class="num">0/13</td><td class="num">1/24</td><td class="num">7/8</td><td class="num">5/12</td></tr>
+          <tr class="vence"><td>Com a regra</td><td class="num">0/13</td><td class="num">1/24</td><td class="num">8/8</td><td class="num">7/12</td></tr>
+        </tbody>
+      </table></div>
+      <p class="nota">A regra ajuda no carcinoma invasivo (5 → 7 de 12), mas a pipeline chama de maligno 55 das 57 lâminas. O ganho nas benignas visto no desenvolvimento não se repetiu. O problema vem antes do modelo de linguagem: o roteador busca o que parece suspeito e o descritor quase nunca diz "atípico".</p>
     </div>
   </div>
   <div class="painel">
@@ -579,8 +586,8 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
       <tr><td>1. Filtro de tecido</td><td><span class="selo ok">resolvido</span></td><td>—</td></tr>
       <tr><td>2. Roteador</td><td><span class="selo parcial">bom em lâminas malignas</span></td><td>métrica para lâminas benignas e atípicas</td></tr>
       <tr><td>3. Descritor</td><td><span class="selo parcial">bom no DCIS × IC, fraco no atípico</span></td><td>mais lâminas atípicas para treinar</td></tr>
-      <tr><td>4. Agregação</td><td><span class="selo parcial">regra em confirmação</span></td><td>resultado final do teste externo</td></tr>
-      <tr><td>5. Síntese</td><td><span class="selo parcial">funciona, herda os erros</span></td><td>reduzir os falsos positivos antes do modelo</td></tr>
+      <tr><td>4. Agregação</td><td><span class="selo parcial">regra ajuda no IC</span></td><td>conferir à mão a extração da classificação</td></tr>
+      <tr><td>5. Síntese</td><td><span class="selo falha">28% em lâminas novas</span></td><td>reduzir os falsos positivos malignos nos estágios 2 e 3</td></tr>
     </tbody>
   </table></div>
   <p class="nota">Ressalvas gerais: 2 lâminas por classe no desenvolvimento; as anotações do BRACS marcam regiões, não cada célula; o rótulo da lâmina é o da lesão mais grave.</p>
