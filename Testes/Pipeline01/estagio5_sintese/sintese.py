@@ -15,6 +15,7 @@ Uso (venv do projeto):
 import argparse
 import base64
 import json
+import re
 import sys
 import time
 import urllib.request
@@ -50,7 +51,23 @@ Responda nesta estrutura:
 ## Regiões para revisão prioritária
 (coordenadas e o motivo)
 ## Limitações
-(inclua que o texto foi gerado automaticamente e precisa de confirmação por patologista)"""
+(inclua que o texto foi gerado automaticamente e precisa de confirmação por patologista)
+
+Termine com uma última linha exatamente neste formato, escolhendo uma única opção:
+CLASSIFICAÇÃO FINAL: benigno | atípico | DCIS | carcinoma invasivo"""
+
+CLASSES_FINAIS = {"benigno": "benigno", "atípico": "atipico", "atipico": "atipico", "dcis": "DCIS",
+                  "carcinoma invasivo": "IC"}
+
+
+def classificacao_final(texto):
+    """Classe da linha 'CLASSIFICAÇÃO FINAL: ...' (benigno, atipico, DCIS, IC) ou None."""
+    m = re.findall(r"CLASSIFICA[ÇC][ÃA]O FINAL\W*([^\n]+)", texto, flags=re.IGNORECASE)
+    if not m:
+        return None
+    resp = m[-1].strip(" *_.:").lower()
+    achadas = {v for k, v in CLASSES_FINAIS.items() if k in resp}
+    return achadas.pop() if len(achadas) == 1 else None
 
 
 def chamar(modelo, prompt, imagens):
@@ -75,6 +92,7 @@ def rodar(svs=None, k=32, sufixo="_uni", modelo="medgemma:4b", com_imagens=True)
     nome = f"prelaudo_k{k}{sufixo}_{modelo.replace(':', '-')}"
     (saida / f"{nome}.md").write_text(texto, encoding="utf-8")
     meta = {"lamina": stem, "rotulo_real_nao_enviado_ao_modelo": info_lamina(stem).get("rotulo"),
+            "classificacao_final": classificacao_final(texto),
             "modelo": modelo, "opcoes": OPCOES, "imagens": [p.name for p in ancoras],
             "segundos": round(time.time() - t0, 1), "tokens_entrada": r.get("prompt_eval_count"),
             "tokens_saida": r.get("eval_count")}

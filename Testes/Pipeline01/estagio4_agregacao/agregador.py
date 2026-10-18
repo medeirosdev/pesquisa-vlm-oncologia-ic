@@ -21,10 +21,22 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from comum.lamina import dir_resultados, resolver_svs
 
 N_ANCORAS = 3
+
+# Regra do componente invasivo (17/10): no teste exploratório do estágio 5, o modelo de linguagem
+# seguiu a maioria dos patches e chamou de DCIS uma lâmina de carcinoma invasivo em que o componente
+# invasivo era minoria. Com regra_invasivo=True, o cabeçalho diz se há componente invasivo e lembra
+# que ele define o diagnóstico principal. Fixado antes de testar (validacao/prelaudo_avaliacao.py).
+MIN_PATCHES_INVASIVO = 2
+MIN_PROB_INVASIVO = 0.90
 TOKENS_POR_ANCORA = 400  # meio da faixa 256-576 documentada em docs/pipelines.md
 
 
-def montar(stem, k, sufixo):
+def componente_invasivo(descritores):
+    """Patches com subtipo carcinoma invasivo e P(IC) >= MIN_PROB_INVASIVO (só no descritor hierárquico)."""
+    return [d for d in descritores if d.get("subtipo") == "IC" and (d.get("prob_subtipo") or {}).get("IC", 0) >= MIN_PROB_INVASIVO]
+
+
+def montar(stem, k, sufixo, regra_invasivo=False):
     e3 = dir_resultados(stem, "estagio3")
     dados = json.loads((e3 / f"estagio3_descritores_k{k}{sufixo}.json").read_text(encoding="utf-8"))
     descritores = dados["descritores"]
@@ -41,21 +53,32 @@ def montar(stem, k, sufixo):
               "Patches por categoria: " + ", ".join(f"{c} {cats.get(c, 0)}" for c in ("benigno", "atipico", "maligno")),
               "Achados agregados:"]
     linhas += [f"  - {a}: {n}/{total} patches ({100 * n / total:.0f}%)" for a, n in contagem.most_common()]
-    linhas += [f"Achado dominante: {dominante} ({100 * freq / total:.0f}% dos patches)", "", "Detalhe por patch:"]
+    linhas += [f"Achado dominante: {dominante} ({100 * freq / total:.0f}% dos patches)"]
+    if regra_invasivo:
+        inv = componente_invasivo(descritores)
+        if len(inv) >= MIN_PATCHES_INVASIVO:
+            linhas += [f"Componente invasivo: PRESENTE ({len(inv)} patches com invasive carcinoma, probabilidade >= {MIN_PROB_INVASIVO:.2f}: "
+                       + ", ".join(f"[{d['x0']},{d['y0']}]" for d in inv) + ")",
+                       "Regra: a presença de componente invasivo define o diagnóstico principal (carcinoma invasivo), "
+                       "mesmo que seja minoria dos patches; os demais achados entram como componente associado."]
+        else:
+            linhas += [f"Componente invasivo: não detectado (critério: >= {MIN_PATCHES_INVASIVO} patches com invasive carcinoma "
+                       f"e probabilidade >= {MIN_PROB_INVASIVO:.2f}; encontrados {len(inv)})."]
+    linhas += ["", "Detalhe por patch:"]
     linhas += [d["texto"] for d in descritores]
     linhas += ["", f"Âncoras visuais anexadas ({len(ancoras)}): " + ", ".join(f"[{a['x0']},{a['y0']}]" for a in ancoras)]
     prompt = "\n".join(linhas)
     return prompt, ancoras, dominante, round(100 * freq / total, 1)
 
 
-def rodar(svs=None, k=32, sufixos=("",)) -> dict:
+def rodar(svs=None, k=32, sufixos=("",), regra_invasivo=False) -> dict:
     stem = resolver_svs(svs).stem
     saida = dir_resultados(stem, "estagio4")
     e3 = dir_resultados(stem, "estagio3")
     resultado = {}
     for sufixo in sufixos:
-        prompt, ancoras, dominante, pct = montar(stem, k, sufixo)
-        nome = f"estagio4_prompt_k{k}{sufixo}"
+        prompt, ancoras, dominante, pct = montar(stem, k, sufixo, regra_invasivo)
+        nome = f"estagio4_prompt_k{k}{sufixo}" + ("_regra" if regra_invasivo else "")
         (saida / f"{nome}.txt").write_text(prompt, encoding="utf-8")
         pasta = saida / f"{nome}_ancoras"
         pasta.mkdir(exist_ok=True)
