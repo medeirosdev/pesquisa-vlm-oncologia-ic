@@ -86,7 +86,10 @@ def rodar(svs=None, banco="v2", ks=KS_PADRAO) -> dict:
         writer.writeheader()
         writer.writerows(ordenados)
 
-    rois = [r for r in carregar_rois(lamina.stem) if r["correlacao"] >= 0.5]
+    try:
+        rois = [r for r in carregar_rois(lamina.stem) if r["correlacao"] >= 0.5]
+    except FileNotFoundError:  # lâmina sem RoIs localizados (ex.: teste externo do pré-laudo): sem métrica
+        rois = []
     rng = random.Random(0)
     curva = []
     for k in sorted(ks):
