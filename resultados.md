@@ -165,5 +165,5 @@ Detalhes: `Testes/Pipeline01/validacao/problemas_e_metrica.md`.
 2. A escolha dos patches parecia inconsistente pela métrica de RoIs, mas, medindo pelos núcleos, os roteadores acham tumor em 86–88% dos patches escolhidos nas lâminas malignas (sorteio: 52%).
 3. Comparar a imagem com frases (zero-shot) é o gargalo do estágio 3: fica no acaso no DCIS vs. IC, mesmo quando o embedding contém a informação.
 4. Uma camada treinada em cima do UNI2-h separa DCIS de IC e generaliza pra outra instituição; no atípico, falta dado.
-6. A pipeline já roda de ponta a ponta até o pré-laudo, mas o texto final segue a maioria dos patches e herda os falsos positivos: acertou 1 de 3 lâminas no teste exploratório.
 5. A medida dos núcleos separa DCIS de IC, mas os valores não são confiáveis: mesmo com a classificação de núcleos treinada no NuCLS (tumor 0,83 / 0,88), a medida não bate com a anotação (Spearman 0,35).
+6. A pipeline já roda de ponta a ponta até o pré-laudo, mas o texto final segue a maioria dos patches e herda os falsos positivos: acertou 1 de 3 lâminas no teste exploratório.
