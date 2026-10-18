@@ -55,15 +55,22 @@ def descrever():
     import agregador
     import descritor_uni
     import roteador_topk
+    # duas passadas, pra não ter QuiltNet (roteador) e UNI2-h (descritor) juntos na GPU de 4 GB
+    for s in baixadas():
+        if not (dir_resultados(s, "estagio2") / "estagio2_scores_v2.csv").exists():
+            roteador_topk.rodar(s, "v2", ks=[K])
+            print(f"  {s}: estágios 1 e 2 prontos", flush=True)
+    import torch
+    from comum.modelo import carregar_quiltnet
+    carregar_quiltnet.cache_clear()
+    torch.cuda.empty_cache()
     for s in baixadas():
         if (dir_resultados(s, "estagio4") / f"estagio4_prompt_k{K}_uni_regra.txt").exists():
             continue
-        if not (dir_resultados(s, "estagio2") / "estagio2_scores_v2.csv").exists():
-            roteador_topk.rodar(s, "v2", ks=[K])
         descritor_uni.rodar(s, K)
         agregador.rodar(s, K, ["_uni"], regra_invasivo=False)
         agregador.rodar(s, K, ["_uni"], regra_invasivo=True)
-        print(f"  {s}: estágios 1 a 4 prontos", flush=True)
+        print(f"  {s}: estágios 3 e 4 prontos", flush=True)
 
 
 def sintetizar():
