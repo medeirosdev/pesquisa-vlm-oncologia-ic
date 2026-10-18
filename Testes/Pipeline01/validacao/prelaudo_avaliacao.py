@@ -18,6 +18,13 @@ Fixado ANTES de rodar (commit anterior aos resultados):
     Critério de "funcionou": nas 15, v2 (com regra) acerta mais lâminas IC que v1 E a acurácia
     total de v2 não é menor que a de v1.
 
+Correção do instrumento (17/10, antes de qualquer resultado diagnóstico ser analisado): na primeira
+tentativa, 0 de 9 respostas trouxeram a linha "CLASSIFICAÇÃO FINAL" (o modelo a ignora ou copia a lista
+de opções). A classificação passou a ser extraída por uma segunda chamada curta ao mesmo modelo, só com o
+texto que ele gerou, em JSON restrito às 4 opções (sintese.classificar_texto). Também: contexto de 8192
+pra 4096 tokens (com 8192 o Ollama chegou a ~6 GB de RAM e a geração caiu pra 0,07 token/s). Critério,
+lâminas e modelo não mudaram.
+
 Uso (venv do projeto; precisa do servidor Ollama no ar pra etapa 2):
     .venv/bin/python validacao/prelaudo_avaliacao.py --etapa descrever   # estágios 3 e 4 (usa o UNI2-h)
     .venv/bin/python validacao/prelaudo_avaliacao.py --etapa sintetizar  # estágio 5 e avaliação
