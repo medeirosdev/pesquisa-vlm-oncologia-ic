@@ -20,4 +20,45 @@ Teste exploratório, sem critério fixado: 3 lâminas, pra ver se a pipeline rod
 - **Gemma 3 foi melhor que MedGemma nesse teste:** prioriza 3 regiões em vez de listar tudo, usa linguagem mais cautelosa e é mais rápido. O MedGemma confunde fração de patches com probabilidade e organiza a impressão de forma incoerente.
 - **Limitações:** 3 lâminas, uma execução por modelo; sem avaliação sistemática. Próximo passo: rodar nas 18 lâminas e comparar a impressão com o rótulo real.
 
-Pré-laudos completos: `resultados/<lamina>/estagio5/prelaudo_k32_uni_<modelo>.md` (+ `.json` com tempo, tokens e o rótulo real).
+Pré-laudos completos: `resultados/<lamina>/estagio5/prelaudo_k32_uni_<modelo>.md` (+ `.json` com tempo, tokens e o rótulo real). Os do teste exploratório ficaram em `resultados/<lamina>/estagio5/exploratorio_1710/`.
+
+## Avaliação sistemática e regra do componente invasivo (17/10)
+
+Script: [../validacao/prelaudo_avaliacao.py](../validacao/prelaudo_avaliacao.py), fixado antes (commit `acd789c`). Gemma 3 4B. Rótulo real = rótulo da lâmina no BRACS, agrupado em benigno / atípico / DCIS / IC.
+
+- **A)** pipeline sem a regra (v1), nas 18 lâminas, descritiva.
+- **B)** regra do componente invasivo no estágio 4 (v2: se ≥ 2 patches com carcinoma invasivo e P ≥ 0,90, o prompt diz "componente invasivo presente" e lembra que ele define o diagnóstico; senão, "componente invasivo não detectado"). Avaliada só nas 15 lâminas que não foram usadas pra criar a regra. Critério: v2 acerta mais lâminas IC que v1 e não perde acurácia.
+
+**Correção do instrumento antes da análise** (commit `c50a4b2`): na primeira tentativa, 0 de 9 respostas trouxeram a linha "CLASSIFICAÇÃO FINAL" pedida; a classificação passou a ser extraída por uma segunda chamada curta ao mesmo modelo, só com o texto que ele gerou, em JSON restrito às 4 opções. O contexto caiu de 8192 pra 4096 tokens (com 8192 o Ollama chegou a ~6 GB de RAM e a 0,07 token/s). Critério, lâminas e modelo não mudaram. No teste da correção, uma lâmina (`BRACS_1003718`) teve o resultado visto antes da rodada completa; nada foi mudado por causa disso.
+
+| Lâmina | Rótulo BRACS | Real | Sem regra (v1) | Com regra (v2) |
+|---|---|---|---|---|
+| `BRACS_1003677` | IC | IC | IC ✓ | IC ✓ |
+| `BRACS_297` | IC | IC | IC ✓ | IC ✓ |
+| `BRACS_295` | IC | IC | IC ✓ | IC ✓ |
+| `BRACS_773` | IC | IC | DCIS ✗ | IC ✓ |
+| `BRACS_1512` | DCIS | DCIS | DCIS ✓ | DCIS ✓ |
+| `BRACS_1003718` | N | benigno | IC ✗ | benigno ✓ |
+| `BRACS_1507` | N | benigno | benigno ✓ | benigno ✓ |
+| `BRACS_1641` | N | benigno | DCIS ✗ | benigno ✓ |
+| `BRACS_1320` | PB | benigno | DCIS ✗ | benigno ✓ |
+| `BRACS_1592` | UDH | atípico | DCIS ✗ | atípico ✓ |
+| `BRACS_1617` | UDH | atípico | IC ✗ | IC ✗ |
+| `BRACS_1271` | ADH | atípico | IC ✗ | DCIS ✗ |
+| `BRACS_1494` | ADH | atípico | IC ✗ | IC ✗ |
+| `BRACS_1774` | FEA | atípico | DCIS ✗ | DCIS ✗ |
+| `BRACS_743` | FEA | atípico | DCIS ✗ | DCIS ✗ |
+| `BRACS_748` (usada na regra) | IC | IC | DCIS ✗ | — |
+| `BRACS_1489` (usada na regra) | DCIS | DCIS | DCIS ✓ | — |
+| `BRACS_1370` (usada na regra) | PB | benigno | DCIS ✗ | — |
+
+| | Sem regra (v1) | Com regra (v2) |
+|---|---|---|
+| **A)** 18 lâminas | 6/18 (33%) — benigno 1/5, atípico 0/6, DCIS 2/2, IC 3/5 | — |
+| **B)** 15 lâminas fora | 5/15 (33%) — IC 3/4 | **10/15 (67%)** — IC **4/4** |
+
+- **B passou no critério** (IC 3 → 4 de 4; acurácia 5 → 10 de 15).
+- **Sem a regra, o modelo é alarmista:** chama de DCIS ou carcinoma invasivo quase tudo — 15 das 18 respostas são malignas, com só 7 lâminas malignas.
+- **O maior ganho da regra veio das lâminas benignas** (1 → 4 de 4), não só do IC: a linha "componente invasivo não detectado" deixa o modelo menos alarmista. Não era o efeito esperado quando a regra foi escrita.
+- **O atípico continua errado** (1 de 6 com a regra): o descritor quase não reconhece atípico, e duas lâminas atípicas (`BRACS_1617`, `BRACS_1494`) viram carcinoma invasivo — a regra também propaga os falsos positivos de IC do estágio 3.
+- **Ressalvas:** 15 lâminas, uma execução por versão, um só modelo; diferença de 5 lâminas. O rótulo da lâmina no BRACS é o da lesão mais grave anotada, não um laudo completo.

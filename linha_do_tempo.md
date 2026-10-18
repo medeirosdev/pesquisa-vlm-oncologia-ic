@@ -4,7 +4,7 @@ Estado em 17/10/2026. Datas tiradas do histórico de commits. Resultados de todo
 
 ## Em uma frase
 
-Estamos testando a **Pipeline Ideia 01**: transformar uma lâmina histopatológica gigante numa descrição textual curta que um modelo local pequeno consiga ler — filtrando o fundo, escolhendo os poucos patches que importam, descrevendo cada um em texto e deixando o modelo sintetizar. Tudo roda em 16 lâminas do BRACS (duas levas de 8, pacientes diferentes), mais 2 lâminas com DCIS e IC juntos e um dataset de outra instituição (BACH). O estágio 1 funciona; o estágio 2 (escolha dos patches) fica em média no dobro do acaso, mas é inconsistente entre lâminas; no estágio 3, o zero-shot com frases fica em 53% nas categorias e no acaso no DCIS vs. IC, enquanto uma camada treinada em cima do UNI2-h separa DCIS de IC com AUC 0,95–0,99, inclusive em outra instituição.
+Estamos testando a **Pipeline Ideia 01**: transformar uma lâmina histopatológica gigante numa descrição textual curta que um modelo local pequeno consiga ler — filtrando o fundo, escolhendo os poucos patches que importam, descrevendo cada um em texto e deixando o modelo sintetizar. Tudo roda em 16 lâminas do BRACS (duas levas de 8, pacientes diferentes), mais 2 lâminas com DCIS e IC juntos e um dataset de outra instituição (BACH). O estágio 1 funciona; o estágio 2 (escolha dos patches) fica em média no dobro do acaso, mas é inconsistente entre lâminas; no estágio 3, uma camada treinada em cima do UNI2-h separa DCIS de IC com AUC 0,95–0,99, inclusive em outra instituição; e a pipeline completa, com um modelo de linguagem local, gera um pré-laudo cuja classificação final acerta 10 de 15 lâminas não usadas no ajuste.
 
 ## Linha do tempo
 
@@ -119,6 +119,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 | 13/10 | RAM cheia travou o computador (o carregamento do UNI2-h chegava a ~5,4 GB). Corrigido: modelo criado em fp16 e pesos lidos por mmap; testes pesados rodam com limite de memória |
 | 13/10 | Estágio 2, métrica sem RoIs (patches com ≥ 20 núcleos tumorais, 7 lâminas malignas): roteador por frases 0,86, UNI2-h "não benigno" 0,88, sorteio 0,52. O roteador novo por categoria não passou (0,54) — por desenho reserva patches pra benigno/atípico. A "falha" do estágio 2 vinha em boa parte da métrica por RoI |
 | 17/10 | **Pipeline completa pela primeira vez**: roteador → descritor hierárquico UNI2-h → agregação → modelo local via Ollama (MedGemma 4B e Gemma 3 4B), 3 lâminas. Acerta o DCIS; na lâmina de IC os dois sugerem DCIS (seguem a maioria dos patches); na lâmina benigna o MedGemma afirma câncer e o Gemma 3 aponta a inconsistência. Ollama 0.40.6 rodando do HD |
+| 17/10 | Avaliação sistemática do pré-laudo (Gemma 3 4B): sem regra, 6 de 18 lâminas certas — o modelo chama de maligno 15 das 18. Regra do componente invasivo no estágio 4, testada nas 15 lâminas fora das usadas pra criá-la: 5 → **10 de 15**, IC 3 → 4 de 4, benignas 1 → 4 de 4. Passou. Atípico continua 1 de 6. Instrumento corrigido antes da análise (classificação por JSON restrito; contexto 4096) |
 
 ## Onde paramos
 
@@ -172,8 +173,10 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 
 - [ ] **Baseline zero-shot no PathVQA** — nunca começou; é o resultado mais rápido e comparável com outros artigos
 - [x] **Estágio 5** — pipeline completa até o pré-laudo (MedGemma 4B, Gemma 3 4B), exploratório em 3 lâminas
-- [ ] Avaliar o pré-laudo nas 18 lâminas (impressão vs. rótulo real)
-- [ ] Regra no estágio 4 pra componente invasivo minoritário (testar em lâminas fora das usadas pra escrevê-la)
+- [x] Avaliar o pré-laudo nas 18 lâminas — sem regra, 6 de 18
+- [x] Regra no estágio 4 pra componente invasivo — 10 de 15 nas lâminas fora (sem regra: 5 de 15); passou
+- [ ] Confirmar a regra em lâminas novas (fora das 18) e com outro modelo de linguagem
+- [ ] Atípico no pré-laudo (1 de 6): precisa de mais lâminas atípicas pro descritor
 
 **Limitações que afetam tudo:**
 

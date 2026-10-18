@@ -150,7 +150,18 @@ Pipeline completa: roteador → descritor hierárquico UNI2-h → agregação �
 | `BRACS_748` (IC) | DCIS ✗ | DCIS, com alerta pro invasivo ✗ |
 | `BRACS_1370` (PB) | DCIS e invasivo, confiança alta ✗ | aponta inconsistência, sem concluir câncer |
 
-O modelo segue a maioria dos patches (na lâmina de IC, o componente invasivo é minoria) e repete os falsos positivos do estágio 3. Gemma 3 prioriza melhor e é mais cauteloso que MedGemma. Detalhes: `Testes/Pipeline01/estagio5_sintese/resultados.md`.
+O modelo segue a maioria dos patches (na lâmina de IC, o componente invasivo é minoria) e repete os falsos positivos do estágio 3. Gemma 3 prioriza melhor e é mais cauteloso que MedGemma.
+
+### Avaliação sistemática do pré-laudo e regra do componente invasivo (Gemma 3 4B)
+
+Classificação final do pré-laudo (benigno / atípico / DCIS / IC) contra o rótulo da lâmina no BRACS.
+
+| | Sem regra (v1) | Com regra (v2) | Passou? |
+|---|---|---|---|
+| 18 lâminas | 6/18 (33%): benigno 1/5, atípico 0/6, DCIS 2/2, IC 3/5 | — | descritivo |
+| 15 lâminas fora das usadas pra criar a regra | 5/15 (33%), IC 3/4 | **10/15 (67%), IC 4/4** | **sim** (critério: mais IC e acurácia não menor) |
+
+Regra (estágio 4): se ≥ 2 patches com carcinoma invasivo e P ≥ 0,90, o prompt diz "componente invasivo presente" e que ele define o diagnóstico; senão, "não detectado". Sem a regra, o modelo chama de maligno 15 de 18 lâminas; com ela, acerta as 4 benignas. O atípico continua errado (1/6), e duas atípicas viram IC. Detalhes: `Testes/Pipeline01/estagio5_sintese/resultados.md`.
 
 ## Anotações oficiais do BRACS
 
@@ -166,4 +177,4 @@ Detalhes: `Testes/Pipeline01/validacao/problemas_e_metrica.md`.
 3. Comparar a imagem com frases (zero-shot) é o gargalo do estágio 3: fica no acaso no DCIS vs. IC, mesmo quando o embedding contém a informação.
 4. Uma camada treinada em cima do UNI2-h separa DCIS de IC e generaliza pra outra instituição; no atípico, falta dado.
 5. A medida dos núcleos separa DCIS de IC, mas os valores não são confiáveis: mesmo com a classificação de núcleos treinada no NuCLS (tumor 0,83 / 0,88), a medida não bate com a anotação (Spearman 0,35).
-6. A pipeline já roda de ponta a ponta até o pré-laudo, mas o texto final segue a maioria dos patches e herda os falsos positivos: acertou 1 de 3 lâminas no teste exploratório.
+6. A pipeline roda de ponta a ponta até o pré-laudo. Com a regra do componente invasivo no estágio 4, a classificação final acerta 10 de 15 lâminas não usadas pra criar a regra (sem a regra: 5 de 15), incluindo as 4 de IC e as 4 benignas; o atípico continua sendo o ponto fraco (1 de 6).
