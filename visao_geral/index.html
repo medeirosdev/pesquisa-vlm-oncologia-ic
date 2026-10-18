@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pipeline Ideia 01</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: uma lâmina lida de cima a baixo — faixa da pipeline no topo, depois um bloco por estágio, na ordem em que o dado passa. Cores da coloração H&E. */
+:root {
+  --vidro: #f6f4f8;        /* fundo: lâmina de vidro, neutro com leve viés rosado */
+  --papel: #ffffff;        /* superfícies */
+  --tinta: #1f1a2b;        /* texto */
+  --tinta-2: #5d5470;      /* texto secundário */
+  --linha: #e2dcea;        /* bordas e grades */
+  --hema: #3f2f8f;         /* hematoxilina: núcleos — acento principal */
+  --hema-suave: #ebe7f8;
+  --eosina: #c8456f;       /* eosina: citoplasma/estroma — acento secundário */
+  --eosina-suave: #fbe9ef;
+  --ok: #1f7a4d; --ok-suave: #e3f3ea;
+  --falha: #b3361f; --falha-suave: #fbe7e2;
+  --parcial: #9a6a06; --parcial-suave: #fbf1db;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-texto: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --font-dados: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --raio: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --vidro: #14111b; --papel: #1d1927; --tinta: #ece8f3; --tinta-2: #a99fbc; --linha: #2f2940;
+    --hema: #a99cf0; --hema-suave: #2a2448; --eosina: #f08aa9; --eosina-suave: #3a1e2b;
+    --ok: #5fcf95; --ok-suave: #173326; --falha: #f08a72; --falha-suave: #3a1d17;
+    --parcial: #e5b24a; --parcial-suave: #3a2d12; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --vidro: #14111b; --papel: #1d1927; --tinta: #ece8f3; --tinta-2: #a99fbc; --linha: #2f2940;
+  --hema: #a99cf0; --hema-suave: #2a2448; --eosina: #f08aa9; --eosina-suave: #3a1e2b;
+  --ok: #5fcf95; --ok-suave: #173326; --falha: #f08a72; --falha-suave: #3a1d17;
+  --parcial: #e5b24a; --parcial-suave: #3a2d12; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--vidro); color: var(--tinta);
+  font-family: var(--font-texto); font-size: 17px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 64px;
+}
+.wrap { max-width: 1080px; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2.1rem, 5vw, 3.3rem); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.15rem; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.rotulo { font-family: var(--font-dados); font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tinta-2); }
+.num { font-family: var(--font-dados); font-variant-numeric: tabular-nums; }
+a { color: var(--hema); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--eosina); outline-offset: 2px; }
+
+/* topo */
+header.topo { padding-block: 56px 28px; display: grid; gap: 18px; }
+.topo .lead { font-size: 1.15rem; color: var(--tinta-2); }
+.fatos { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-top: 8px; }
+.fato { padding: 14px 16px; border-left: 3px solid var(--hema); background: var(--papel); border-radius: 0 var(--raio) var(--raio) 0; }
+.fato:nth-child(even) { border-left-color: var(--eosina); }
+.fato b { display: block; font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; }
+.fato span { color: var(--tinta-2); font-size: 0.92rem; }
+
+/* faixa da pipeline */
+.faixa { margin-block: 28px 8px; overflow-x: auto; }
+.faixa ol { list-style: none; margin: 0; padding: 4px 0; display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap: 0; min-width: 760px; }
+.faixa li { position: relative; padding-right: 26px; }
+.faixa li:not(:last-child)::after {
+  content: ""; position: absolute; right: 6px; top: 34px; width: 14px; height: 14px;
+  border-top: 2px solid var(--tinta-2); border-right: 2px solid var(--tinta-2); transform: rotate(45deg);
+}
+.faixa a { display: grid; gap: 6px; padding: 14px; height: 100%; text-decoration: none; color: var(--tinta);
+  background: var(--papel); border: 1px solid var(--linha); border-radius: var(--raio); transition: border-color .15s, transform .15s; }
+.faixa a:hover { border-color: var(--hema); transform: translateY(-2px); }
+.faixa .n { font-family: var(--font-dados); font-size: 0.8rem; color: var(--hema); }
+.faixa strong { font-family: var(--font-display); font-size: 1.05rem; }
+.faixa small { color: var(--tinta-2); font-size: 0.85rem; line-height: 1.35; }
+
+/* selos */
+.selo { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+.selo::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.ok { color: var(--ok); background: var(--ok-suave); }
+.falha { color: var(--falha); background: var(--falha-suave); }
+.parcial { color: var(--parcial); background: var(--parcial-suave); }
+.ref { color: var(--tinta-2); background: var(--linha); }
+
+/* seções */
+section.estagio { margin-top: 56px; display: grid; gap: 20px; scroll-margin-top: 16px; }
+.cab { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; align-items: baseline; }
+.cab .marca { font-family: var(--font-display); font-weight: 700; font-size: 2.6rem; color: var(--hema); line-height: 1; grid-row: span 2; }
+.cab.eo .marca { color: var(--eosina); }
+.cab p { color: var(--tinta-2); grid-column: 2; }
+.grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.painel { background: var(--papel); border: 1px solid var(--linha); border-radius: var(--raio); padding: 18px 20px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.painel.destaque { border-color: var(--hema); box-shadow: 0 0 0 3px var(--hema-suave); }
+.entrada-saida { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; font-size: 0.95rem; }
+.entrada-saida div { padding: 10px 12px; background: var(--vidro); border-radius: 8px; }
+.entrada-saida .seta { color: var(--tinta-2); font-family: var(--font-dados); }
+ul.limpa { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; }
+ul.limpa li { max-width: 68ch; }
+.nota { font-size: 0.92rem; color: var(--tinta-2); }
+
+/* barras: largura = valor / máximo da escala */
+.barras { display: grid; gap: 9px; }
+.barra { display: grid; grid-template-columns: minmax(120px, 34%) 1fr 64px; gap: 10px; align-items: center; font-size: 0.92rem; }
+.barra .nome { min-width: 0; }
+.barra .trilho { position: relative; height: 14px; background: var(--vidro); border-radius: 4px; overflow: hidden; }
+.barra .trilho i { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--hema); }
+.barra.e .trilho i { background: var(--eosina); }
+.barra.cinza .trilho i { background: var(--tinta-2); opacity: .55; }
+.barra .trilho .acaso { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--tinta); opacity: .55; }
+.barra .valor { font-family: var(--font-dados); font-variant-numeric: tabular-nums; text-align: right; }
+.legenda-acaso { font-size: 0.82rem; color: var(--tinta-2); display: flex; align-items: center; gap: 8px; }
+.legenda-acaso::before { content: ""; width: 2px; height: 14px; background: var(--tinta); opacity: .55; }
+
+/* tabelas */
+.tabela { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--linha); vertical-align: top; }
+th { font-family: var(--font-dados); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tinta-2); font-weight: 600; }
+td.num, th.num { text-align: right; }
+tr.vence td { background: var(--hema-suave); }
+
+/* figuras */
+figure { margin: 0; display: grid; gap: 8px; min-width: 0; }
+figure img { width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--linha); background: var(--papel); display: block; }
+figcaption { font-size: 0.86rem; color: var(--tinta-2); max-width: 68ch; }
+.figuras { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.figuras.quatro { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.chaves { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.85rem; color: var(--tinta-2); }
+.chaves span { display: inline-flex; align-items: center; gap: 6px; }
+.chaves i { width: 12px; height: 12px; border: 2px solid currentColor; border-radius: 2px; }
+.c-dcis { color: #3f2f8f; } .c-ic { color: #c8456f; } .c-ben { color: #1f7a4d; } .c-roi { color: #969696; }
+
+/* desafios e exemplos */
+.desafios { background: var(--eosina-suave); border-radius: var(--raio); padding: 16px 20px; display: grid; gap: 10px; }
+.desafios h3 { color: var(--eosina); }
+.exemplo { display: grid; gap: 10px; }
+pre.saida { margin: 0; font-family: var(--font-dados); font-size: 0.82rem; line-height: 1.5; background: var(--vidro); border: 1px solid var(--linha);
+  border-radius: 8px; padding: 12px 14px; overflow-x: auto; white-space: pre-wrap; color: var(--tinta); }
+.par { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+
+/* rodapé */
+.final { margin-top: 64px; display: grid; gap: 16px; }
+footer { margin-top: 40px; color: var(--tinta-2); font-size: 0.88rem; border-top: 1px solid var(--linha); padding-top: 16px; }
+
+@media (max-width: 560px) {
+  body { font-size: 16px; }
+  .barra { grid-template-columns: 1fr 56px; }
+  .barra .nome { grid-column: 1 / -1; }
+  .entrada-saida { grid-template-columns: 1fr; }
+  .entrada-saida .seta { transform: rotate(90deg); justify-self: center; }
+  .cab .marca { font-size: 2rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)} body{margin:0} img{max-width:100%} [hidden]{display:none!important}</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="topo">
+  <span class="rotulo">Iniciação Científica · UNICAMP · VLMs na Oncologia</span>
+  <h1>Pipeline Ideia 01: da lâmina inteira ao pré-laudo</h1>
+  <p class="lead">Uma lâmina de mama corada em H&amp;E tem dezenas de milhares de pixels de lado. A pipeline a reduz, em cinco estágios, a um texto curto que um modelo de linguagem pequeno, rodando localmente, transforma num rascunho de pré-laudo. Abaixo, cada estágio com o que faz, o que foi testado e o que os números mostram.</p>
+  <div class="fatos">
+    <div class="fato"><b class="num">18 + 57</b><span>lâminas do BRACS: 18 de desenvolvimento, 57 do conjunto de teste oficial</span></div>
+    <div class="fato"><b class="num">0,95</b><span>AUC DCIS × carcinoma invasivo em outra instituição (BACH)</span></div>
+    <div class="fato"><b class="num">55,8%</b><span>acerto do descritor nas 4 classes finais (acaso = 25%)</span></div>
+    <div class="fato"><b class="num">4 GB</b><span>de GPU: tudo roda localmente, sem enviar dados do paciente</span></div>
+  </div>
+</header>
+
+<nav class="faixa" aria-label="Estágios da pipeline">
+  <ol>
+    <li><a href="#e1"><span class="n">estágio 1</span><strong>Filtro de tecido</strong><small>descarta o fundo branco</small></a></li>
+    <li><a href="#e2"><span class="n">estágio 2</span><strong>Roteador</strong><small>escolhe 32 patches de milhares</small></a></li>
+    <li><a href="#e3"><span class="n">estágio 3</span><strong>Descritor</strong><small>categoria e subtipo de cada patch</small></a></li>
+    <li><a href="#e4"><span class="n">estágio 4</span><strong>Agregação</strong><small>junta tudo num prompt</small></a></li>
+    <li><a href="#e5"><span class="n">estágio 5</span><strong>Síntese</strong><small>modelo local escreve o pré-laudo</small></a></li>
+  </ol>
+</nav>
+
+<!-- DADOS -->
+<section class="estagio" id="dados">
+  <div class="cab eo"><span class="marca">◇</span><h2>Dados e como cada teste é feito</h2><p>Todo teste tem regra e critério de sucesso fixados e registrados em commit antes de rodar, e é avaliado em lâminas que o método não viu.</p></div>
+  <div class="grade">
+    <div class="painel">
+      <h3>Conjuntos usados</h3>
+      <div class="tabela"><table>
+        <thead><tr><th>Conjunto</th><th>O que é</th><th>Uso</th></tr></thead>
+        <tbody>
+          <tr><td>BRACS</td><td>547 lâminas de mama, 4.537 regiões anotadas em 7 classes (N, PB, UDH, FEA, ADH, DCIS, IC)</td><td>18 lâminas de desenvolvimento e 57 do teste oficial</td></tr>
+          <tr><td>BACH</td><td>Imagens de microscopia de outra instituição (Porto): 100 <i>in situ</i>, 100 invasivo</td><td>teste de generalização</td></tr>
+          <tr><td>NuCLS</td><td>1.744 campos de mama do TCGA, ~59 mil núcleos classificados por patologista</td><td>validar a segmentação de núcleos</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="painel">
+      <h3>Unidades e métricas</h3>
+      <ul class="limpa">
+        <li><b>Patch (tile):</b> 512 × 512 px no nível de 40x, ou 128 × 128 µm de tecido.</li>
+        <li><b>Acerto por categoria:</b> média do acerto em cada classe real; com 3 classes o acaso é 33%, com 4 é 25%.</li>
+        <li><b>AUC:</b> chance de um patch de IC ter pontuação maior que um de DCIS. 0,5 é o acaso, 1,0 é separação perfeita.</li>
+        <li><b>Controle com rótulos embaralhados:</b> mostra quanto se acerta só por sorte.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ESTÁGIO 1 -->
+<section class="estagio" id="e1">
+  <div class="cab"><span class="marca">1</span><h2>Filtro de tecido</h2><p>Separa tecido de fundo branco pela saturação da cor (limiar de Otsu e operações morfológicas). Só patches com pelo menos 50% de tecido seguem.</p></div>
+  <div class="grade">
+    <div class="painel">
+      <div class="entrada-saida"><div>Lâmina inteira<br><span class="nota">41.001 patches na BRACS_748</span></div><span class="seta">→</span><div>Patches com tecido<br><span class="nota">15.138 (63% da área era fundo)</span></div></div>
+      <span class="selo ok">resolvido</span>
+    </div>
+    <div class="painel">
+      <h3>Quanto das regiões anotadas a máscara cobre</h3>
+      <div class="barras">
+        <div class="barra"><span class="nome">BRACS_748 (98 regiões)</span><span class="trilho"><i style="width:96%"></i></span><span class="valor">96%</span></div>
+        <div class="barra"><span class="nome">16 lâminas, pior caso</span><span class="trilho"><i style="width:74%"></i></span><span class="valor">74%</span></div>
+        <div class="barra"><span class="nome">16 lâminas, melhor caso</span><span class="trilho"><i style="width:100%"></i></span><span class="valor">100%</span></div>
+      </div>
+      <p class="nota">A exceção (38%) é uma lâmina normal em que a caixa retangular da anotação envolve muito estroma claro em volta de um lóbulo pequeno.</p>
+    </div>
+  </div>
+  <div class="figuras">
+    <figure><img src="img/e1_lamina.jpg" alt="Miniatura da lâmina BRACS_748 corada em H&amp;E, com tecido mamário cercado de fundo branco" loading="lazy"><figcaption>Entrada: miniatura da lâmina BRACS_748 (carcinoma invasivo), reduzida 32 vezes.</figcaption></figure>
+    <figure><img src="img/e1_mascara.jpg" alt="A mesma lâmina com a área detectada como tecido destacada" loading="lazy"><figcaption>Saída: a máscara de tecido (Otsu na saturação + morfologia) sobre a lâmina. Só a área destacada segue para os próximos estágios.</figcaption></figure>
+  </div>
+  <div class="par">
+    <div class="desafios">
+      <h3>Problemas e desafios</h3>
+      <ul class="limpa">
+        <li>Escolher o filtro: seis foram comparados. Sem verdade de campo, "% de tecido" não dizia qual era melhor; a métrica passou a ser quanto das regiões anotadas a máscara cobre.</li>
+        <li>Lâminas com pirâmides diferentes (níveis 1/4/8x em vez de 1/4/16/32x) quebravam os scripts; o nível passou a ser escolhido pelo fator de redução.</li>
+        <li>Estroma muito claro e gordura ficam de fora da máscara. Isso é desejado na maioria dos casos, mas derruba a cobertura em lâminas normais com lóbulos pequenos.</li>
+      </ul>
+    </div>
+    <div class="exemplo painel">
+      <h3>Exemplo de resultado</h3>
+      <pre class="saida">BRACS_748
+patches no nível de 40x:   41.001
+patches com ≥ 50% tecido: 15.138  (descarta 63% da área)
+regiões anotadas cobertas: 98 de 98  (cobertura média 96%)</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ESTÁGIO 2 -->
+<section class="estagio" id="e2">
+  <div class="cab"><span class="marca">2</span><h2>Roteador</h2><p>Descrever milhares de patches geraria texto demais. O roteador pontua cada patch e escolhe os 32 mais relevantes, mantendo pelo menos 192 µm entre eles para não ficarem todos no mesmo foco.</p></div>
+  <div class="grade">
+    <div class="painel">
+      <h3>Como pontua</h3>
+      <ul class="limpa">
+        <li><b>Por frases (o atual):</b> similaridade do patch, no QuiltNet, com frases "suspeitas" menos a similaridade com frases "benignas".</li>
+        <li><b>UNI2-h "não benigno":</b> probabilidade de não ser benigno, dada por uma camada treinada nas outras lâminas.</li>
+        <li><b>UNI2-h por categoria:</b> divide os 32 patches entre as categorias encontradas.</li>
+      </ul>
+      <p class="nota">Medido pelas regiões anotadas, o roteador parecia fraco (precisão ~0,2), porque as anotações não marcam toda a lesão. Contando os núcleos tumorais de cada patch escolhido, sem depender das anotações, ele funciona bem nas lâminas malignas.</p>
+    </div>
+    <div class="painel destaque">
+      <h3>Fração dos 32 patches com tumor (7 lâminas malignas)</h3>
+      <div class="barras">
+        <div class="barra"><span class="nome">UNI2-h "não benigno"</span><span class="trilho"><i style="width:88%"></i><span class="acaso" style="left:52%"></span></span><span class="valor">0,88</span></div>
+        <div class="barra"><span class="nome">Por frases (atual)</span><span class="trilho"><i style="width:86%"></i><span class="acaso" style="left:52%"></span></span><span class="valor">0,86</span></div>
+        <div class="barra e"><span class="nome">UNI2-h por categoria</span><span class="trilho"><i style="width:54%"></i><span class="acaso" style="left:52%"></span></span><span class="valor">0,54</span></div>
+        <div class="barra cinza"><span class="nome">Sorteio</span><span class="trilho"><i style="width:52%"></i></span><span class="valor">0,52</span></div>
+      </div>
+      <span class="legenda-acaso">sorteio (0,52)</span>
+      <p class="nota">Em lâminas benignas e atípicas ainda não há uma métrica boa para o roteador.</p>
+    </div>
+  </div>
+  <div class="figuras">
+    <figure><img src="img/e2_selecao_748.jpg" alt="Lâmina BRACS_748 com 32 quadrados coloridos marcando os patches escolhidos" loading="lazy"><figcaption>BRACS_748 (carcinoma invasivo): os 32 patches escolhidos, coloridos pelo que o descritor disse de cada um. Quase todos caem no tumor.</figcaption></figure>
+    <figure><img src="img/e2_selecao_1370.jpg" alt="Lâmina BRACS_1370 com patches verdes no tecido benigno e alguns violeta e rosa" loading="lazy"><figcaption>BRACS_1370 (lesão benigna): a maioria dos patches sai benigna (verde), mas 12 saem malignos. Esses falsos positivos chegam até o pré-laudo.</figcaption></figure>
+  </div>
+  <div class="chaves"><span class="c-dcis"><i></i>DCIS</span><span class="c-ic"><i></i>carcinoma invasivo</span><span class="c-ben"><i></i>benigno</span><span class="c-roi"><i></i>região anotada pelo patologista</span></div>
+  <div class="par">
+    <div class="desafios">
+      <h3>Problemas e desafios</h3>
+      <ul class="limpa">
+        <li>Orçamento de texto: cobrir mais de 80% das regiões anotadas exigiria 512 patches, cerca de 23 mil tokens, muito acima do que um modelo pequeno lê bem.</li>
+        <li>A métrica pelas anotações engana: o patologista marca algumas regiões, não toda a lesão, então um patch de tumor fora da anotação conta como erro.</li>
+        <li>O roteador procura o que parece "suspeito". Em lâminas benignas e atípicas, isso puxa justamente os patches mais parecidos com câncer e alimenta os falsos positivos.</li>
+        <li>Memória: calcular o QuiltNet em 15 mil patches por lâmina, numa GPU de 4 GB, exigiu rodar um modelo por vez.</li>
+      </ul>
+    </div>
+    <div class="exemplo painel">
+      <h3>Exemplo de resultado</h3>
+      <pre class="saida">BRACS_748 · 15.138 candidatos → 32 escolhidos
+pontuação = sim(frase suspeita) − sim(frase benigna)
+distância mínima entre patches: 192 µm
+
+patches escolhidos com tumor (≥ 20 núcleos):
+  roteador por frases   0,97
+  sorteio               0,24</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ESTÁGIO 3 -->
+<section class="estagio" id="e3">
+  <div class="cab"><span class="marca">3</span><h2>Descritor</h2><p>Transforma cada patch escolhido em texto. É o estágio com mais testes, porque é onde a separação entre benigno, atípico, DCIS e carcinoma invasivo acontece.</p></div>
+
+  <div class="grade">
+    <div class="painel">
+      <h3>Três métodos</h3>
+      <ul class="limpa">
+        <li><b>Frases (zero-shot):</b> compara o patch com um banco de frases no QuiltNet. Não usa exemplos rotulados.</li>
+        <li><b>Camada treinada:</b> regressão logística sobre o embedding do UNI2-h (1.536 números por patch), treinada nas outras lâminas.</li>
+        <li><b>Núcleos (CellViT):</b> fração de núcleos tumorais com um núcleo de estroma a até 20 µm, inspirada na perda da camada mioepitelial no carcinoma invasivo.</li>
+      </ul>
+    </div>
+    <div class="painel destaque">
+      <h3>Descritor atual: hierárquico com UNI2-h</h3>
+      <p>Primeiro a categoria (benigno, atípico, maligno); se maligno, DCIS ou carcinoma invasivo. Uma tabela fixa transforma o resultado em texto:</p>
+      <p class="num" style="font-size:.9rem;padding:10px 12px;background:var(--vidro);border-radius:8px">[94720,22016] (maligno 1.00) invasive carcinoma 0.98</p>
+      <span class="selo ok">passou: 55,8% contra 42,3% das frases</span>
+    </div>
+  </div>
+
+  <div class="grade">
+    <div class="painel">
+      <h3>DCIS × carcinoma invasivo, em lâmina fora do treino (AUC)</h3>
+      <div class="barras">
+        <div class="barra"><span class="nome">UNI2-h + camada</span><span class="trilho"><i style="width:97%"></i><span class="acaso" style="left:50%"></span></span><span class="valor">0,96–0,99</span></div>
+        <div class="barra"><span class="nome">QuiltNet + camada</span><span class="trilho"><i style="width:87%"></i><span class="acaso" style="left:50%"></span></span><span class="valor">0,83–0,95</span></div>
+        <div class="barra e"><span class="nome">Núcleos (sem treino)</span><span class="trilho"><i style="width:74%"></i><span class="acaso" style="left:50%"></span></span><span class="valor">0,66–0,84</span></div>
+        <div class="barra cinza"><span class="nome">Frases (zero-shot)</span><span class="trilho"><i style="width:53%"></i><span class="acaso" style="left:50%"></span></span><span class="valor">0,50–0,58</span></div>
+      </div>
+      <span class="legenda-acaso">acaso (0,5). Barra na média das 3 lâminas com DCIS e IC juntos; controle embaralhado: 0,38–0,46</span>
+      <p class="nota">O mesmo embedding do QuiltNet que fica no acaso com frases chega a 0,83–0,95 com uma camada treinada: a informação estava na imagem; o que falhava era a comparação com texto.</p>
+    </div>
+    <div class="painel">
+      <h3>Generalização: treinado no BRACS (Nápoles), testado no BACH (Porto)</h3>
+      <div class="barras">
+        <div class="barra"><span class="nome">UNI2-h + camada</span><span class="trilho"><i style="width:95%"></i><span class="acaso" style="left:50%"></span></span><span class="valor">0,95</span></div>
+        <div class="barra e"><span class="nome">Núcleos (sem treino)</span><span class="trilho"><i style="width:63%"></i><span class="acaso" style="left:50%"></span></span><span class="valor">0,63</span></div>
+        <div class="barra cinza"><span class="nome">QuiltNet + camada</span><span class="trilho"><i style="width:57%"></i><span class="acaso" style="left:50%"></span></span><span class="valor">0,57</span></div>
+      </div>
+      <span class="legenda-acaso">acaso (0,5); AUC por imagem, sem retreino</span>
+      <p class="nota">Só o UNI2-h mantém o desempenho fora da instituição de origem. O QuiltNet parecia bom no BRACS, mas aprendeu algo específico daquelas lâminas.</p>
+    </div>
+  </div>
+
+  <div class="painel">
+    <h3>Acerto nas 4 classes finais (18 lâminas, lâmina fora do treino)</h3>
+    <div class="tabela"><table>
+      <thead><tr><th>Método</th><th class="num">Benigno</th><th class="num">Atípico</th><th class="num">DCIS</th><th class="num">IC</th><th class="num">Média</th></tr></thead>
+      <tbody>
+        <tr><td>Hierarquia com frases</td><td class="num">57%</td><td class="num">46%</td><td class="num">16%</td><td class="num">50%</td><td class="num">42,3%</td></tr>
+        <tr class="vence"><td><b>Hierarquia com UNI2-h</b></td><td class="num">58%</td><td class="num">14%</td><td class="num">78%</td><td class="num">74%</td><td class="num"><b>55,8%</b></td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">O ganho vem dos malignos. O atípico é o ponto fraco: há pouco dado de treino (972 patches, quase todos de 3 lâminas).</p>
+  </div>
+
+  <div class="grade">
+    <div class="painel">
+      <h3>Os núcleos medem com precisão? (validação no NuCLS)</h3>
+      <div class="tabela"><table>
+        <thead><tr><th></th><th class="num">CellViT original</th><th class="num">Treinado no NuCLS</th></tr></thead>
+        <tbody>
+          <tr><td>Núcleos encontrados</td><td class="num" colspan="2" style="text-align:center">82–93%</td></tr>
+          <tr><td>Tumor: sensibilidade / valor preditivo</td><td class="num">0,46 / 0,86</td><td class="num">0,83 / 0,88</td></tr>
+          <tr><td>Estroma: sensibilidade / valor preditivo</td><td class="num">0,80 / 0,44</td><td class="num">0,72 / 0,52</td></tr>
+          <tr><td>Medida vs. anotação (Spearman)</td><td class="num">0,28</td><td class="num">0,35</td></tr>
+        </tbody>
+      </table></div>
+      <span class="selo falha">não passou (critério: Spearman ≥ 0,7)</span>
+      <p class="nota">Medidas mais robustas (distância mediana ao estroma; contato com 3 vizinhos) também ficaram entre 0,27 e 0,37. Decisão: os núcleos servem como sinal, mas o número não vai para o texto do laudo.</p>
+    </div>
+    <div class="painel">
+      <h3>Também testado, sem ganho</h3>
+      <div class="tabela"><table>
+        <tbody>
+          <tr><td>Trocar frases uma a uma</td><td><span class="selo falha">não se repetiu em lâminas novas</span></td></tr>
+          <tr><td>Ensemble de frases</td><td><span class="selo falha">DCIS × IC 0,54–0,57</span></td></tr>
+          <tr><td>Média com os 8 patches vizinhos</td><td><span class="selo falha">+3 pontos, só no IC</span></td></tr>
+          <tr><td>Tipo de tecido em volta do patch</td><td><span class="selo falha">relação invertida</span></td></tr>
+          <tr><td>"Tumor cercado de tumor → IC"</td><td><span class="selo parcial">passou, efeito fraco (~55%)</span></td></tr>
+          <tr><td>UNI2-h + núcleos juntos</td><td><span class="selo falha">não acrescenta</span></td></tr>
+          <tr><td>Contornos oficiais das anotações</td><td><span class="selo ref">a maioria é retângulo</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <h3>Exemplos de patches e o que o descritor escreveu</h3>
+  <div class="figuras quatro">
+    <figure><img src="img/e3_patch_dcis.jpg" alt="Patch com células tumorais preenchendo um ducto" loading="lazy"><figcaption><span class="selo ok">certo</span> BRACS_748<br><code>(maligno 1.00) ductal carcinoma in situ 0.99</code></figcaption></figure>
+    <figure><img src="img/e3_patch_ic.jpg" alt="Patch com células tumorais em lâminas no estroma" loading="lazy"><figcaption><span class="selo ok">certo</span> BRACS_748<br><code>(maligno 1.00) invasive carcinoma 0.98</code></figcaption></figure>
+    <figure><img src="img/e3_patch_benigno.jpg" alt="Patch com epitélio benigno e estroma colagenoso" loading="lazy"><figcaption><span class="selo ok">certo</span> BRACS_1370<br><code>(benigno 1.00) benign tissue</code></figcaption></figure>
+    <figure><img src="img/e3_patch_falso_positivo.jpg" alt="Patch de estroma com uma fenda no tecido, sem epitélio" loading="lazy"><figcaption><span class="selo falha">falso positivo</span> BRACS_1370: só estroma e uma fenda no tecido<br><code>(maligno 1.00) invasive carcinoma 1.00</code></figcaption></figure>
+  </div>
+
+  <h3>Núcleos segmentados pelo CellViT</h3>
+  <div class="figuras">
+    <figure><img src="img/e3_nucleos_dcis.jpg" alt="Núcleos tumorais em bloco com uma borda lisa contra o estroma" loading="lazy"><figcaption>DCIS: o tumor forma um bloco com uma borda única contra o estroma; os núcleos do estroma (azul) ficam enfileirados do outro lado. Fração de núcleos tumorais encostados no estroma: 0,10.</figcaption></figure>
+    <figure><img src="img/e3_nucleos_ic.jpg" alt="Núcleos tumorais em ninhos com filetes de estroma entre eles" loading="lazy"><figcaption>Carcinoma invasivo: ninhos de tumor com filetes de estroma entremeados. Fração: 0,29. Vermelho: neoplásico; magenta: epitelial; azul: conjuntivo; verde: inflamatório.</figcaption></figure>
+  </div>
+
+  <div class="par">
+    <div class="desafios">
+      <h3>Problemas e desafios</h3>
+      <ul class="limpa">
+        <li>Comparar imagem com frases fica no acaso para DCIS × IC: algumas frases "ganham" em quase todos os patches, independentemente da imagem.</li>
+        <li>Ajustar frases olhando as mesmas lâminas superajusta: trocas que subiam o acerto nas lâminas de ajuste não se repetiram em lâminas novas.</li>
+        <li>O rótulo do BRACS é da região marcada, e a maioria das anotações é um retângulo que inclui estroma junto com a lesão. Quase metade dos patches "DCIS" não tem tumor.</li>
+        <li>O atípico tem pouco dado (972 patches, quase todos de 3 lâminas) e quase nunca é reconhecido.</li>
+        <li>O CellViT não tem a classe "mioepitelial" e confunde linfócitos e tumor com estroma; a medida dos núcleos não bate com a anotação de patologistas.</li>
+        <li>Generalização: o QuiltNet com camada treinada parecia bom no BRACS e caiu para perto do acaso em outra instituição.</li>
+      </ul>
+    </div>
+    <div class="exemplo painel">
+      <h3>Exemplo de resultado</h3>
+      <pre class="saida">BRACS_748 · 32 patches descritos
+[96256,41984] (maligno 1.00) ductal carcinoma in situ 0.99
+[94720,22016] (maligno 1.00) invasive carcinoma 0.98
+[71680,61952] (maligno 1.00) ductal carcinoma in situ 1.00
+[102400,42496] (maligno 1.00) invasive carcinoma 0.85
+[98304,37888] (maligno 1.00) invasive carcinoma 1.00
+…
+categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ESTÁGIO 4 -->
+<section class="estagio" id="e4">
+  <div class="cab"><span class="marca">4</span><h2>Agregação</h2><p>Junta os 32 textos num único prompt, com as contagens por categoria e as imagens de 3 patches âncora.</p></div>
+  <div class="grade">
+    <div class="painel">
+      <h3>Exemplo de cabeçalho (BRACS_748)</h3>
+      <p class="num" style="font-size:.85rem;padding:12px;background:var(--vidro);border-radius:8px;white-space:pre-wrap;max-width:none">Patches analisados: 32
+Patches por categoria: benigno 0, atipico 0, maligno 32
+  - ductal carcinoma in situ: 26/32 (81%)
+  - invasive carcinoma: 6/32 (19%)
+Componente invasivo: PRESENTE (3 patches, P ≥ 0,90)</p>
+    </div>
+    <div class="painel">
+      <h3>Regra do componente invasivo</h3>
+      <p>Na prática, um componente invasivo define o diagnóstico mesmo sendo minoria dos patches. Sem essa regra, o modelo de linguagem seguia a maioria. Com ela, o prompt diz se há componente invasivo (pelo menos 2 patches de carcinoma invasivo com probabilidade ≥ 0,90) e lembra que ele define o diagnóstico.</p>
+    </div>
+  </div>
+  <div class="par">
+    <div class="desafios">
+      <h3>Problemas e desafios</h3>
+      <ul class="limpa">
+        <li>O limiar da regra (2 patches, probabilidade ≥ 0,90) foi fixado por critério, sem ajuste. Ele marcou componente invasivo em 10 das 18 lâminas de desenvolvimento, quando só 5 eram de carcinoma invasivo.</li>
+        <li>A regra propaga os falsos positivos do descritor: lâminas atípicas com patches "invasivos" passam a ser apresentadas como carcinoma invasivo.</li>
+        <li>As contagens por categoria dependem dos 32 patches escolhidos pelo roteador, que puxa o que parece suspeito; a proporção de patches não representa a lâmina inteira.</li>
+      </ul>
+    </div>
+    <div class="exemplo painel">
+      <h3>Exemplo de resultado (BRACS_1641, tecido normal)</h3>
+      <pre class="saida">Patches analisados: 32
+Patches por categoria: benigno 30, atipico 2, maligno 0
+  - benign tissue: 30/32 patches (94%)
+  - atypical epithelial lesion: 2/32 patches (6%)
+Componente invasivo: não detectado (critério: ≥ 2 patches
+com invasive carcinoma e probabilidade ≥ 0.90; encontrados 0).</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ESTÁGIO 5 -->
+<section class="estagio" id="e5">
+  <div class="cab eo"><span class="marca">5</span><h2>Síntese: o pré-laudo</h2><p>Um modelo de linguagem local (Gemma 3 4B, via Ollama) lê o prompt e as imagens e escreve o rascunho, com impressão diagnóstica, grau de confiança, regiões para revisão e limitações. O rótulo real nunca vai para o modelo.</p></div>
+  <div class="grade">
+    <div class="painel">
+      <h3>Teste da regra, nas 15 lâminas fora das usadas para criá-la</h3>
+      <div class="barras">
+        <div class="barra"><span class="nome">Com a regra</span><span class="trilho"><i style="width:66.7%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">10/15</span></div>
+        <div class="barra cinza"><span class="nome">Sem a regra</span><span class="trilho"><i style="width:33.3%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">5/15</span></div>
+      </div>
+      <span class="legenda-acaso">acaso (25%, 4 classes)</span>
+      <span class="selo ok">passou: IC 3 → 4 de 4; benignas 1 → 4 de 4</span>
+    </div>
+    <div class="painel destaque">
+      <h3>Teste externo: 57 lâminas do conjunto de teste oficial</h3>
+      <span class="selo parcial">em andamento · parcial em 45 lâminas</span>
+      <div class="barras">
+        <div class="barra"><span class="nome">Com a regra</span><span class="trilho"><i style="width:26.7%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">12/45</span></div>
+        <div class="barra cinza"><span class="nome">Sem a regra</span><span class="trilho"><i style="width:26.7%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">12/45</span></div>
+      </div>
+      <span class="legenda-acaso">acaso (25%, 4 classes)</span>
+      <p class="nota">Até aqui, a pipeline chama quase tudo de maligno: DCIS 8 de 8 e IC 4 de 6 certos, mas benignas 0 de 10 e atípicas 0 a 1 de 21. O ganho da regra não está se repetindo. O problema vem antes do modelo de linguagem: o roteador busca o que parece suspeito e o descritor quase nunca diz "atípico".</p>
+    </div>
+  </div>
+  <div class="painel">
+    <h3>Como o modelo de linguagem se comporta</h3>
+    <ul class="limpa">
+      <li>Sem a regra, é alarmista: chamou de maligno 15 de 18 lâminas, quando só 7 eram.</li>
+      <li>Repete os falsos positivos do descritor: numa lâmina benigna com 12 patches "malignos", o MedGemma afirmou carcinoma com confiança alta.</li>
+      <li>O Gemma 3 prioriza melhor que o MedGemma (3 regiões, não 32), é mais cauteloso e mais rápido.</li>
+      <li>Não segue bem instruções de formato: a classificação final precisou ser extraída por uma segunda chamada, em formato restrito.</li>
+    </ul>
+  </div>
+
+  <h3>Exemplos de pré-laudo (trechos reais, Gemma 3 4B)</h3>
+  <div class="par">
+    <div class="exemplo painel">
+      <span class="selo ok">certo</span>
+      <h3>BRACS_1489 · rótulo real: DCIS</h3>
+      <pre class="saida">## Impressão diagnóstica sugerida
+Moderada. A alta prevalência de DCIS (84%) sugere uma
+avaliação mais aprofundada para determinar o grau e a
+extensão da doença. A presença de patches com categorias
+de "atípico" e "invasivo carcinoma" requer investigação
+adicional.
+
+## Regiões para revisão prioritária
+[99840,17408] – Patch com alta probabilidade de DCIS (1.00).
+[117248,24064] – Patch com alta probabilidade de DCIS (1.00).
+
+Classificação extraída: DCIS</pre>
+    </div>
+    <div class="exemplo painel">
+      <span class="selo ok">certo, com a regra</span>
+      <h3>BRACS_1641 · rótulo real: tecido normal</h3>
+      <pre class="saida">## Impressão diagnóstica sugerida
+Baixo (devido à predominância de tecido benigno e à baixa
+probabilidade da lesão atípica). A evidência atual não
+suporta a presença de carcinoma invasivo.
+
+## Regiões para revisão prioritária
+[59392,52736] - Probabilidade de 0.97 para lesão epitelial
+atípica, necessita de avaliação mais detalhada.
+
+Classificação extraída: benigno</pre>
+    </div>
+  </div>
+
+  <div class="par">
+    <div class="desafios">
+      <h3>Problemas e desafios</h3>
+      <ul class="limpa">
+        <li>Hardware: numa GPU de 4 GB, só parte do modelo cabe na placa; o resto roda na CPU. Cada pré-laudo leva de 1 a 4 minutos.</li>
+        <li>Memória: o servidor do Ollama acumulava cache a cada pré-laudo até travar o computador; o modelo passou a ser descarregado após cada chamada.</li>
+        <li>O modelo herda os erros do descritor: com patches malignos falsos, ele escreve "carcinoma".</li>
+        <li>Confunde "81% dos patches" com "81% de probabilidade" e às vezes lista todos os patches como prioritários.</li>
+        <li>Extrair a classificação é parte do problema. Na BRACS_1641 sem a regra, o texto diz "a predominância de tecido benigno sugere uma avaliação de lesão benigna", mas a extração em formato restrito devolveu DCIS. Parte da diferença entre as versões pode vir da extração; isso precisa de uma conferência manual numa amostra.</li>
+      </ul>
+    </div>
+    <div class="exemplo painel">
+      <span class="selo falha">extração divergente</span>
+      <h3>BRACS_1641 sem a regra · rótulo real: tecido normal</h3>
+      <pre class="saida">## Impressão diagnóstica sugerida
+Baixo (6% de patches atípicos) – A predominância de tecido
+benigno sugere uma avaliação de lesão benigna. A presença
+de duas lesões atípicas requer investigação adicional.
+
+Classificação extraída: DCIS   ← não bate com o texto</pre>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL -->
+<section class="final">
+  <h2>Onde a pipeline está</h2>
+  <div class="tabela"><table>
+    <thead><tr><th>Estágio</th><th>Situação</th><th>Próximo passo</th></tr></thead>
+    <tbody>
+      <tr><td>1. Filtro de tecido</td><td><span class="selo ok">resolvido</span></td><td>—</td></tr>
+      <tr><td>2. Roteador</td><td><span class="selo parcial">bom em lâminas malignas</span></td><td>métrica para lâminas benignas e atípicas</td></tr>
+      <tr><td>3. Descritor</td><td><span class="selo parcial">bom no DCIS × IC, fraco no atípico</span></td><td>mais lâminas atípicas para treinar</td></tr>
+      <tr><td>4. Agregação</td><td><span class="selo parcial">regra em confirmação</span></td><td>resultado final do teste externo</td></tr>
+      <tr><td>5. Síntese</td><td><span class="selo parcial">funciona, herda os erros</span></td><td>reduzir os falsos positivos antes do modelo</td></tr>
+    </tbody>
+  </table></div>
+  <p class="nota">Ressalvas gerais: 2 lâminas por classe no desenvolvimento; as anotações do BRACS marcam regiões, não cada célula; o rótulo da lâmina é o da lesão mais grave.</p>
+</section>
+
+<footer>
+  <p>Pipeline Ideia 01 · orientação Prof. João Batista Florindo · situação em 18/10/2026. Modelos: QuiltNet-B-32, UNI2-h, CellViT-256, Gemma 3 4B e MedGemma 4B, todos rodando localmente.</p>
+  <p>Imagens de lâminas: BRACS (Brancati et al., <i>BRACS: A Dataset for BReAst Carcinoma Subtyping in H&amp;E Histology Images</i>, Database, 2022), licença CC BY-NC 4.0. Núcleos anotados: NuCLS (Amgad et al., GigaScience, 2022), CC0. Imagens do BACH não são reproduzidas (licença CC BY-NC-ND); só os resultados numéricos.</p>
+</footer>
+
+</div>
+</body>
+</html>
