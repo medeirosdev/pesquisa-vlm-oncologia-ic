@@ -1,6 +1,6 @@
 # Resultados — Pipeline Ideia 01
 
-Estado em 13/10/2026. Um resumo de cada teste, com números, critério e se passou. Detalhes, tabelas completas e discussão ficam nos arquivos indicados em cada seção. Ordem cronológica dos testes: [linha_do_tempo.md](linha_do_tempo.md).
+Estado em 17/10/2026. Um resumo de cada teste, com números, critério e se passou. Detalhes, tabelas completas e discussão ficam nos arquivos indicados em cada seção. Ordem cronológica dos testes: [linha_do_tempo.md](linha_do_tempo.md).
 
 ## Dados e métricas
 
@@ -140,6 +140,18 @@ O tipo do tumor ficou bom; o "conjuntivo" continua errando metade, e a medida (u
 
 Decisão: os núcleos ficam como sinal, sem número no texto. Limite: os campos do NuCLS (~71 µm) são pequenos pra uma medida de vizinhança.
 
+## Estágio 5 — pré-laudo por modelo de linguagem local (exploratório)
+
+Pipeline completa: roteador → descritor hierárquico UNI2-h → agregação → modelo local (Ollama), 3 lâminas, sem critério fixado.
+
+| Lâmina (rótulo real) | MedGemma 4B | Gemma 3 4B |
+|---|---|---|
+| `BRACS_1489` (DCIS) | DCIS ✓ | DCIS ✓ |
+| `BRACS_748` (IC) | DCIS ✗ | DCIS, com alerta pro invasivo ✗ |
+| `BRACS_1370` (PB) | DCIS e invasivo, confiança alta ✗ | aponta inconsistência, sem concluir câncer |
+
+O modelo segue a maioria dos patches (na lâmina de IC, o componente invasivo é minoria) e repete os falsos positivos do estágio 3. Gemma 3 prioriza melhor e é mais cauteloso que MedGemma. Detalhes: `Testes/Pipeline01/estagio5_sintese/resultados.md`.
+
 ## Anotações oficiais do BRACS
 
 - `.qpdata` lidas com o QuPath e exportadas pra GeoJSON: 387 de 387 lâminas; totais por classe iguais aos do artigo.
@@ -153,4 +165,5 @@ Detalhes: `Testes/Pipeline01/validacao/problemas_e_metrica.md`.
 2. A escolha dos patches parecia inconsistente pela métrica de RoIs, mas, medindo pelos núcleos, os roteadores acham tumor em 86–88% dos patches escolhidos nas lâminas malignas (sorteio: 52%).
 3. Comparar a imagem com frases (zero-shot) é o gargalo do estágio 3: fica no acaso no DCIS vs. IC, mesmo quando o embedding contém a informação.
 4. Uma camada treinada em cima do UNI2-h separa DCIS de IC e generaliza pra outra instituição; no atípico, falta dado.
+6. A pipeline já roda de ponta a ponta até o pré-laudo, mas o texto final segue a maioria dos patches e herda os falsos positivos: acertou 1 de 3 lâminas no teste exploratório.
 5. A medida dos núcleos separa DCIS de IC, mas os valores não são confiáveis: mesmo com a classificação de núcleos treinada no NuCLS (tumor 0,83 / 0,88), a medida não bate com a anotação (Spearman 0,35).

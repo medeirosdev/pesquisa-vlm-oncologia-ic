@@ -29,6 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "validacao"))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "estagio2_roteador"))
 
+import cv2
 import numpy as np
 
 from categoria_uni import logistica_multinomial
@@ -81,7 +82,7 @@ def texto_do_tile(x0, y0, p1, p2):
     return cat, sub, texto
 
 
-def rodar(svs=None, k=32) -> dict:
+def rodar(svs=None, k=32, n_exemplos=3) -> dict:
     lamina = Lamina(resolver_svs(svs))
     stem = lamina.stem
     e2, saida = dir_resultados(stem, "estagio2"), dir_resultados(stem, "estagio3")
@@ -113,6 +114,11 @@ def rodar(svs=None, k=32) -> dict:
               "descritores": descritores}
     (saida / f"estagio3_descritores_k{k}_uni.json").write_text(json.dumps(resumo, indent=2, ensure_ascii=False),
                                                               encoding="utf-8")
+    exemplos = saida / f"exemplos_k{k}_uni"  # âncoras visuais que o estágio 4 anexa
+    exemplos.mkdir(exist_ok=True)
+    for i, d in enumerate(sorted(descritores, key=lambda x: -x["score_roteador"])[:n_exemplos]):
+        cv2.imwrite(str(exemplos / f"{i:02d}_x{d['x0']}_y{d['y0']}.png"),
+                    cv2.cvtColor(lamina.janela_nativa(d["x0"], d["y0"]), cv2.COLOR_RGB2BGR))
     return resumo
 
 

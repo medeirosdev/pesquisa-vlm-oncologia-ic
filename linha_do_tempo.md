@@ -1,6 +1,6 @@
 # Linha do tempo — IC VLMs na Oncologia
 
-Estado em 13/10/2026. Datas tiradas do histórico de commits. Resultados de todos os testes, com números e critérios: [resultados.md](resultados.md).
+Estado em 17/10/2026. Datas tiradas do histórico de commits. Resultados de todos os testes, com números e critérios: [resultados.md](resultados.md).
 
 ## Em uma frase
 
@@ -118,6 +118,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 | 13/10 | Método 3, medidas mais robustas no NuCLS (distância mediana ao estroma; ≥ 3 vizinhos de estroma): nenhuma passa (Spearman 0,27–0,37). Decisão: núcleos ficam como sinal, sem número no texto |
 | 13/10 | RAM cheia travou o computador (o carregamento do UNI2-h chegava a ~5,4 GB). Corrigido: modelo criado em fp16 e pesos lidos por mmap; testes pesados rodam com limite de memória |
 | 13/10 | Estágio 2, métrica sem RoIs (patches com ≥ 20 núcleos tumorais, 7 lâminas malignas): roteador por frases 0,86, UNI2-h "não benigno" 0,88, sorteio 0,52. O roteador novo por categoria não passou (0,54) — por desenho reserva patches pra benigno/atípico. A "falha" do estágio 2 vinha em boa parte da métrica por RoI |
+| 17/10 | **Pipeline completa pela primeira vez**: roteador → descritor hierárquico UNI2-h → agregação → modelo local via Ollama (MedGemma 4B e Gemma 3 4B), 3 lâminas. Acerta o DCIS; na lâmina de IC os dois sugerem DCIS (seguem a maioria dos patches); na lâmina benigna o MedGemma afirma câncer e o Gemma 3 aponta a inconsistência. Ollama 0.40.6 rodando do HD |
 
 ## Onde paramos
 
@@ -133,7 +134,8 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 - CellViT: ambiente separado no HD (`/media/medeiros/HD 1TB/venvs/cellvit`, exige numpy < 2); pesos em `Modelos/cellvit/` (Zenodo 15094831).
 - QuPath/paquo: ambiente separado no HD (`venvs/paquo`), QuPath 0.5.1 em `Modelos/qupath/`.
 - UNI2-h: pesos em `Modelos/UNI2H/pytorch_model.bin`.
-- GPU de 4 GB: UNI2-h e QuiltNet não cabem juntos com o desktop aberto — rodar um de cada vez.
+- GPU de 4 GB: UNI2-h e QuiltNet não cabem juntos com o desktop aberto — rodar um de cada vez. Testes pesados com limite de memória (`systemd-run --user --scope -p MemoryMax=6G`).
+- Ollama 0.40.6 no HD (`Modelos/ollama-bin/bin/ollama`), modelos em `Modelos/ollama` (iniciar com `OLLAMA_MODELS=... ollama serve`). O Ollama do sistema (0.14.3) é antigo demais.
 
 ## O que precisa ser feito
 
@@ -169,7 +171,9 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 **Frentes paradas há mais tempo:**
 
 - [ ] **Baseline zero-shot no PathVQA** — nunca começou; é o resultado mais rápido e comparável com outros artigos
-- [ ] **Estágio 5** — rodar o prompt do estágio 4 numa VLM de verdade (MedGemma-4B ou similar)
+- [x] **Estágio 5** — pipeline completa até o pré-laudo (MedGemma 4B, Gemma 3 4B), exploratório em 3 lâminas
+- [ ] Avaliar o pré-laudo nas 18 lâminas (impressão vs. rótulo real)
+- [ ] Regra no estágio 4 pra componente invasivo minoritário (testar em lâminas fora das usadas pra escrevê-la)
 
 **Limitações que afetam tudo:**
 
