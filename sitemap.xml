@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://medeirosdev.github.io/pesquisa-vlm-oncologia-ic/</loc>
+         <lastmod>2026-10-19</lastmod>
+    </url>
+    <url>
+         <loc>https://medeirosdev.github.io/pesquisa-vlm-oncologia-ic/conceitos/</loc>
+         <lastmod>2026-10-19</lastmod>
+    </url>
+    <url>
+         <loc>https://medeirosdev.github.io/pesquisa-vlm-oncologia-ic/datasets/</loc>
+         <lastmod>2026-10-19</lastmod>
+    </url>
+    <url>
+         <loc>https://medeirosdev.github.io/pesquisa-vlm-oncologia-ic/metodologia/</loc>
+         <lastmod>2026-10-19</lastmod>
+    </url>
+    <url>
+         <loc>https://medeirosdev.github.io/pesquisa-vlm-oncologia-ic/modelos-locais/</loc>
+         <lastmod>2026-10-19</lastmod>
+    </url>
+    <url>
+         <loc>https://medeirosdev.github.io/pesquisa-vlm-oncologia-ic/pipelines/</loc>
+         <lastmod>2026-10-19</lastmod>
+    </url>
+    <url>
+         <loc>https://medeirosdev.github.io/pesquisa-vlm-oncologia-ic/questoes/</loc>
+         <lastmod>2026-10-19</lastmod>
+    </url>
+</urlset>
