@@ -58,7 +58,7 @@ Script: [../validacao/prelaudo_avaliacao.py](../validacao/prelaudo_avaliacao.py)
 | **B)** 15 lâminas fora | 5/15 (33%) — IC 3/4 | **10/15 (67%)** — IC **4/4** |
 
 - **B passou no critério** (IC 3 → 4 de 4; acurácia 5 → 10 de 15).
-- **Sem a regra, o modelo é alarmista:** chama de DCIS ou carcinoma invasivo quase tudo — 15 das 18 respostas são malignas, com só 7 lâminas malignas.
+- **Sem a regra, o modelo é alarmista:** chama de DCIS ou carcinoma invasivo quase tudo — 17 das 18 respostas são malignas, com só 7 lâminas malignas.
 - **O maior ganho da regra veio das lâminas benignas** (1 → 4 de 4), não só do IC: a linha "componente invasivo não detectado" deixa o modelo menos alarmista. Não era o efeito esperado quando a regra foi escrita.
 - **O atípico continua errado** (1 de 6 com a regra): o descritor quase não reconhece atípico, e duas lâminas atípicas (`BRACS_1617`, `BRACS_1494`) viram carcinoma invasivo — a regra também propaga os falsos positivos de IC do estágio 3.
 - **Ressalvas:** 15 lâminas, uma execução por versão, um só modelo; diferença de 5 lâminas. O rótulo da lâmina no BRACS é o da lesão mais grave anotada, não um laudo completo.

@@ -161,7 +161,7 @@ Classificação final do pré-laudo (benigno / atípico / DCIS / IC) contra o r�
 | 18 lâminas | 6/18 (33%): benigno 1/5, atípico 0/6, DCIS 2/2, IC 3/5 | — | descritivo |
 | 15 lâminas fora das usadas pra criar a regra | 5/15 (33%), IC 3/4 | **10/15 (67%), IC 4/4** | **sim** (critério: mais IC e acurácia não menor) |
 
-Regra (estágio 4): se ≥ 2 patches com carcinoma invasivo e P ≥ 0,90, o prompt diz "componente invasivo presente" e que ele define o diagnóstico; senão, "não detectado". Sem a regra, o modelo chama de maligno 15 de 18 lâminas; com ela, acerta as 4 benignas. O atípico continua errado (1/6), e duas atípicas viram IC.
+Regra (estágio 4): se ≥ 2 patches com carcinoma invasivo e P ≥ 0,90, o prompt diz "componente invasivo presente" e que ele define o diagnóstico; senão, "não detectado". Sem a regra, o modelo chama de maligno 17 de 18 lâminas; com ela, acerta as 4 benignas. O atípico continua errado (1/6), e duas atípicas viram IC.
 
 **Teste externo** — 57 lâminas do conjunto de teste oficial do BRACS (31 pacientes nunca usados), pipeline congelada:
 

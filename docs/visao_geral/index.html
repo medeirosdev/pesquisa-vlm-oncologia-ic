@@ -210,7 +210,8 @@ footer { margin-top: 40px; color: var(--tinta-2); font-size: 0.88rem; border-top
       <h3>Unidades e métricas</h3>
       <ul class="limpa">
         <li><b>Patch (tile):</b> 512 × 512 px no nível de 40x, ou 128 × 128 µm de tecido.</li>
-        <li><b>Acerto por categoria:</b> média do acerto em cada classe real; com 3 classes o acaso é 33%, com 4 é 25%.</li>
+        <li><b>Acerto por categoria</b> (descritor): média do acerto em cada classe real; com 3 classes o acaso é 33%, com 4 é 25%.</li>
+        <li><b>Acerto do pré-laudo</b> (estágio 5): lâminas certas / total de lâminas, e o mesmo por classe; cada linha das tabelas soma as colunas.</li>
         <li><b>AUC:</b> chance de um patch de IC ter pontuação maior que um de DCIS. 0,5 é o acaso, 1,0 é separação perfeita.</li>
         <li><b>Controle com rótulos embaralhados:</b> mostra quanto se acerta só por sorte.</li>
       </ul>
@@ -489,6 +490,14 @@ com invasive carcinoma e probabilidade ≥ 0.90; encontrados 0).</pre>
         <div class="barra cinza"><span class="nome">Sem a regra</span><span class="trilho"><i style="width:33.3%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">5/15</span></div>
       </div>
       <span class="legenda-acaso">acaso (25%, 4 classes)</span>
+      <div class="tabela"><table>
+        <thead><tr><th></th><th class="num">Benigno</th><th class="num">Atípico</th><th class="num">DCIS</th><th class="num">IC</th><th class="num">Total</th></tr></thead>
+        <tbody>
+          <tr><td>Sem a regra</td><td class="num">1/4</td><td class="num">0/6</td><td class="num">1/1</td><td class="num">3/4</td><td class="num">5/15</td></tr>
+          <tr class="vence"><td>Com a regra</td><td class="num">4/4</td><td class="num">1/6</td><td class="num">1/1</td><td class="num">4/4</td><td class="num"><b>10/15</b></td></tr>
+        </tbody>
+      </table></div>
+      <p class="nota">Cada célula: lâminas certas / lâminas daquela classe. O total é a soma das colunas.</p>
       <span class="selo ok">passou: IC 3 → 4 de 4; benignas 1 → 4 de 4</span>
     </div>
     <div class="painel destaque">
@@ -500,19 +509,21 @@ com invasive carcinoma e probabilidade ≥ 0.90; encontrados 0).</pre>
       </div>
       <span class="legenda-acaso">acaso (25%, 4 classes)</span>
       <div class="tabela"><table>
-        <thead><tr><th></th><th class="num">Benigno</th><th class="num">Atípico</th><th class="num">DCIS</th><th class="num">IC</th></tr></thead>
+        <thead><tr><th></th><th class="num">Benigno</th><th class="num">Atípico</th><th class="num">DCIS</th><th class="num">IC</th><th class="num">Total</th></tr></thead>
         <tbody>
-          <tr><td>Sem a regra</td><td class="num">0/13</td><td class="num">1/24</td><td class="num">7/8</td><td class="num">5/12</td></tr>
-          <tr class="vence"><td>Com a regra</td><td class="num">0/13</td><td class="num">1/24</td><td class="num">8/8</td><td class="num">7/12</td></tr>
+          <tr><td>Sem a regra</td><td class="num">0/13</td><td class="num">1/24</td><td class="num">7/8</td><td class="num">5/12</td><td class="num">13/57</td></tr>
+          <tr class="vence"><td>Com a regra</td><td class="num">0/13</td><td class="num">1/24</td><td class="num">8/8</td><td class="num">7/12</td><td class="num"><b>16/57</b></td></tr>
+          <tr><td>Respostas malignas</td><td class="num" colspan="4"></td><td class="num">55/57</td></tr>
         </tbody>
       </table></div>
+      <p class="nota">Cada célula: lâminas certas / lâminas daquela classe (13 + 24 + 8 + 12 = 57). Com a regra: 0 + 1 + 8 + 7 = 16 certas.</p>
       <p class="nota">A regra ajuda no carcinoma invasivo (5 → 7 de 12), mas a pipeline chama de maligno 55 das 57 lâminas. O ganho nas benignas visto no desenvolvimento não se repetiu. O problema vem antes do modelo de linguagem: o roteador busca o que parece suspeito e o descritor quase nunca diz "atípico".</p>
     </div>
   </div>
   <div class="painel">
     <h3>Como o modelo de linguagem se comporta</h3>
     <ul class="limpa">
-      <li>Sem a regra, é alarmista: chamou de maligno 15 de 18 lâminas, quando só 7 eram.</li>
+      <li>Sem a regra, é alarmista: nas 18 lâminas de desenvolvimento, chamou de maligno 17, quando só 7 eram. No teste externo, com ou sem regra, chamou de maligno 55 de 57.</li>
       <li>Repete os falsos positivos do descritor: numa lâmina benigna com 12 patches "malignos", o MedGemma afirmou carcinoma com confiança alta.</li>
       <li>O Gemma 3 prioriza melhor que o MedGemma (3 regiões, não 32), é mais cauteloso e mais rápido.</li>
       <li>Não segue bem instruções de formato: a classificação final precisou ser extraída por uma segunda chamada, em formato restrito.</li>
@@ -561,7 +572,8 @@ Classificação extraída: benigno</pre>
         <li>Memória: o servidor do Ollama acumulava cache a cada pré-laudo até travar o computador; o modelo passou a ser descarregado após cada chamada.</li>
         <li>O modelo herda os erros do descritor: com patches malignos falsos, ele escreve "carcinoma".</li>
         <li>Confunde "81% dos patches" com "81% de probabilidade" e às vezes lista todos os patches como prioritários.</li>
-        <li>Extrair a classificação é parte do problema. Na BRACS_1641 sem a regra, o texto diz "a predominância de tecido benigno sugere uma avaliação de lesão benigna", mas a extração em formato restrito devolveu DCIS. Parte da diferença entre as versões pode vir da extração; isso precisa de uma conferência manual numa amostra.</li>
+        <li>Extrair a classificação é parte do problema. Na BRACS_1641 sem a regra, o texto diz "a predominância de tecido benigno sugere uma avaliação de lesão benigna", mas a extração em formato restrito devolveu DCIS. Numa conferência de 20 pré-laudos sorteados, a extração bateu com o texto em 8, contrariou o texto em 2 e, em 10, o texto não se decidia por uma classe e a extração escolheu DCIS.</li>
+        <li>O modelo raramente se compromete: em metade dos pré-laudos conferidos, escreve algo como "a predominância de tecido benigno sugere benignidade, no entanto a presença de DCIS requer investigação". Vários desses casos têm evidência com maioria de patches benignos; poucos patches malignos bastam pra lâmina virar maligna.</li>
       </ul>
     </div>
     <div class="exemplo painel">
@@ -586,7 +598,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
       <tr><td>1. Filtro de tecido</td><td><span class="selo ok">resolvido</span></td><td>—</td></tr>
       <tr><td>2. Roteador</td><td><span class="selo parcial">bom em lâminas malignas</span></td><td>métrica para lâminas benignas e atípicas</td></tr>
       <tr><td>3. Descritor</td><td><span class="selo parcial">bom no DCIS × IC, fraco no atípico</span></td><td>mais lâminas atípicas para treinar</td></tr>
-      <tr><td>4. Agregação</td><td><span class="selo parcial">regra ajuda no IC</span></td><td>conferir à mão a extração da classificação</td></tr>
+      <tr><td>4. Agregação</td><td><span class="selo parcial">regra ajuda no IC</span></td><td>decidir a classe final por regra explícita sobre as proporções de patches</td></tr>
       <tr><td>5. Síntese</td><td><span class="selo falha">28% em lâminas novas</span></td><td>reduzir os falsos positivos malignos nos estágios 2 e 3</td></tr>
     </tbody>
   </table></div>
@@ -594,7 +606,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
 </section>
 
 <footer>
-  <p>Pipeline Ideia 01 · orientação Prof. João Batista Florindo · situação em 18/10/2026. Modelos: QuiltNet-B-32, UNI2-h, CellViT-256, Gemma 3 4B e MedGemma 4B, todos rodando localmente.</p>
+  <p>Pipeline Ideia 01 · orientação Prof. João Batista Florindo · situação em 19/10/2026. Modelos: QuiltNet-B-32, UNI2-h, CellViT-256, Gemma 3 4B e MedGemma 4B, todos rodando localmente.</p>
   <p>Imagens de lâminas: BRACS (Brancati et al., <i>BRACS: A Dataset for BReAst Carcinoma Subtyping in H&amp;E Histology Images</i>, Database, 2022), licença CC BY-NC 4.0. Núcleos anotados: NuCLS (Amgad et al., GigaScience, 2022), CC0. Imagens do BACH não são reproduzidas (licença CC BY-NC-ND); só os resultados numéricos.</p>
 </footer>
 
