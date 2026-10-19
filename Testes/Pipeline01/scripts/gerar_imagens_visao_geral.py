@@ -1,6 +1,6 @@
 """
-Gera as imagens de exemplo da página de visão geral da pipeline (pasta visao_geral/ na raiz do
-projeto), a partir das saídas já calculadas dos estágios. Imagens do BRACS (CC BY-NC 4.0, com
+Gera as imagens de exemplo da página de visão geral da pipeline (pasta docs/visao_geral/ do
+projeto, dentro de docs/ — publicada junto com o site MkDocs), a partir das saídas já calculadas dos estágios. Imagens do BRACS (CC BY-NC 4.0, com
 atribuição na página) e sobreposições de núcleos do CellViT; nenhuma imagem do BACH (licença ND).
 
 Uso (venv do projeto, com o HD montado):
@@ -19,7 +19,7 @@ import numpy as np
 
 from comum.lamina import RAIZ_PROJETO, TILE_NATIVO, Lamina, dir_resultados, resolver_svs
 
-SAIDA = RAIZ_PROJETO / "visao_geral" / "img"
+SAIDA = RAIZ_PROJETO / "docs" / "visao_geral" / "img"
 COR = {"DCIS": (143, 47, 63), "IC": (111, 69, 200), "benigno": (77, 122, 31), "atipico": (6, 106, 154)}  # BGR
 
 

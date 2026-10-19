@@ -2,9 +2,9 @@
 
 Página estática (`index.html` + `img/`) com os cinco estágios da pipeline, as métricas, exemplos de resultado e os problemas de cada parte. Não depende de build: abre direto no navegador.
 
-## Hospedar no GitHub Pages
+## Publicação
 
-Em *Settings → Pages* do repositório, escolher a branch e a pasta que contém este `index.html`. Se o site MkDocs já ocupa o GitHub Pages do repositório, uma alternativa é copiar esta pasta para `docs/visao_geral/`: o MkDocs copia arquivos estáticos e a página fica em `<site>/visao_geral/`.
+A pasta fica dentro de `docs/`, então é publicada junto com o site MkDocs (a Action `.github/workflows/docs.yml` roda `mkdocs gh-deploy` a cada push que altera `docs/`). O MkDocs copia o `index.html` e as imagens sem alterá-los; a página fica em `<site>/visao_geral/`.
 
 ## Regenerar as imagens
 

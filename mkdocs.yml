@@ -24,6 +24,10 @@ theme:
     - search.suggest
     - content.code.copy
 
+# a página visao_geral/ é um HTML estático; o README dela é só pra quem lê o repositório
+exclude_docs: |
+  visao_geral/README.md
+
 nav:
   - Início: index.md
   - Datasets: datasets.md
@@ -32,6 +36,7 @@ nav:
   - Conceitos: conceitos.md
   - Pipelines: pipelines.md
   - Questões: questoes.md
+  - Visão geral da pipeline: visao_geral/
 
 markdown_extensions:
   - tables
