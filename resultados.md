@@ -171,7 +171,7 @@ Regra (estágio 4): se ≥ 2 patches com carcinoma invasivo e P ≥ 0,90, o prom
 | Benigno / atípico | 0/13 · 1/24 | 0/13 · 1/24 | — |
 | Respostas malignas | 55 de 57 | 55 de 57 | — |
 
-A regra se confirma no IC, mas a pipeline chama quase tudo de maligno: o acerto total fica perto do acaso de 4 classes (25%). O ganho nas benignas visto no desenvolvimento não se repetiu. A extração da classificação também erra em alguns casos (falta conferência manual). Detalhes: `Testes/Pipeline01/estagio5_sintese/resultados.md`.
+A regra se confirma no IC, mas a pipeline chama quase tudo de maligno: o acerto total fica perto do acaso de 4 classes (25%). O ganho nas benignas visto no desenvolvimento não se repetiu. Conferência de 20 pré-laudos: a extração erra em ~10%, e em metade o texto não se decide por uma classe (a extração escolhe DCIS); várias lâminas benignas têm evidência com predominância de patches benignos. Detalhes: `Testes/Pipeline01/estagio5_sintese/resultados.md`.
 
 ## Anotações oficiais do BRACS
 

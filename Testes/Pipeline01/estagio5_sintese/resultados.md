@@ -82,3 +82,18 @@ Pipeline congelada, sem nenhum ajuste ([../validacao/prelaudo_teste_externo.py](
 - **O ganho da regra nas lâminas benignas, visto nas 15 lâminas de desenvolvimento (1 → 4 de 4), não se repetiu** (0 → 0 de 13). O que se manteve foi o ganho no IC.
 - **O problema está antes do modelo de linguagem:** o roteador escolhe os patches que parecem suspeitos e o descritor quase nunca diz "atípico"; o modelo recebe evidência maligna e escreve maligno.
 - **A extração da classificação também erra:** na `BRACS_1641` sem a regra, o texto sugere lesão benigna e a extração em formato restrito devolveu DCIS. Parte das diferenças entre versões pode vir da extração; falta conferir uma amostra à mão.
+
+### Conferência da extração da classificação (amostra de 20 pré-laudos do teste externo, 18/10)
+
+Sorteio com semente 0 entre os 114 pré-laudos; a impressão diagnóstica escrita pelo modelo comparada com a classificação extraída em JSON (julgamento feito na análise, sem patologista):
+
+| Situação | Quantos |
+|---|---|
+| Texto e extração batem | 8 de 20 |
+| Extração contraria o texto (ex.: "carcinoma invasivo com DCIS como componente" → DCIS) | 2 de 20 |
+| O texto não se decide por uma classe (ex.: "predominância de tecido benigno sugere benignidade, no entanto a presença de DCIS requer investigação") e a extração escolhe DCIS | 10 de 20 |
+
+- A extração erra em ~10% dos casos; não explica sozinha o resultado.
+- Em metade dos pré-laudos o modelo não se compromete com uma classe, e a extração resolve quase sempre como DCIS.
+- Em várias lâminas benignas e atípicas a evidência diz "predominância de tecido benigno": o problema está em parte na decisão final (poucos patches malignos fazem a lâmina inteira virar maligna), não só nos falsos positivos do estágio 3.
+- Próximo teste: classe final por regra explícita sobre as proporções de patches (limiar escolhido nas 18 lâminas de desenvolvimento, testado nas 57 do teste oficial), com o modelo de linguagem só redigindo o texto.

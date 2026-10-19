@@ -122,6 +122,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 | 17/10 | Avaliação sistemática do pré-laudo (Gemma 3 4B): sem regra, 6 de 18 lâminas certas — o modelo chama de maligno 15 das 18. Regra do componente invasivo no estágio 4, testada nas 15 lâminas fora das usadas pra criá-la: 5 → **10 de 15**, IC 3 → 4 de 4, benignas 1 → 4 de 4. Passou. Atípico continua 1 de 6. Instrumento corrigido antes da análise (classificação por JSON restrito; contexto 4096) |
 | 18/10 | **Teste externo**: 57 lâminas do conjunto de teste oficial do BRACS (31 pacientes nunca usados), pipeline congelada. Com a regra 16/57 (28%), sem 13/57 (23%); IC 7 contra 5 de 12 — passa no critério por pouco. Mas 55 de 57 respostas são malignas: benignas 0/13, atípicas 1/24. O ganho nas benignas do desenvolvimento não se repetiu |
 | 18/10 | Página de visão geral da pipeline (`visao_geral/`, pra GitHub Pages) com imagens de exemplo, resultados e desafios de cada estágio. Encontrado erro na extração da classificação (texto diz benigno, extração diz DCIS) |
+| 18/10 | Conferência da extração em 20 pré-laudos: bate em 8, contraria o texto em 2, e em 10 o texto não se decide e a extração escolhe DCIS. Várias lâminas benignas/atípicas têm evidência com "predominância de tecido benigno": parte do problema está na decisão final |
 
 ## Onde paramos
 
@@ -179,7 +180,8 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 - [x] Regra no estágio 4 pra componente invasivo — 10 de 15 nas lâminas fora (sem regra: 5 de 15); passou
 - [x] Confirmar a regra em lâminas novas — teste externo (57): passa no IC por pouco; a pipeline chama quase tudo de maligno
 - [ ] Reduzir os falsos positivos malignos em lâminas benignas/atípicas (estágios 2 e 3) — principal gargalo agora
-- [ ] Conferir à mão uma amostra da extração da classificação (texto vs. JSON)
+- [x] Conferir à mão uma amostra da extração — erra em ~10%; em metade dos casos o texto não se decide
+- [ ] Classe final por regra explícita sobre as proporções de patches (limiar nas 18 de desenvolvimento, teste nas 57)
 - [ ] Testar com outro modelo de linguagem
 - [ ] Atípico no pré-laudo (1 de 6): precisa de mais lâminas atípicas pro descritor
 
