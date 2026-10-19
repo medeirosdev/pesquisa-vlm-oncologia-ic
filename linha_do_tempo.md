@@ -196,6 +196,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 | O quê | Onde |
 |---|---|
 | **Resultados de todos os testes** | [resultados.md](resultados.md) |
+| Brainstorming de melhorias e testes novos por estágio | [brainstorming_melhorias.md](brainstorming_melhorias.md) |
 | Documentação pública | `docs/` (site MkDocs) |
 | Como rodar os testes, estrutura das pastas | `Testes/Pipeline01/README.md` |
 | Descrição da Pipeline 01 | `docs/pipelines.md`, `Testes/Pipeline01/ideia/` |
