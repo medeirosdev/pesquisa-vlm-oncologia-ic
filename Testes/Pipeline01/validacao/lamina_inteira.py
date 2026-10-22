@@ -71,7 +71,11 @@ def classe_final(c):
 
 # ---------- etapa 1: patches das RoIs ----------
 def patches_da_roi(caminho, rng):
-    rgb = np.array(Image.open(caminho).convert("RGB"))
+    try:
+        rgb = np.array(Image.open(caminho).convert("RGB"))
+    except OSError as e:  # ex.: BRACS_773_UDH_20.png está truncado no dataset local
+        print(f"  {caminho.name}: recorte ilegível ({e}), pulado", flush=True)
+        return []
     h, w = rgb.shape[:2]
     if h < TILE_NATIVO or w < TILE_NATIVO:
         pad = np.full((max(h, TILE_NATIVO), max(w, TILE_NATIVO), 3), 255, np.uint8)
