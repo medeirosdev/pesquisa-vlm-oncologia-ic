@@ -1,6 +1,6 @@
 # Linha do tempo — IC VLMs na Oncologia
 
-Estado em 18/10/2026. Datas tiradas do histórico de commits. Resultados de todos os testes, com números e critérios: [resultados.md](resultados.md).
+Estado em 22/10/2026. Datas tiradas do histórico de commits. Resultados de todos os testes, com números e critérios: [resultados.md](resultados.md).
 
 ## Em uma frase
 
@@ -122,6 +122,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 | 17/10 | Avaliação sistemática do pré-laudo (Gemma 3 4B): sem regra, 6 de 18 lâminas certas — o modelo chama de maligno 17 das 18. Regra do componente invasivo no estágio 4, testada nas 15 lâminas fora das usadas pra criá-la: 5 → **10 de 15**, IC 3 → 4 de 4, benignas 1 → 4 de 4. Passou. Atípico continua 1 de 6. Instrumento corrigido antes da análise (classificação por JSON restrito; contexto 4096) |
 | 18/10 | **Teste externo**: 57 lâminas do conjunto de teste oficial do BRACS (31 pacientes nunca usados), pipeline congelada. Com a regra 16/57 (28%), sem 13/57 (23%); IC 7 contra 5 de 12 — passa no critério por pouco. Mas 55 de 57 respostas são malignas: benignas 0/13, atípicas 1/24. O ganho nas benignas do desenvolvimento não se repetiu |
 | 18/10 | Página de visão geral da pipeline (`visao_geral/`, pra GitHub Pages) com imagens de exemplo, resultados e desafios de cada estágio. Encontrado erro na extração da classificação (texto diz benigno, extração diz DCIS) |
+| 22/10 | Descritor treinado nas 3.402 RoIs de treino do BRACS + classe da lâmina por regra de proporção sobre 2.000 patches (limiares nas 18 de desenvolvimento). No teste externo: 22/57 lâminas certas (o maior número), atípico 1 → 10 de 24, mas acurácia balanceada 0,35 contra 0,41 da pipeline atual — não passou. Limiares superajustados às 18 lâminas (só 2 DCIS): nunca diz DCIS |
 | 18/10 | Conferência da extração em 20 pré-laudos: bate em 8, contraria o texto em 2, e em 10 o texto não se decide e a extração escolhe DCIS. Várias lâminas benignas/atípicas têm evidência com "predominância de tecido benigno": parte do problema está na decisão final |
 
 ## Onde paramos
@@ -181,7 +182,8 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 - [x] Confirmar a regra em lâminas novas — teste externo (57): passa no IC por pouco; a pipeline chama quase tudo de maligno
 - [ ] Reduzir os falsos positivos malignos em lâminas benignas/atípicas (estágios 2 e 3) — principal gargalo agora
 - [x] Conferir à mão uma amostra da extração — erra em ~10%; em metade dos casos o texto não se decide
-- [ ] Classe final por regra explícita sobre as proporções de patches (limiar nas 18 de desenvolvimento, teste nas 57)
+- [x] Classe final por regra de proporção + descritor das RoIs — atípico 1 → 10 de 24, mas limiares superajustados (não passou)
+- [ ] Calibrar ou aprender a decisão da lâmina com as 65 lâminas de validação oficiais do BRACS (só embeddings)
 - [ ] Testar com outro modelo de linguagem
 - [ ] Atípico no pré-laudo (1 de 6): precisa de mais lâminas atípicas pro descritor
 
