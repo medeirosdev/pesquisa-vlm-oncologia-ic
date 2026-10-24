@@ -36,6 +36,18 @@ def componente_invasivo(descritores):
     return [d for d in descritores if d.get("subtipo") == "IC" and (d.get("prob_subtipo") or {}).get("IC", 0) >= MIN_PROB_INVASIVO]
 
 
+def linhas_componente_invasivo(descritores):
+    """Linhas do cabeçalho com a regra do componente invasivo."""
+    inv = componente_invasivo(descritores)
+    if len(inv) >= MIN_PATCHES_INVASIVO:
+        return [f"Componente invasivo: PRESENTE ({len(inv)} patches com invasive carcinoma, probabilidade >= {MIN_PROB_INVASIVO:.2f}: "
+                + ", ".join(f"[{d['x0']},{d['y0']}]" for d in inv) + ")",
+                "Regra: a presença de componente invasivo define o diagnóstico principal (carcinoma invasivo), "
+                "mesmo que seja minoria dos patches; os demais achados entram como componente associado."]
+    return [f"Componente invasivo: não detectado (critério: >= {MIN_PATCHES_INVASIVO} patches com invasive carcinoma "
+            f"e probabilidade >= {MIN_PROB_INVASIVO:.2f}; encontrados {len(inv)})."]
+
+
 def montar(stem, k, sufixo, regra_invasivo=False):
     e3 = dir_resultados(stem, "estagio3")
     dados = json.loads((e3 / f"estagio3_descritores_k{k}{sufixo}.json").read_text(encoding="utf-8"))
@@ -55,15 +67,7 @@ def montar(stem, k, sufixo, regra_invasivo=False):
     linhas += [f"  - {a}: {n}/{total} patches ({100 * n / total:.0f}%)" for a, n in contagem.most_common()]
     linhas += [f"Achado dominante: {dominante} ({100 * freq / total:.0f}% dos patches)"]
     if regra_invasivo:
-        inv = componente_invasivo(descritores)
-        if len(inv) >= MIN_PATCHES_INVASIVO:
-            linhas += [f"Componente invasivo: PRESENTE ({len(inv)} patches com invasive carcinoma, probabilidade >= {MIN_PROB_INVASIVO:.2f}: "
-                       + ", ".join(f"[{d['x0']},{d['y0']}]" for d in inv) + ")",
-                       "Regra: a presença de componente invasivo define o diagnóstico principal (carcinoma invasivo), "
-                       "mesmo que seja minoria dos patches; os demais achados entram como componente associado."]
-        else:
-            linhas += [f"Componente invasivo: não detectado (critério: >= {MIN_PATCHES_INVASIVO} patches com invasive carcinoma "
-                       f"e probabilidade >= {MIN_PROB_INVASIVO:.2f}; encontrados {len(inv)})."]
+        linhas += linhas_componente_invasivo(descritores)
     linhas += ["", "Detalhe por patch:"]
     linhas += [d["texto"] for d in descritores]
     linhas += ["", f"Âncoras visuais anexadas ({len(ancoras)}): " + ", ".join(f"[{a['x0']},{a['y0']}]" for a in ancoras)]
