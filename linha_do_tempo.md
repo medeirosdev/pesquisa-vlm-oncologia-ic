@@ -144,6 +144,8 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 
 ## O que precisa ser feito
 
+Lista curta do que está pendente agora: [tarefas_pendentes.md](tarefas_pendentes.md).
+
 **Estágios 2 e 3:**
 
 - [x] Reduzir o viés pró-"benigno" do descritor — maligno de 33% pra 43% trocando a frase do lóbulo normal
