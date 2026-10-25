@@ -67,21 +67,24 @@ def calcular_atributos(dev, val, teste):
     """Atributos por lâmina (cache em SAIDA/atributos.json)."""
     from lamina_inteira import amostra, dados_descritor_rois, treinar_e_prever
     cache = SAIDA / "atributos.json"
-    if cache.exists():
-        return json.loads(cache.read_text(encoding="utf-8"))
+    A = json.loads(cache.read_text(encoding="utf-8")) if cache.exists() else {}
     treino = dados_descritor_rois()
-    A = {}
     for s in dev:
-        A[s] = atributos(*treinar_e_prever(*treino(excluir=s), amostra(s)))
-        print(f"  dev {s}", flush=True)
-    outras = val + teste
-    X = [amostra(s) for s in outras]
-    p1, p2 = treinar_e_prever(*treino(), np.concatenate(X))
-    ini = 0
-    for s, x in zip(outras, X):
-        A[s] = atributos(p1[ini:ini + len(x)], p2[ini:ini + len(x)])
-        ini += len(x)
-    cache.write_text(json.dumps(A, indent=1), encoding="utf-8")
+        if s not in A:
+            A[s] = atributos(*treinar_e_prever(*treino(excluir=s), amostra(s)))
+            cache.write_text(json.dumps(A, indent=1), encoding="utf-8")
+            print(f"  dev {s}", flush=True)
+    faltam = [s for s in val + teste if s not in A]
+    for i in range(0, len(faltam), 20):  # em blocos: as 118 lâminas juntas passam de 6 GB de RAM
+        bloco = faltam[i:i + 20]
+        X = [amostra(s) for s in bloco]
+        p1, p2 = treinar_e_prever(*treino(), np.concatenate(X))
+        ini = 0
+        for s, x in zip(bloco, X):
+            A[s] = atributos(p1[ini:ini + len(x)], p2[ini:ini + len(x)])
+            ini += len(x)
+        cache.write_text(json.dumps(A, indent=1), encoding="utf-8")
+        print(f"  {i + len(bloco)}/{len(faltam)} lâminas de validação e teste", flush=True)
     return A
 
 
