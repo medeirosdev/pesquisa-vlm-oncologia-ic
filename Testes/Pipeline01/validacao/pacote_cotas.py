@@ -92,8 +92,12 @@ def descrever():
 
 
 def patches(s):
+    return patches_de_probs(SAIDA / f"{s}_probs.npz")
+
+
+def patches_de_probs(arquivo):
     from descritor_uni import NOMES, SUBTIPOS, texto_do_tile
-    z = np.load(SAIDA / f"{s}_probs.npz")
+    z = np.load(arquivo)
     saida = []
     for (x0, y0), a, b in zip(z["xy"], z["p1"], z["p2"]):
         cat, sub, texto = texto_do_tile(int(x0), int(y0), a, b)

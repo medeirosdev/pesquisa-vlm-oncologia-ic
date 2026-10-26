@@ -77,10 +77,35 @@ def classificacao_final(texto):
     return achadas.pop() if len(achadas) == 1 else None
 
 
-def chamar(modelo, prompt, imagens):
+# Modo "só redige" (26/10): a classe vem do classificador da lâmina inteira; o modelo de linguagem não decide,
+# só escreve o texto a partir de campos fixos (classe, confiança, proporções, regiões).
+INSTRUCOES_REDACAO = """Você redige um RASCUNHO de pré-laudo histopatológico de mama, para revisão por um patologista.
+
+A classe da lâmina JÁ FOI DECIDIDA por um classificador automático da lâmina inteira. Você NÃO decide nem muda
+a classe: seu papel é redigir um texto claro e fiel aos campos recebidos:
+- classe sugerida pelo classificador, com as probabilidades das 4 classes e o grau de confiança;
+- proporção de cada classe entre os patches de tecido da lâmina (cada patch é um quadrado de 128 µm);
+- regiões para revisão: coordenadas [x,y] de patches, com a classe e a probabilidade de cada um.
+
+Regras:
+1. Use apenas os números e as coordenadas fornecidos, sem arredondar de outro jeito e sem inventar outros.
+2. Não descreva achados morfológicos que não estejam nos campos.
+3. A impressão diagnóstica deve ser a classe sugerida, com o grau de confiança informado.
+4. Se a confiança for baixa ou as proporções forem mistas, diga isso.
+5. Escreva em português, de forma objetiva.
+
+Responda nesta estrutura:
+## Resumo da evidência
+## Impressão diagnóstica sugerida
+## Regiões para revisão prioritária
+## Limitações
+(inclua que o texto foi gerado automaticamente e precisa de confirmação por patologista)"""
+
+
+def chamar(modelo, prompt, imagens, instrucoes=INSTRUCOES, lembrete=LEMBRETE_FINAL):
     corpo = {"model": modelo, "stream": False, "options": OPCOES,
-             "messages": [{"role": "system", "content": INSTRUCOES},
-                          {"role": "user", "content": prompt + LEMBRETE_FINAL, "images": imagens}]}
+             "messages": [{"role": "system", "content": instrucoes},
+                          {"role": "user", "content": prompt + lembrete, "images": imagens}]}
     req = urllib.request.Request(OLLAMA, data=json.dumps(corpo).encode(), headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=1800) as r:
         return json.loads(r.read())
