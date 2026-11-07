@@ -9,6 +9,7 @@ A miniatura precisa da lâmina no HD; sem ela, o mapa sai sobre fundo branco.
 Uso (venv do projeto):
     .venv/bin/python scripts/mapas_de_calor.py BRACS_264 BRACS_1003728 [--docs]
 Opção --docs: salva também em docs/visao_geral/img/ (JPEG reduzido, pra página).
+Opção --reducao 64: miniatura mais reduzida, pra lâminas que estouram a memória.
 """
 
 import argparse
@@ -52,7 +53,7 @@ def predito_classificador(s):
     return None
 
 
-def desenhar(s, docs=False):
+def desenhar(s, docs=False, reducao=32):
     from lamina_inteira import classe_final
     z = np.load(arquivo_probs(s))
     p1, p2, xy = z["p1"], z["p2"], z["xy"]
@@ -63,9 +64,9 @@ def desenhar(s, docs=False):
 
     svs = Path(ler_caminhos()["laminas_dir"]) / f"{s}.svs"
     if svs.exists():
-        rgb, ds = Lamina(svs).thumbnail(32)
+        rgb, ds = Lamina(svs).thumbnail(reducao)
     else:
-        ds = 32.0
+        ds = float(reducao)
         h, w = int((xy[:, 1].max() + TILE_NATIVO) / ds) + 1, int((xy[:, 0].max() + TILE_NATIVO) / ds) + 1
         rgb = np.full((h, w, 3), 255, np.uint8)
     lado = TILE_NATIVO / ds
@@ -100,6 +101,7 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("laminas", nargs="+")
     p.add_argument("--docs", action="store_true")
+    p.add_argument("--reducao", type=int, default=32, help="redução da miniatura; 64 pra lâminas grandes")
     a = p.parse_args()
     for s in a.laminas:
-        desenhar(s, a.docs)
+        desenhar(s, a.docs, a.reducao)

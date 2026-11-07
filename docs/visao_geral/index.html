@@ -73,7 +73,9 @@ header.topo { padding-block: 56px 28px; display: grid; gap: 18px; }
 
 /* faixa da pipeline */
 .faixa { margin-block: 28px 8px; overflow-x: auto; }
-.faixa ol { list-style: none; margin: 0; padding: 4px 0; display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap: 0; min-width: 760px; }
+.faixa ol { list-style: none; margin: 0; padding: 4px 0; display: grid; grid-template-columns: repeat(6, minmax(140px, 1fr)); gap: 0; min-width: 880px; }
+.faixa a.novo { border-color: var(--eosina); }
+.faixa a.novo .n { color: var(--eosina); }
 .faixa li { position: relative; padding-right: 26px; }
 .faixa li:not(:last-child)::after {
   content: ""; position: absolute; right: 6px; top: 34px; width: 14px; height: 14px;
@@ -137,6 +139,7 @@ figure img { width: 100%; height: auto; border-radius: 8px; border: 1px solid va
 figcaption { font-size: 0.86rem; color: var(--tinta-2); max-width: 68ch; }
 .figuras { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
 .figuras.quatro { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.grade.dois, .figuras.mapas { grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); }
 .chaves { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.85rem; color: var(--tinta-2); }
 .chaves span { display: inline-flex; align-items: center; gap: 6px; }
 .chaves i { width: 12px; height: 12px; border: 2px solid currentColor; border-radius: 2px; }
@@ -174,9 +177,9 @@ footer { margin-top: 40px; color: var(--tinta-2); font-size: 0.88rem; border-top
   <h1>Pipeline Ideia 01: da lâmina inteira ao pré-laudo</h1>
   <p class="lead">Uma lâmina de mama corada em H&amp;E tem dezenas de milhares de pixels de lado. A pipeline a reduz, em cinco estágios, a um texto curto que um modelo de linguagem pequeno, rodando localmente, transforma num rascunho de pré-laudo. Abaixo, cada estágio com o que faz, o que foi testado e o que os números mostram.</p>
   <div class="fatos">
-    <div class="fato"><b class="num">18 + 57</b><span>lâminas do BRACS: 18 de desenvolvimento, 57 do conjunto de teste oficial</span></div>
+    <div class="fato"><b class="num">18 + 61 + 57</b><span>lâminas do BRACS: desenvolvimento, validação oficial e teste oficial</span></div>
     <div class="fato"><b class="num">0,95</b><span>AUC DCIS × carcinoma invasivo em outra instituição (BACH)</span></div>
-    <div class="fato"><b class="num">55,8%</b><span>acerto do descritor nas 4 classes finais (acaso = 25%)</span></div>
+    <div class="fato"><b class="num">16 → 27 de 57</b><span>lâminas certas ao tirar a decisão do modelo de linguagem (acurácia balanceada 0,41 → 0,47; acaso = 0,25)</span></div>
     <div class="fato"><b class="num">4 GB</b><span>de GPU: tudo roda localmente, sem enviar dados do paciente</span></div>
   </div>
 </header>
@@ -186,6 +189,7 @@ footer { margin-top: 40px; color: var(--tinta-2); font-size: 0.88rem; border-top
     <li><a href="#e1"><span class="n">estágio 1</span><strong>Filtro de tecido</strong><small>descarta o fundo branco</small></a></li>
     <li><a href="#e2"><span class="n">estágio 2</span><strong>Roteador</strong><small>escolhe 32 patches de milhares</small></a></li>
     <li><a href="#e3"><span class="n">estágio 3</span><strong>Descritor</strong><small>categoria e subtipo de cada patch</small></a></li>
+    <li><a href="#lamina" class="novo"><span class="n">novo · 3½</span><strong>Decisão da lâmina</strong><small>a classe final sai de um classificador, não do modelo de linguagem</small></a></li>
     <li><a href="#e4"><span class="n">estágio 4</span><strong>Agregação</strong><small>junta tudo num prompt</small></a></li>
     <li><a href="#e5"><span class="n">estágio 5</span><strong>Síntese</strong><small>modelo local escreve o pré-laudo</small></a></li>
   </ol>
@@ -200,7 +204,7 @@ footer { margin-top: 40px; color: var(--tinta-2); font-size: 0.88rem; border-top
       <div class="tabela"><table>
         <thead><tr><th>Conjunto</th><th>O que é</th><th>Uso</th></tr></thead>
         <tbody>
-          <tr><td>BRACS</td><td>547 lâminas de mama, 4.537 regiões anotadas em 7 classes (N, PB, UDH, FEA, ADH, DCIS, IC)</td><td>18 lâminas de desenvolvimento e 57 do teste oficial</td></tr>
+          <tr><td>BRACS</td><td>547 lâminas de mama, 4.537 regiões anotadas em 7 classes (N, PB, UDH, FEA, ADH, DCIS, IC)</td><td>18 lâminas de desenvolvimento, 61 da validação oficial e 57 do teste oficial; 3.655 regiões de treino para treinar o descritor</td></tr>
           <tr><td>BACH</td><td>Imagens de microscopia de outra instituição (Porto): 100 <i>in situ</i>, 100 invasivo</td><td>teste de generalização</td></tr>
           <tr><td>NuCLS</td><td>1.744 campos de mama do TCGA, ~59 mil núcleos classificados por patologista</td><td>validar a segmentação de núcleos</td></tr>
         </tbody>
@@ -290,6 +294,16 @@ regiões anotadas cobertas: 98 de 98  (cobertura média 96%)</pre>
     <figure><img src="img/e2_selecao_1370.jpg" alt="Lâmina BRACS_1370 com patches verdes no tecido benigno e alguns violeta e rosa" loading="lazy"><figcaption>BRACS_1370 (lesão benigna): a maioria dos patches sai benigna (verde), mas 12 saem malignos. Esses falsos positivos chegam até o pré-laudo.</figcaption></figure>
   </div>
   <div class="chaves"><span class="c-dcis"><i></i>DCIS</span><span class="c-ic"><i></i>carcinoma invasivo</span><span class="c-ben"><i></i>benigno</span><span class="c-roi"><i></i>região anotada pelo patologista</span></div>
+  <div class="painel destaque">
+    <h3>Em teste: pacote com cota fixa por classe</h3>
+    <p>Em vez de só os 32 patches mais suspeitos, um pacote com número fixo de cada classe: 8 benignos, 6 atípicos, 6 DCIS e 6 carcinoma invasivo, os de maior confiança em cada uma. Três versões da evidência são comparadas nas 61 lâminas de validação, com o modelo de linguagem decidindo:</p>
+    <ul class="limpa">
+      <li><b>A:</b> os 32 mais suspeitos (como hoje);</li>
+      <li><b>B:</b> o pacote com cotas;</li>
+      <li><b>C:</b> o pacote com cotas + a proporção de cada classe na lâmina inteira.</li>
+    </ul>
+    <span class="selo ref" id="cotas-status">em andamento: 30 de 183 pré-laudos · critério fixado antes: acurácia balanceada de C maior que a de A</span>
+  </div>
   <div class="par">
     <div class="desafios">
       <h3>Problemas e desafios</h3>
@@ -370,6 +384,16 @@ patches escolhidos com tumor (≥ 20 núcleos):
     <p class="nota">O ganho vem dos malignos. O atípico é o ponto fraco: há pouco dado de treino (972 patches, quase todos de 3 lâminas).</p>
   </div>
 
+  <div class="painel destaque">
+    <h3>Descritor treinado nas regiões anotadas do BRACS (novo)</h3>
+    <p>A mesma hierarquia, agora treinada com as regiões de treino do BRACS (23.669 patches de 3.402 regiões, até 16 por região) em vez dos patches de 18 lâminas. O atípico ganha muito mais exemplos: UDH 387, FEA 624, ADH 387 regiões.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Acerto por patch, nas 312 regiões de validação</th><th class="num">Benigno</th><th class="num">Atípico</th><th class="num">Maligno</th></tr></thead>
+      <tbody><tr><td>Descritor das regiões</td><td class="num">77%</td><td class="num">41%</td><td class="num">89%</td></tr></tbody>
+    </table></div>
+    <p class="nota">No teste externo, o atípico passou de 1 para 10 de 24 lâminas. O custo: o descritor marca patches como DCIS ou carcinoma invasivo também em lâminas benignas (por exemplo, 115 de 2.000 patches "invasivos" numa lâmina benigna da validação).</p>
+  </div>
+
   <div class="grade">
     <div class="painel">
       <h3>Os núcleos medem com precisão? (validação no NuCLS)</h3>
@@ -437,6 +461,124 @@ patches escolhidos com tumor (≥ 20 núcleos):
 [98304,37888] (maligno 1.00) invasive carcinoma 1.00
 …
 categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
+    </div>
+  </div>
+</section>
+
+<!-- DECISÃO DA LÂMINA -->
+<section class="estagio" id="lamina">
+  <div class="cab eo"><span class="marca">3½</span><h2>Decisão da lâmina inteira</h2><p>Etapa nova. Em vez de o modelo de linguagem decidir a classe a partir de 32 patches, um classificador usa até 2.000 patches de cada lâmina: 12 números (frações por classe, médias e percentis altos das probabilidades) entram numa regressão logística treinada com o rótulo de 79 lâminas. O modelo de linguagem passa a só redigir.</p></div>
+
+  <div class="painel destaque">
+    <h3>Teste nas 57 lâminas: acurácia balanceada nas 4 classes</h3>
+    <div class="barras">
+      <div class="barra"><span class="nome">Hierárquico + negativos (exploratório)</span><span class="trilho"><i style="width:49%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,490</span></div>
+      <div class="barra"><span class="nome"><b>Classificador + negativos</b></span><span class="trilho"><i style="width:47%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,470</span></div>
+      <div class="barra"><span class="nome">Hierárquico</span><span class="trilho"><i style="width:43.7%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,437</span></div>
+      <div class="barra"><span class="nome">Classificador</span><span class="trilho"><i style="width:42.4%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,424</span></div>
+      <div class="barra cinza"><span class="nome">Modelo de linguagem decide (E0)</span><span class="trilho"><i style="width:40.6%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,406</span></div>
+      <div class="barra cinza"><span class="nome">Regra de proporção (22/10)</span><span class="trilho"><i style="width:34.6%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,346</span></div>
+    </div>
+    <span class="legenda-acaso">acaso (0,25, 4 classes)</span>
+    <div class="tabela"><table>
+      <thead><tr><th></th><th class="num">Benigno</th><th class="num">Atípico</th><th class="num">DCIS</th><th class="num">IC</th><th class="num">Total</th><th>Critério</th></tr></thead>
+      <tbody>
+        <tr><td>Modelo de linguagem decide (E0)</td><td class="num">0/13</td><td class="num">1/24</td><td class="num">8/8</td><td class="num">7/12</td><td class="num">16/57</td><td><span class="selo ref">referência</span></td></tr>
+        <tr><td>Regra de proporção (22/10)</td><td class="num">5/13</td><td class="num">10/24</td><td class="num">0/8</td><td class="num">7/12</td><td class="num">22/57</td><td><span class="selo falha">não passou</span></td></tr>
+        <tr><td>Classificador</td><td class="num">2/13</td><td class="num">5/24</td><td class="num">4/8</td><td class="num">10/12</td><td class="num">21/57</td><td><span class="selo parcial">passou, dentro do ruído</span></td></tr>
+        <tr><td>Hierárquico</td><td class="num">7/13</td><td class="num">3/24</td><td class="num">2/8</td><td class="num">10/12</td><td class="num">22/57</td><td><span class="selo parcial">passou por pouco</span></td></tr>
+        <tr class="vence"><td><b>Classificador + negativos benignos</b></td><td class="num">6/13</td><td class="num">9/24</td><td class="num">1/8</td><td class="num">11/12</td><td class="num"><b>27/57</b></td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Hierárquico + negativos (exploratório)</td><td class="num">6/13</td><td class="num">11/24</td><td class="num">1/8</td><td class="num">11/12</td><td class="num">29/57</td><td><span class="selo ref">sem critério</span></td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Cada célula: lâminas certas / lâminas daquela classe. Intervalo de 95% por bootstrap agrupado por paciente: 0,31–0,53 no classificador e 0,36–0,59 com negativos; os intervalos se sobrepõem. A linha exploratória foi calculada depois de ver os outros resultados.</p>
+  </div>
+
+  <div class="grade dois">
+    <div class="painel">
+      <h3>Lâminas benignas como exemplos negativos</h3>
+      <p>O rótulo de uma lâmina do BRACS é o da lesão mais grave: numa lâmina benigna, nenhum patch é atípico nem maligno. Até 500 patches de cada uma das 26 lâminas benignas do treino entram no descritor como "benigno", sem usar os do mesmo paciente ao descrever uma lâmina.</p>
+      <div class="barras">
+        <div class="barra cinza"><span class="nome">Antes</span><span class="trilho"><i style="width:23.1%"></i></span><span class="valor">23,1%</span></div>
+        <div class="barra"><span class="nome">Com negativos</span><span class="trilho"><i style="width:7%"></i></span><span class="valor">7,0%</span></div>
+      </div>
+      <p class="nota">Fração média de patches classificados como DCIS ou IC nas 13 lâminas benignas do teste. O acerto nos patches malignos das regiões de validação ficou em 89%.</p>
+      <span class="selo ok">passou</span>
+    </div>
+    <div class="painel">
+      <h3>Triagem: benigno × precisa de atenção</h3>
+      <div class="tabela"><table>
+        <thead><tr><th></th><th class="num">Sensib.</th><th class="num">Especif.</th><th class="num">AUC</th></tr></thead>
+        <tbody>
+          <tr><td>Classificador</td><td class="num">0,95</td><td class="num">0,00</td><td class="num">0,52</td></tr>
+          <tr><td>Com negativos (exploratório)</td><td class="num">0,98</td><td class="num">0,15</td><td class="num">0,65</td></tr>
+          <tr><td>Modelo de linguagem (E0)</td><td class="num">0,98</td><td class="num">0,00</td><td class="num">—</td></tr>
+        </tbody>
+      </table></div>
+      <p class="nota">Critério: sensibilidade ≥ 0,90 e especificidade ≥ 0,40. Lâminas atípicas são quase todas tecido benigno com uma lesão pequena, e os números da lâmina inteira diluem essa lesão.</p>
+      <span class="selo falha">não passou</span>
+    </div>
+    <div class="painel">
+      <h3>Abstenção: "não sei"</h3>
+      <p>Quando a maior probabilidade fica abaixo de um limiar escolhido no treino, a lâmina vai direto ao patologista.</p>
+      <div class="tabela"><table>
+        <thead><tr><th></th><th class="num">Lâminas</th><th class="num">Acurácia balanceada</th></tr></thead>
+        <tbody>
+          <tr><td>Todas</td><td class="num">57</td><td class="num">0,424</td></tr>
+          <tr class="vence"><td>Com decisão</td><td class="num">32 (56%)</td><td class="num">0,478</td></tr>
+        </tbody>
+      </table></div>
+      <p class="nota">A curva de acerto por cobertura oscila entre 0,41 e 0,50, sem subir de forma regular: 57 lâminas são poucas para concluir.</p>
+      <span class="selo parcial">passou, ganho pequeno</span>
+    </div>
+    <div class="painel">
+      <h3>Comparação com o publicado (3 classes)</h3>
+      <div class="barras">
+        <div class="barra cinza"><span class="nome">UNI + ABMIL (395 lâminas de treino)</span><span class="trilho"><i style="width:68.7%"></i><span class="acaso" style="left:33.3%"></span></span><span class="valor">0,687</span></div>
+        <div class="barra cinza"><span class="nome">ResNet-50 + ABMIL (395)</span><span class="trilho"><i style="width:55.2%"></i><span class="acaso" style="left:33.3%"></span></span><span class="valor">0,552</span></div>
+        <div class="barra"><span class="nome">Hierárquico + negativos (79), exploratório</span><span class="trilho"><i style="width:52.3%"></i><span class="acaso" style="left:33.3%"></span></span><span class="valor">0,523</span></div>
+        <div class="barra"><span class="nome">Classificador + negativos (79)</span><span class="trilho"><i style="width:49.6%"></i><span class="acaso" style="left:33.3%"></span></span><span class="valor">0,496</span></div>
+        <div class="barra e"><span class="nome">Modelo de linguagem decide</span><span class="trilho"><i style="width:34.7%"></i><span class="acaso" style="left:33.3%"></span></span><span class="valor">0,347</span></div>
+      </div>
+      <span class="legenda-acaso">acaso (0,33, 3 classes)</span>
+      <p class="nota">Comparação indicativa, não direta: o artigo do UNI testa nas 87 lâminas oficiais; aqui são 57 delas. Referência: Chen et al., <i>Nature Medicine</i>, 2024, Extended Data Table 19.</p>
+    </div>
+  </div>
+
+  <h3>Mapas de calor: onde o sistema viu cada coisa</h3>
+  <p class="nota">Primeira lâmina de cada classe real do teste, sem escolha por acerto. Esquerda: classe prevista de cada patch. Direita: probabilidade de não ser benigno. Só 2.000 patches de cada lâmina foram classificados, por isso o aspecto pontilhado. Descritor das regiões, sem os negativos.</p>
+  <div class="figuras mapas">
+    <figure><img src="img/mapa_BRACS_1284.jpg" alt="Mapa de calor de uma lâmina de carcinoma invasivo, com patches de alta probabilidade formando um bloco contínuo" loading="lazy"><figcaption><span class="selo ok">certo</span> BRACS_1284, carcinoma invasivo. Os patches suspeitos formam um bloco contínuo (classificador: IC, 0,997).</figcaption></figure>
+    <figure><img src="img/mapa_BRACS_1330.jpg" alt="Mapa de calor de uma lâmina benigna, com patches de alta probabilidade espalhados pelo tecido" loading="lazy"><figcaption><span class="selo falha">errado</span> BRACS_1330, benigna. Os falsos positivos ficam espalhados, sem foco (classificador: atípico, 0,37).</figcaption></figure>
+    <figure><img src="img/mapa_BRACS_1283.jpg" alt="Mapa de calor de uma lâmina de DCIS" loading="lazy"><figcaption><span class="selo ok">certo</span> BRACS_1283, DCIS (classificador: DCIS, confiança baixa, 0,39).</figcaption></figure>
+    <figure><img src="img/mapa_BRACS_1003691.jpg" alt="Mapa de calor de uma lâmina atípica" loading="lazy"><figcaption><span class="selo falha">errado</span> BRACS_1003691, atípica (classificador: DCIS, 0,41; atípico vem logo atrás, com 0,37).</figcaption></figure>
+  </div>
+
+  <div class="par">
+    <div class="desafios">
+      <h3>Problemas e desafios</h3>
+      <ul class="limpa">
+        <li><b>Benigno × atípico é o ponto mais difícil:</b> na triagem, os dois quase não se separam. A lesão atípica ocupa pouca área, e as médias da lâmina a diluem.</li>
+        <li><b>Tratar um erro cria outro:</b> os negativos cortaram os falsos malignos, mas o DCIS caiu de 4 para 1 de 8 lâminas. Cada versão acerta classes diferentes.</li>
+        <li><b>Poucos dados de lâmina:</b> 79 lâminas de treino contra as 395 do BRACS. Baixar as 379 restantes leva cerca de 40 horas.</li>
+        <li><b>Teste reaproveitado:</b> as 57 lâminas já foram usadas em vários testes. Nada foi ajustado nelas, mas repetir comparações aumenta a chance de um ganho por acaso. A confirmação deve usar as 30 lâminas de teste ainda não usadas.</li>
+        <li><b>Limiares em poucas lâminas superajustam:</b> a regra de proporção de 22/10 chegou a 0,87 nas 18 lâminas de desenvolvimento e caiu para 0,35 no teste.</li>
+        <li><b>Hardware compartilhado:</b> com RAM de 15 GB e GPU de 4 GB, os testes rodam um de cada vez, com limite de memória; lâminas grandes estouram até a geração das figuras.</li>
+      </ul>
+    </div>
+    <div class="exemplo painel">
+      <h3>Exemplo de resultado: campos enviados ao modelo de linguagem (BRACS_264)</h3>
+      <pre class="saida">Classe sugerida pelo classificador: benigno
+Probabilidades: benigno 0.40, atípico 0.33,
+  DCIS 0.15, carcinoma invasivo 0.12
+Confiança: baixa
+Proporção entre os 2000 patches:
+  benigno 73.3% · atípico 13.9%
+  DCIS 8.0% · carcinoma invasivo 4.8%
+Regiões a conferir:
+  [3584,59904] ductal carcinoma in situ 1.00
+  [4096,62464] invasive carcinoma 1.00
+  [43008,56832] atypical epithelial lesion</pre>
     </div>
   </div>
 </section>
@@ -520,6 +662,12 @@ com invasive carcinoma e probabilidade ≥ 0.90; encontrados 0).</pre>
       <p class="nota">A regra ajuda no carcinoma invasivo (5 → 7 de 12), mas a pipeline chama de maligno 55 das 57 lâminas. O ganho nas benignas visto no desenvolvimento não se repetiu. O problema vem antes do modelo de linguagem: o roteador busca o que parece suspeito e o descritor quase nunca diz "atípico".</p>
     </div>
   </div>
+  <div class="painel destaque">
+    <h3>Em teste: o modelo de linguagem só redige</h3>
+    <p>A classe passa a vir do classificador da lâmina, e o modelo recebe campos fixos: classe, probabilidades, confiança, proporções e regiões. Uma checagem automática confere o texto: a classe é a sugerida? Os números e as coordenadas citados existem na evidência? A comparação é com os 57 pré-laudos antigos.</p>
+    <span class="selo ref">rodando · critério fixado antes: classe igual em ≥ 90% dos textos e menos números sem sustentação que nos antigos</span>
+  </div>
+
   <div class="painel">
     <h3>Como o modelo de linguagem se comporta</h3>
     <ul class="limpa">
@@ -597,16 +745,17 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
     <tbody>
       <tr><td>1. Filtro de tecido</td><td><span class="selo ok">resolvido</span></td><td>—</td></tr>
       <tr><td>2. Roteador</td><td><span class="selo parcial">bom em lâminas malignas</span></td><td>métrica para lâminas benignas e atípicas</td></tr>
-      <tr><td>3. Descritor</td><td><span class="selo parcial">bom no DCIS × IC, fraco no atípico</span></td><td>mais lâminas atípicas para treinar</td></tr>
-      <tr><td>4. Agregação</td><td><span class="selo parcial">regra ajuda no IC</span></td><td>decidir a classe final por regra explícita sobre as proporções de patches</td></tr>
-      <tr><td>5. Síntese</td><td><span class="selo falha">28% em lâminas novas</span></td><td>reduzir os falsos positivos malignos nos estágios 2 e 3</td></tr>
+      <tr><td>3. Descritor</td><td><span class="selo parcial">bom no DCIS × IC; negativos cortam falsos malignos; atípico ainda fraco</span></td><td>recuperar o DCIS sem perder as benignas</td></tr>
+      <tr><td>3½. Decisão da lâmina</td><td><span class="selo parcial">27/57, acurácia balanceada 0,47; separar benigno de atípico é o ponto fraco</span></td><td>MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas</td></tr>
+      <tr><td>4. Agregação</td><td><span class="selo parcial">regra ajuda no IC</span></td><td>trocar a contagem dos 32 patches pelos campos fixos</td></tr>
+      <tr><td>5. Síntese</td><td><span class="selo parcial">deixa de decidir a classe; redação em teste</span></td><td>checagem automática do texto e avaliação por patologista</td></tr>
     </tbody>
   </table></div>
   <p class="nota">Ressalvas gerais: 2 lâminas por classe no desenvolvimento; as anotações do BRACS marcam regiões, não cada célula; o rótulo da lâmina é o da lesão mais grave.</p>
 </section>
 
 <footer>
-  <p>Pipeline Ideia 01 · orientação Prof. João Batista Florindo · situação em 19/10/2026. Modelos: QuiltNet-B-32, UNI2-h, CellViT-256, Gemma 3 4B e MedGemma 4B, todos rodando localmente.</p>
+  <p>Pipeline Ideia 01 · orientação Prof. João Batista Florindo · situação em 06/11/2026. Modelos: QuiltNet-B-32, UNI2-h, CellViT-256, Gemma 3 4B e MedGemma 4B, todos rodando localmente.</p>
   <p>Imagens de lâminas: BRACS (Brancati et al., <i>BRACS: A Dataset for BReAst Carcinoma Subtyping in H&amp;E Histology Images</i>, Database, 2022), licença CC BY-NC 4.0. Núcleos anotados: NuCLS (Amgad et al., GigaScience, 2022), CC0. Imagens do BACH não são reproduzidas (licença CC BY-NC-ND); só os resultados numéricos.</p>
 </footer>
 
