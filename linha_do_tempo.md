@@ -124,6 +124,9 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 | 18/10 | Página de visão geral da pipeline (`visao_geral/`, pra GitHub Pages) com imagens de exemplo, resultados e desafios de cada estágio. Encontrado erro na extração da classificação (texto diz benigno, extração diz DCIS) |
 | 22/10 | Descritor treinado nas 3.402 RoIs de treino do BRACS + classe da lâmina por regra de proporção sobre 2.000 patches (limiares nas 18 de desenvolvimento). No teste externo: 22/57 lâminas certas (o maior número), atípico 1 → 10 de 24, mas acurácia balanceada 0,35 contra 0,41 da pipeline atual — não passou. Limiares superajustados às 18 lâminas (só 2 DCIS): nunca diz DCIS |
 | 18/10 | Conferência da extração em 20 pré-laudos: bate em 8, contraria o texto em 2, e em 10 o texto não se decide e a extração escolhe DCIS. Várias lâminas benignas/atípicas têm evidência com "predominância de tecido benigno": parte do problema está na decisão final |
+| 24/10 | Embeddings UNI2-h de 61 das 63 lâminas de validação oficial, baixando e apagando cada lâmina. Pacote com cota fixa por classe (8/6/6/6) fixado antes de rodar; teste com o modelo de linguagem pausado em 30 de 183 pré-laudos |
+| 26/10 | Classificador da lâmina inteira (12 atributos + logística, treino em 79 lâminas): 21/57, acurácia balanceada 0,424 contra 0,406 — passou, dentro do ruído (IC 95% 0,31–0,53). Hierárquico: 0,437, passou por pouco. Abstenção: decide em 56% das lâminas, 0,478 — passou, ganho pequeno. Triagem binária: especificidade 0, AUC 0,52 — não passou |
+| 06/11 | Lâminas benignas como negativos no descritor: 27/57, acurácia balanceada 0,470 — passou, o melhor resultado até aqui. Patches falsos DCIS + IC nas lâminas benignas: 23% → 7%. O DCIS cai para 1 de 8. Comparação com o publicado (UNI + ABMIL, 3 classes): 0,50 contra 0,69, indicativa |
 
 ## Onde paramos
 
