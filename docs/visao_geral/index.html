@@ -175,7 +175,7 @@ footer { margin-top: 40px; color: var(--tinta-2); font-size: 0.88rem; border-top
 <header class="topo">
   <span class="rotulo">Iniciação Científica · UNICAMP · VLMs na Oncologia</span>
   <h1>Pipeline Ideia 01: da lâmina inteira ao pré-laudo</h1>
-  <p class="lead">Uma lâmina de mama corada em H&amp;E tem dezenas de milhares de pixels de lado. A pipeline a reduz, em cinco estágios, a um texto curto que um modelo de linguagem pequeno, rodando localmente, transforma num rascunho de pré-laudo. Abaixo, cada estágio com o que faz, o que foi testado e o que os números mostram.</p>
+  <p class="lead">Uma lâmina de mama corada em H&amp;E tem dezenas de milhares de pixels de lado. A pipeline a reduz, em cinco estágios, a um texto curto que um modelo de linguagem pequeno, rodando localmente, transforma num rascunho de pré-laudo; uma etapa nova decide a classe da lâmina inteira. Abaixo, cada estágio com o que faz, o que foi testado e o que os números mostram.</p>
   <div class="fatos">
     <div class="fato"><b class="num">18 + 61 + 57</b><span>lâminas do BRACS: desenvolvimento, validação oficial e teste oficial</span></div>
     <div class="fato"><b class="num">0,95</b><span>AUC DCIS × carcinoma invasivo em outra instituição (BACH)</span></div>
@@ -216,6 +216,9 @@ footer { margin-top: 40px; color: var(--tinta-2); font-size: 0.88rem; border-top
         <li><b>Patch (tile):</b> 512 × 512 px no nível de 40x, ou 128 × 128 µm de tecido.</li>
         <li><b>Acerto por categoria</b> (descritor): média do acerto em cada classe real; com 3 classes o acaso é 33%, com 4 é 25%.</li>
         <li><b>Acerto do pré-laudo</b> (estágio 5): lâminas certas / total de lâminas, e o mesmo por classe; cada linha das tabelas soma as colunas.</li>
+        <li><b>Acurácia balanceada:</b> média do acerto em cada classe, para a classe mais comum não dominar o número. É a métrica principal da decisão da lâmina. Acaso: 0,25 com 4 classes, 0,33 com 3.</li>
+        <li><b>Intervalo de 95%:</b> calculado por bootstrap agrupado por paciente; intervalos que se sobrepõem indicam que a diferença ainda não está provada.</li>
+        <li><b>Exploratório:</b> análise feita sem critério fixado antes; não conta como confirmação.</li>
         <li><b>AUC:</b> chance de um patch de IC ter pontuação maior que um de DCIS. 0,5 é o acaso, 1,0 é separação perfeita.</li>
         <li><b>Controle com rótulos embaralhados:</b> mostra quanto se acerta só por sorte.</li>
       </ul>
@@ -446,7 +449,8 @@ patches escolhidos com tumor (≥ 20 núcleos):
         <li>Comparar imagem com frases fica no acaso para DCIS × IC: algumas frases "ganham" em quase todos os patches, independentemente da imagem.</li>
         <li>Ajustar frases olhando as mesmas lâminas superajusta: trocas que subiam o acerto nas lâminas de ajuste não se repetiram em lâminas novas.</li>
         <li>O rótulo do BRACS é da região marcada, e a maioria das anotações é um retângulo que inclui estroma junto com a lesão. Quase metade dos patches "DCIS" não tem tumor.</li>
-        <li>O atípico tem pouco dado (972 patches, quase todos de 3 lâminas) e quase nunca é reconhecido.</li>
+        <li>O atípico tinha pouco dado (972 patches, quase todos de 3 lâminas) e quase nunca era reconhecido. Treinar nas regiões do BRACS sobe o acerto por patch para 41%, ainda o mais baixo das três categorias.</li>
+        <li>O descritor treinado nas regiões marca falsos DCIS e carcinoma invasivo em lâminas benignas (23% dos patches nas benignas do teste); usar lâminas benignas como negativos reduz para 7%, ao custo de menos acertos em DCIS.</li>
         <li>O CellViT não tem a classe "mioepitelial" e confunde linfócitos e tumor com estroma; a medida dos núcleos não bate com a anotação de patologistas.</li>
         <li>Generalização: o QuiltNet com camada treinada parecia bom no BRACS e caiu para perto do acaso em outra instituição.</li>
       </ul>
@@ -665,7 +669,7 @@ com invasive carcinoma e probabilidade ≥ 0.90; encontrados 0).</pre>
   <div class="painel destaque">
     <h3>Em teste: o modelo de linguagem só redige</h3>
     <p>A classe passa a vir do classificador da lâmina, e o modelo recebe campos fixos: classe, probabilidades, confiança, proporções e regiões. Uma checagem automática confere o texto: a classe é a sugerida? Os números e as coordenadas citados existem na evidência? A comparação é com os 57 pré-laudos antigos.</p>
-    <span class="selo ref">rodando · critério fixado antes: classe igual em ≥ 90% dos textos e menos números sem sustentação que nos antigos</span>
+    <span class="selo ref">em andamento: 29 de 57 pré-laudos · critério fixado antes: classe igual em ≥ 90% dos textos e menos números sem sustentação que nos antigos</span>
   </div>
 
   <div class="painel">
@@ -755,7 +759,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
 </section>
 
 <footer>
-  <p>Pipeline Ideia 01 · orientação Prof. João Batista Florindo · situação em 06/11/2026. Modelos: QuiltNet-B-32, UNI2-h, CellViT-256, Gemma 3 4B e MedGemma 4B, todos rodando localmente.</p>
+  <p>Pipeline Ideia 01 · orientação Prof. João Batista Florindo · situação em 07/11/2026. Modelos: QuiltNet-B-32, UNI2-h, CellViT-256, Gemma 3 4B e MedGemma 4B, todos rodando localmente.</p>
   <p>Imagens de lâminas: BRACS (Brancati et al., <i>BRACS: A Dataset for BReAst Carcinoma Subtyping in H&amp;E Histology Images</i>, Database, 2022), licença CC BY-NC 4.0. Núcleos anotados: NuCLS (Amgad et al., GigaScience, 2022), CC0. Imagens do BACH não são reproduzidas (licença CC BY-NC-ND); só os resultados numéricos.</p>
 </footer>
 
