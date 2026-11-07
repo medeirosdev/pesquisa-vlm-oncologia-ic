@@ -6,7 +6,7 @@ benigno, atípico, DCIS, IC.
 Fixado ANTES de rodar (commit anterior aos resultados):
   - Lâminas: as 16 da primeira e segunda leva + BRACS_773 e BRACS_295 (18). Tiles: todos os
     rotulados (rotular_tiles, RoIs com correlação >= 0,5). Classe final: N, PB -> benigno;
-    UDH, FEA, ADH -> atípico; DCIS; IC.
+    UDH, FEA, ADH -> atípico; DCIS; IC. (corrigido em 07/11/2026: UDH é benigno no BRACS; resultados anteriores a essa data usam UDH em atípico)
   - UNI2-h: as duas camadas de descritor_uni.prever_hierarquico, treinadas nas outras 17 lâminas.
   - Referência, a mesma hierarquia com frases (zero-shot, QuiltNet): nível 1 = categoria do
     descritor atual (BANCO_DESCRITOR); nível 2 = máx. similaridade com o banco IC vs. o banco DCIS
@@ -42,7 +42,7 @@ FINAIS = ["benigno", "atipico", "DCIS", "IC"]
 
 
 def classe_final(classe_bracs):
-    return {"N": "benigno", "PB": "benigno", "UDH": "atipico", "FEA": "atipico", "ADH": "atipico"}.get(classe_bracs,
+    return {"N": "benigno", "PB": "benigno", "UDH": "benigno", "FEA": "atipico", "ADH": "atipico"}.get(classe_bracs,
                                                                                                     classe_bracs)
 
 

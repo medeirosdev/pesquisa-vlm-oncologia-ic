@@ -162,7 +162,7 @@ def checar_texto(texto, evidencia):
 
 
 def etapa_checar():
-    from lamina_inteira import FINAIS, acuracia_balanceada, laminas_teste
+    from lamina_inteira import FINAIS, acuracia_balanceada, classe_final, laminas_teste
     feito = json.loads((SAIDA / "registro.json").read_text(encoding="utf-8"))
     teste = [s for s in laminas_teste() if s in feito]
     novos, antigos = {}, {}
@@ -180,7 +180,7 @@ def etapa_checar():
                 "textos_com_numero_nao_sustentado": sum(bool(c["nao_sustentados"]) for c in ch.values()),
                 "coordenadas": nc, "coordenadas_inventadas": ci}
     concorda = sum(feito[s]["classe_extraida"] == feito[s]["classe_sugerida"] for s in teste)
-    r, p = [feito[s]["real"] for s in teste], [feito[s]["classe_sugerida"] for s in teste]
+    r, p = [classe_final(info_lamina(s)["rotulo"]) for s in teste], [feito[s]["classe_sugerida"] for s in teste]
     resumo = {"n": len(teste), "classe_extraida_igual_sugerida": f"{concorda}/{len(teste)}",
               "fracao_concorda": round(concorda / len(teste), 3),
               "novos": total(novos), "antigos": total(antigos),

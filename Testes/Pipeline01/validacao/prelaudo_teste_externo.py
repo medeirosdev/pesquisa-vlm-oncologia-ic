@@ -38,7 +38,7 @@ from comum.rois import info_lamina
 LISTA = Path(__file__).resolve().parent.parent / "scripts" / "lista_teste_oficial.txt"
 MODELO = "gemma3:4b"
 K = 32
-GRUPO = {"N": "benigno", "PB": "benigno", "UDH": "atipico", "FEA": "atipico", "ADH": "atipico", "DCIS": "DCIS", "IC": "IC"}
+GRUPO = {"N": "benigno", "PB": "benigno", "UDH": "benigno", "FEA": "atipico", "ADH": "atipico", "DCIS": "DCIS", "IC": "IC"}
 SAIDA = RESULTADOS_DIR / "prelaudo_teste_externo.json"
 
 

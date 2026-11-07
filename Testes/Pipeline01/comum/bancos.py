@@ -88,9 +88,9 @@ BANCO_POR_CLASSE = {
     ],
 }
 
-# Categorias oficiais do BRACS (ver docs/datasets.md): benigno = N, PB; atípico = UDH, FEA, ADH;
-# maligno = DCIS, IC.
-CATEGORIA_DA_CLASSE = {"N": "benigno", "PB": "benigno", "UDH": "atipico", "FEA": "atipico",
+# Categorias oficiais do BRACS (ver docs/datasets.md): benigno = N, PB, UDH; atípico = FEA, ADH;
+# maligno = DCIS, IC. (corrigido em 07/11/2026: UDH é benigno no BRACS; resultados anteriores a essa data usam UDH em atípico)
+CATEGORIA_DA_CLASSE = {"N": "benigno", "PB": "benigno", "UDH": "benigno", "FEA": "atipico",
                        "ADH": "atipico", "DCIS": "maligno", "IC": "maligno"}
 
 
@@ -125,9 +125,9 @@ def _substituir(frases):
 
 
 BANCO_DESCRITOR = {
-    "benigno": _substituir(_sem_repetir(BANCO_POR_CLASSE["N"], BANCO_POR_CLASSE["PB"],
+    "benigno": _substituir(_sem_repetir(BANCO_POR_CLASSE["N"], BANCO_POR_CLASSE["PB"], BANCO_POR_CLASSE["UDH"],
                                         ["adipose tissue", "benign fibrous stroma"])),
-    "atipico": _substituir(_sem_repetir(BANCO_POR_CLASSE["UDH"], BANCO_POR_CLASSE["FEA"], BANCO_POR_CLASSE["ADH"])),
+    "atipico": _substituir(_sem_repetir(BANCO_POR_CLASSE["FEA"], BANCO_POR_CLASSE["ADH"])),
     "maligno": _substituir(_sem_repetir(BANCO_V2["suspeito"], BANCO_POR_CLASSE["DCIS"], BANCO_POR_CLASSE["IC"])),
 }
 

@@ -7,7 +7,7 @@ lâminas) -> agregação (estágio 4) -> Gemma 3 4B via Ollama (estágio 5), com
 
 Fixado ANTES de rodar (commit anterior aos resultados):
   - Lâminas: as 18 (16 das duas levas + BRACS_773, BRACS_295). Rótulo real = rótulo da lâmina no
-    BRACS (BRACS.xlsx), agrupado: N, PB -> benigno; UDH, FEA, ADH -> atípico; DCIS; IC.
+    BRACS (BRACS.xlsx), agrupado: N, PB -> benigno; UDH, FEA, ADH -> atípico; DCIS; IC. (corrigido em 07/11/2026: UDH é benigno no BRACS; resultados anteriores a essa data usam UDH em atípico)
   - Modelo: gemma3:4b (o melhor no teste exploratório de 17/10), temperature 0,2, seed 0.
   - A) Avaliação sistemática: prompt sem a regra (v1), nas 18 lâminas. Descritiva: acertos por
     lâmina e matriz de confusão. Resposta sem a linha final (ou ambígua) conta como erro.
@@ -50,7 +50,7 @@ USADAS_NA_REGRA = ["BRACS_748", "BRACS_1489", "BRACS_1370"]
 LAMINAS_TESTE_REGRA = [s for s in LAMINAS if s not in USADAS_NA_REGRA]
 MODELO = "gemma3:4b"
 K = 32
-GRUPO = {"N": "benigno", "PB": "benigno", "UDH": "atipico", "FEA": "atipico", "ADH": "atipico", "DCIS": "DCIS", "IC": "IC"}
+GRUPO = {"N": "benigno", "PB": "benigno", "UDH": "benigno", "FEA": "atipico", "ADH": "atipico", "DCIS": "DCIS", "IC": "IC"}
 SAIDA = RESULTADOS_DIR / "prelaudo_avaliacao.json"
 
 

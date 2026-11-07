@@ -66,7 +66,7 @@ SAIDA = RESULTADOS_DIR / "lamina_inteira"
 
 
 def classe_final(c):
-    return {"N": "benigno", "PB": "benigno", "UDH": "atipico", "FEA": "atipico", "ADH": "atipico"}.get(c, c)
+    return {"N": "benigno", "PB": "benigno", "UDH": "benigno", "FEA": "atipico", "ADH": "atipico"}.get(c, c)
 
 
 # ---------- etapa 1: patches das RoIs ----------
