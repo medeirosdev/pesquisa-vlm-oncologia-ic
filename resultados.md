@@ -215,7 +215,7 @@ Todos os testes usam as 57 lâminas do teste externo, com critério fixado em co
 | Classificador 4 classes, descritor com negativos | 79 lâminas | 57 das 87 | 0,496 |
 | E0 — modelo de linguagem decide | — | 57 das 87 | 0,347 |
 
-A comparação é indicativa, não direta: os conjuntos de teste e de treino diferem, e o UNI2-h usado aqui é outro modelo. Nas 7 classes, o mesmo artigo reporta 0,468 (0,393–0,550); a pipeline não prevê as 7. A distância até 0,687 sugere o que o MIL com as 379 lâminas de treino pode acrescentar. Em ACMIL (Zhang et al., ICCV 2023, Tabela 1), com outra métrica (F1 macro em 3 classes, características SSL), ABMIL chega a 0,680 e ACMIL a 0,722.
+A comparação é indicativa, não direta: os conjuntos de teste e de treino diferem, e o UNI2-h usado aqui é outro modelo. Nas 7 classes, o mesmo artigo reporta 0,468 (0,393–0,550); a pipeline não prevê as 7. A distância até 0,687 sugere o que o MIL com as 379 lâminas de treino pode acrescentar. No artigo do ACMIL (arXiv 2311.07125, Tabela 1), com outra métrica (F1 macro em 3 classes, características SSL), ABMIL chega a 0,680 e ACMIL a 0,722.
 
 ## Anotações oficiais do BRACS
 
