@@ -179,7 +179,7 @@ footer { margin-top: 40px; color: var(--tinta-2); font-size: 0.88rem; border-top
   <div class="fatos">
     <div class="fato"><b class="num">18 + 61 + 57</b><span>lâminas do BRACS: desenvolvimento, validação oficial e teste oficial</span></div>
     <div class="fato"><b class="num">0,95</b><span>AUC DCIS × carcinoma invasivo em outra instituição (BACH)</span></div>
-    <div class="fato"><b class="num">16 → 27 de 57</b><span>lâminas certas ao tirar a decisão do modelo de linguagem (acurácia balanceada 0,41 → 0,47; acaso = 0,25)</span></div>
+    <div class="fato"><b class="num">17 → 29 de 57</b><span>lâminas certas ao tirar a decisão do modelo de linguagem (acurácia balanceada 0,42 → 0,51; acaso = 0,25)</span></div>
     <div class="fato"><b class="num">4 GB</b><span>de GPU: tudo roda localmente, sem enviar dados do paciente</span></div>
   </div>
 </header>
@@ -219,6 +219,7 @@ footer { margin-top: 40px; color: var(--tinta-2); font-size: 0.88rem; border-top
         <li><b>Acurácia balanceada:</b> média do acerto em cada classe, para a classe mais comum não dominar o número. É a métrica principal da decisão da lâmina. Acaso: 0,25 com 4 classes, 0,33 com 3.</li>
         <li><b>Intervalo de 95%:</b> calculado por bootstrap agrupado por paciente; intervalos que se sobrepõem indicam que a diferença ainda não está provada.</li>
         <li><b>Exploratório:</b> análise feita sem critério fixado antes; não conta como confirmação.</li>
+        <li><b>Agrupamento das classes</b> (oficial do BRACS): benigno = N, PB, UDH; atípico = FEA, ADH; maligno = DCIS, IC. Até 06/11 o projeto colocava o UDH em atípico; os resultados de lâmina foram repontuados ou refeitos, e os que não puderam ser estão marcados como "agrupamento antigo".</li>
         <li><b>AUC:</b> chance de um patch de IC ter pontuação maior que um de DCIS. 0,5 é o acaso, 1,0 é separação perfeita.</li>
         <li><b>Controle com rótulos embaralhados:</b> mostra quanto se acerta só por sorte.</li>
       </ul>
@@ -376,7 +377,7 @@ patches escolhidos com tumor (≥ 20 núcleos):
   </div>
 
   <div class="painel">
-    <h3>Acerto nas 4 classes finais (18 lâminas, lâmina fora do treino)</h3>
+    <h3>Acerto nas 4 classes finais (18 lâminas, lâmina fora do treino; agrupamento antigo)</h3>
     <div class="tabela"><table>
       <thead><tr><th>Método</th><th class="num">Benigno</th><th class="num">Atípico</th><th class="num">DCIS</th><th class="num">IC</th><th class="num">Média</th></tr></thead>
       <tbody>
@@ -389,12 +390,13 @@ patches escolhidos com tumor (≥ 20 núcleos):
 
   <div class="painel destaque">
     <h3>Descritor treinado nas regiões anotadas do BRACS (novo)</h3>
-    <p>A mesma hierarquia, agora treinada com as regiões de treino do BRACS (23.669 patches de 3.402 regiões, até 16 por região) em vez dos patches de 18 lâminas. O atípico ganha muito mais exemplos: UDH 387, FEA 624, ADH 387 regiões.</p>
+    <p>A mesma hierarquia, agora treinada com as regiões de treino do BRACS (23.669 patches de 3.402 regiões, até 16 por região) em vez dos patches de 18 lâminas. O atípico ganha muito mais exemplos: FEA 624 e ADH 387 regiões.</p>
     <div class="tabela"><table>
-      <thead><tr><th>Acerto por patch, nas 312 regiões de validação</th><th class="num">Benigno</th><th class="num">Atípico</th><th class="num">Maligno</th></tr></thead>
-      <tbody><tr><td>Descritor das regiões</td><td class="num">77%</td><td class="num">41%</td><td class="num">89%</td></tr></tbody>
+      <thead><tr><th>Acerto por patch, nas 312 regiões de validação (rótulo oficial)</th><th class="num">Benigno</th><th class="num">Atípico</th><th class="num">Maligno</th></tr></thead>
+      <tbody><tr><td>Descritor das regiões</td><td class="num">84%</td><td class="num">35%</td><td class="num">90%</td></tr>
+      <tr><td>Com negativos benignos</td><td class="num">88%</td><td class="num">37%</td><td class="num">87%</td></tr></tbody>
     </table></div>
-    <p class="nota">No teste externo, o atípico passou de 1 para 10 de 24 lâminas. O custo: o descritor marca patches como DCIS ou carcinoma invasivo também em lâminas benignas (por exemplo, 115 de 2.000 patches "invasivos" numa lâmina benigna da validação).</p>
+    <p class="nota">Agrupamento antigo (UDH em atípico): no teste externo, o atípico passou de 1 para 10 de 24 lâminas; com o rótulo oficial, a mesma regra acerta 5 de 17, porque parte do ganho vinha das lâminas UDH. O custo: o descritor marca patches como DCIS ou carcinoma invasivo também em lâminas benignas (por exemplo, 115 de 2.000 patches "invasivos" numa lâmina benigna da validação).</p>
   </div>
 
   <div class="grade">
@@ -449,8 +451,8 @@ patches escolhidos com tumor (≥ 20 núcleos):
         <li>Comparar imagem com frases fica no acaso para DCIS × IC: algumas frases "ganham" em quase todos os patches, independentemente da imagem.</li>
         <li>Ajustar frases olhando as mesmas lâminas superajusta: trocas que subiam o acerto nas lâminas de ajuste não se repetiram em lâminas novas.</li>
         <li>O rótulo do BRACS é da região marcada, e a maioria das anotações é um retângulo que inclui estroma junto com a lesão. Quase metade dos patches "DCIS" não tem tumor.</li>
-        <li>O atípico tinha pouco dado (972 patches, quase todos de 3 lâminas) e quase nunca era reconhecido. Treinar nas regiões do BRACS sobe o acerto por patch para 41%, ainda o mais baixo das três categorias.</li>
-        <li>O descritor treinado nas regiões marca falsos DCIS e carcinoma invasivo em lâminas benignas (23% dos patches nas benignas do teste); usar lâminas benignas como negativos reduz para 7%, ao custo de menos acertos em DCIS.</li>
+        <li>O atípico tinha pouco dado (972 patches, quase todos de 3 lâminas) e quase nunca era reconhecido. Treinar nas regiões do BRACS leva o acerto por patch a 35% (rótulo oficial), ainda o mais baixo das três categorias.</li>
+        <li>O descritor treinado nas regiões marca falsos DCIS e carcinoma invasivo em lâminas benignas (21% dos patches nas 20 benignas do teste); usar lâminas benignas como negativos reduz para 7%, ao custo de menos acertos em DCIS.</li>
         <li>O CellViT não tem a classe "mioepitelial" e confunde linfócitos e tumor com estroma; a medida dos núcleos não bate com a anotação de patologistas.</li>
         <li>Generalização: o QuiltNet com camada treinada parecia bom no BRACS e caiu para perto do acaso em outra instituição.</li>
       </ul>
@@ -474,56 +476,53 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
   <div class="cab eo"><span class="marca">3½</span><h2>Decisão da lâmina inteira</h2><p>Etapa nova. Em vez de o modelo de linguagem decidir a classe a partir de 32 patches, um classificador usa até 2.000 patches de cada lâmina: 12 números (frações por classe, médias e percentis altos das probabilidades) entram numa regressão logística treinada com o rótulo de 79 lâminas. O modelo de linguagem passa a só redigir.</p></div>
 
   <div class="painel destaque">
-    <h3>Teste nas 57 lâminas: acurácia balanceada nas 4 classes</h3>
+    <h3>Teste nas 57 lâminas: acurácia balanceada nas 4 classes (rótulo oficial)</h3>
     <div class="barras">
-      <div class="barra"><span class="nome">Hierárquico + negativos (exploratório)</span><span class="trilho"><i style="width:49%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,490</span></div>
-      <div class="barra"><span class="nome"><b>Classificador + negativos</b></span><span class="trilho"><i style="width:47%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,470</span></div>
-      <div class="barra"><span class="nome">Hierárquico</span><span class="trilho"><i style="width:43.7%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,437</span></div>
-      <div class="barra"><span class="nome">Classificador</span><span class="trilho"><i style="width:42.4%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,424</span></div>
-      <div class="barra cinza"><span class="nome">Modelo de linguagem decide (E0)</span><span class="trilho"><i style="width:40.6%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,406</span></div>
-      <div class="barra cinza"><span class="nome">Regra de proporção (22/10)</span><span class="trilho"><i style="width:34.6%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,346</span></div>
+      <div class="barra"><span class="nome">Hierárquico + negativos (sem critério)</span><span class="trilho"><i style="width:51.8%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,518</span></div>
+      <div class="barra"><span class="nome"><b>Classificador + negativos</b></span><span class="trilho"><i style="width:50.5%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,505</span></div>
+      <div class="barra"><span class="nome">Classificador</span><span class="trilho"><i style="width:45.5%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,455</span></div>
+      <div class="barra cinza"><span class="nome">Modelo de linguagem decide (E0)</span><span class="trilho"><i style="width:42.3%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,423</span></div>
+      <div class="barra cinza"><span class="nome">Regra de proporção (22/10)</span><span class="trilho"><i style="width:30.7%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,307</span></div>
     </div>
     <span class="legenda-acaso">acaso (0,25, 4 classes)</span>
     <div class="tabela"><table>
       <thead><tr><th></th><th class="num">Benigno</th><th class="num">Atípico</th><th class="num">DCIS</th><th class="num">IC</th><th class="num">Total</th><th>Critério</th></tr></thead>
       <tbody>
-        <tr><td>Modelo de linguagem decide (E0)</td><td class="num">0/13</td><td class="num">1/24</td><td class="num">8/8</td><td class="num">7/12</td><td class="num">16/57</td><td><span class="selo ref">referência</span></td></tr>
-        <tr><td>Regra de proporção (22/10)</td><td class="num">5/13</td><td class="num">10/24</td><td class="num">0/8</td><td class="num">7/12</td><td class="num">22/57</td><td><span class="selo falha">não passou</span></td></tr>
-        <tr><td>Classificador</td><td class="num">2/13</td><td class="num">5/24</td><td class="num">4/8</td><td class="num">10/12</td><td class="num">21/57</td><td><span class="selo parcial">passou, dentro do ruído</span></td></tr>
-        <tr><td>Hierárquico</td><td class="num">7/13</td><td class="num">3/24</td><td class="num">2/8</td><td class="num">10/12</td><td class="num">22/57</td><td><span class="selo parcial">passou por pouco</span></td></tr>
-        <tr class="vence"><td><b>Classificador + negativos benignos</b></td><td class="num">6/13</td><td class="num">9/24</td><td class="num">1/8</td><td class="num">11/12</td><td class="num"><b>27/57</b></td><td><span class="selo ok">passou</span></td></tr>
-        <tr><td>Hierárquico + negativos (exploratório)</td><td class="num">6/13</td><td class="num">11/24</td><td class="num">1/8</td><td class="num">11/12</td><td class="num">29/57</td><td><span class="selo ref">sem critério</span></td></tr>
+        <tr><td>Modelo de linguagem decide (E0)</td><td class="num">1/20</td><td class="num">1/17</td><td class="num">8/8</td><td class="num">7/12</td><td class="num">17/57</td><td><span class="selo ref">referência</span></td></tr>
+        <tr><td>Regra de proporção (22/10)</td><td class="num">7/20</td><td class="num">5/17</td><td class="num">0/8</td><td class="num">7/12</td><td class="num">19/57</td><td><span class="selo falha">não passou</span></td></tr>
+        <tr><td>Classificador</td><td class="num">7/20</td><td class="num">3/17</td><td class="num">3/8</td><td class="num">11/12</td><td class="num">24/57</td><td><span class="selo ref">sem critério nesta versão</span></td></tr>
+        <tr class="vence"><td><b>Classificador + negativos benignos</b></td><td class="num">10/20</td><td class="num">6/17</td><td class="num">2/8</td><td class="num">11/12</td><td class="num"><b>29/57</b></td><td><span class="selo ok">passou, por pouco</span></td></tr>
+        <tr><td>Hierárquico + negativos</td><td class="num">10/20</td><td class="num">9/17</td><td class="num">1/8</td><td class="num">11/12</td><td class="num">31/57</td><td><span class="selo ref">sem critério</span></td></tr>
       </tbody>
     </table></div>
-    <p class="nota">Cada célula: lâminas certas / lâminas daquela classe. Intervalo de 95% por bootstrap agrupado por paciente: 0,31–0,53 no classificador e 0,36–0,59 com negativos; os intervalos se sobrepõem. A linha exploratória foi calculada depois de ver os outros resultados.</p>
+    <p class="nota">Cada célula: lâminas certas / lâminas daquela classe (20 + 17 + 8 + 12 = 57). Linhas do modelo de linguagem e da regra de 22/10: as mesmas previsões, repontuadas com o rótulo oficial. Classificadores: refeitos com o rótulo oficial em 07/11. Intervalo de 95% do classificador com negativos: 0,40–0,63. O critério comparava com a versão de 06/11 repontuada (0,491).</p>
   </div>
 
   <div class="grade dois">
     <div class="painel">
       <h3>Lâminas benignas como exemplos negativos</h3>
-      <p>O rótulo de uma lâmina do BRACS é o da lesão mais grave: numa lâmina benigna, nenhum patch é atípico nem maligno. Até 500 patches de cada uma das 26 lâminas benignas do treino entram no descritor como "benigno", sem usar os do mesmo paciente ao descrever uma lâmina.</p>
+      <p>O rótulo de uma lâmina do BRACS é o da lesão mais grave: numa lâmina benigna, nenhum patch é atípico nem maligno. Até 500 patches de cada uma das 34 lâminas benignas do treino (N, PB, UDH) entram no descritor como "benigno", sem usar os do mesmo paciente ao descrever uma lâmina.</p>
       <div class="barras">
-        <div class="barra cinza"><span class="nome">Antes</span><span class="trilho"><i style="width:23.1%"></i></span><span class="valor">23,1%</span></div>
-        <div class="barra"><span class="nome">Com negativos</span><span class="trilho"><i style="width:7%"></i></span><span class="valor">7,0%</span></div>
+        <div class="barra cinza"><span class="nome">Antes</span><span class="trilho"><i style="width:20.6%"></i></span><span class="valor">20,6%</span></div>
+        <div class="barra"><span class="nome">Com negativos</span><span class="trilho"><i style="width:6.6%"></i></span><span class="valor">6,6%</span></div>
       </div>
-      <p class="nota">Fração média de patches classificados como DCIS ou IC nas 13 lâminas benignas do teste. O acerto nos patches malignos das regiões de validação ficou em 89%.</p>
+      <p class="nota">Fração média de patches classificados como DCIS ou IC nas 20 lâminas benignas do teste. Por patch, nas regiões de validação: benigno 84% → 88%, maligno 90% → 87%.</p>
       <span class="selo ok">passou</span>
     </div>
     <div class="painel">
-      <h3>Triagem: benigno × precisa de atenção</h3>
+      <h3>Versões binárias (rótulo oficial, com negativos)</h3>
       <div class="tabela"><table>
-        <thead><tr><th></th><th class="num">Sensib.</th><th class="num">Especif.</th><th class="num">AUC</th></tr></thead>
+        <thead><tr><th></th><th class="num">AUC</th><th class="num">Limiar 0,5</th><th class="num">Sens. ≥ 0,90 no treino</th></tr></thead>
         <tbody>
-          <tr><td>Classificador</td><td class="num">0,95</td><td class="num">0,00</td><td class="num">0,52</td></tr>
-          <tr><td>Com negativos (exploratório)</td><td class="num">0,98</td><td class="num">0,15</td><td class="num">0,65</td></tr>
-          <tr><td>Modelo de linguagem (E0)</td><td class="num">0,98</td><td class="num">0,00</td><td class="num">—</td></tr>
+          <tr><td>Maligno × resto</td><td class="num">0,83</td><td class="num">sens. 13/20, espec. 30/37</td><td class="num">sens. 20/20, espec. 0/37</td></tr>
+          <tr><td>Suspeito (FEA, ADH, DCIS, IC) × benigno</td><td class="num">0,66</td><td class="num">sens. 26/37, espec. 10/20</td><td class="num">sens. 35/37, espec. 5/20</td></tr>
         </tbody>
       </table></div>
-      <p class="nota">Critério: sensibilidade ≥ 0,90 e especificidade ≥ 0,40. Lâminas atípicas são quase todas tecido benigno com uma lesão pequena, e os números da lâmina inteira diluem essa lesão.</p>
+      <p class="nota">Critério: sensibilidade ≥ 0,90 e especificidade ≥ 0,40, com o limiar escolhido no treino. O maligno se separa bem do resto, mas o limiar do treino não transfere para o teste; dizer sempre "não maligno" já acerta 37/57. Lesões atípicas ocupam pouca área, e os números da lâmina inteira as diluem.</p>
       <span class="selo falha">não passou</span>
     </div>
     <div class="painel">
-      <h3>Abstenção: "não sei"</h3>
+      <h3>Abstenção: "não sei" (agrupamento antigo)</h3>
       <p>Quando a maior probabilidade fica abaixo de um limiar escolhido no treino, a lâmina vai direto ao patologista.</p>
       <div class="tabela"><table>
         <thead><tr><th></th><th class="num">Lâminas</th><th class="num">Acurácia balanceada</th></tr></thead>
@@ -540,9 +539,9 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
       <div class="barras">
         <div class="barra cinza"><span class="nome">UNI + ABMIL (395 lâminas de treino)</span><span class="trilho"><i style="width:68.7%"></i><span class="acaso" style="left:33.3%"></span></span><span class="valor">0,687</span></div>
         <div class="barra cinza"><span class="nome">ResNet-50 + ABMIL (395)</span><span class="trilho"><i style="width:55.2%"></i><span class="acaso" style="left:33.3%"></span></span><span class="valor">0,552</span></div>
-        <div class="barra"><span class="nome">Hierárquico + negativos (79), exploratório</span><span class="trilho"><i style="width:52.3%"></i><span class="acaso" style="left:33.3%"></span></span><span class="valor">0,523</span></div>
-        <div class="barra"><span class="nome">Classificador + negativos (79)</span><span class="trilho"><i style="width:49.6%"></i><span class="acaso" style="left:33.3%"></span></span><span class="valor">0,496</span></div>
-        <div class="barra e"><span class="nome">Modelo de linguagem decide</span><span class="trilho"><i style="width:34.7%"></i><span class="acaso" style="left:33.3%"></span></span><span class="valor">0,347</span></div>
+        <div class="barra"><span class="nome">Hierárquico + negativos (79), sem critério</span><span class="trilho"><i style="width:56%"></i><span class="acaso" style="left:33.3%"></span></span><span class="valor">0,560</span></div>
+        <div class="barra"><span class="nome">Classificador + negativos (79)</span><span class="trilho"><i style="width:51.8%"></i><span class="acaso" style="left:33.3%"></span></span><span class="valor">0,518</span></div>
+        <div class="barra e"><span class="nome">Modelo de linguagem decide</span><span class="trilho"><i style="width:37%"></i><span class="acaso" style="left:33.3%"></span></span><span class="valor">0,370</span></div>
       </div>
       <span class="legenda-acaso">acaso (0,33, 3 classes)</span>
       <p class="nota">Comparação indicativa, não direta: o artigo do UNI testa nas 87 lâminas oficiais; aqui são 57 delas. Referência: Chen et al., <i>Nature Medicine</i>, 2024, Extended Data Table 19.</p>
@@ -550,7 +549,7 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
   </div>
 
   <h3>Mapas de calor: onde o sistema viu cada coisa</h3>
-  <p class="nota">Primeira lâmina de cada classe real do teste, sem escolha por acerto. Esquerda: classe prevista de cada patch. Direita: probabilidade de não ser benigno. Só 2.000 patches de cada lâmina foram classificados, por isso o aspecto pontilhado. Descritor das regiões, sem os negativos.</p>
+  <p class="nota">Primeira lâmina de cada classe real do teste, sem escolha por acerto. Esquerda: classe prevista de cada patch. Direita: probabilidade de não ser benigno. Só 2.000 patches de cada lâmina foram classificados, por isso o aspecto pontilhado. Descritor das regiões, sem os negativos, e classificador da lâmina de 06/11 (agrupamento antigo); os rótulos reais das quatro lâminas não mudam com a correção.</p>
   <div class="figuras mapas">
     <figure><img src="img/mapa_BRACS_1284.jpg" alt="Mapa de calor de uma lâmina de carcinoma invasivo, com patches de alta probabilidade formando um bloco contínuo" loading="lazy"><figcaption><span class="selo ok">certo</span> BRACS_1284, carcinoma invasivo. Os patches suspeitos formam um bloco contínuo (classificador: IC, 0,997).</figcaption></figure>
     <figure><img src="img/mapa_BRACS_1330.jpg" alt="Mapa de calor de uma lâmina benigna, com patches de alta probabilidade espalhados pelo tecido" loading="lazy"><figcaption><span class="selo falha">errado</span> BRACS_1330, benigna. Os falsos positivos ficam espalhados, sem foco (classificador: atípico, 0,37).</figcaption></figure>
@@ -563,7 +562,8 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
       <h3>Problemas e desafios</h3>
       <ul class="limpa">
         <li><b>Benigno × atípico é o ponto mais difícil:</b> na triagem, os dois quase não se separam. A lesão atípica ocupa pouca área, e as médias da lâmina a diluem.</li>
-        <li><b>Tratar um erro cria outro:</b> os negativos cortaram os falsos malignos, mas o DCIS caiu de 4 para 1 de 8 lâminas. Cada versão acerta classes diferentes.</li>
+        <li><b>Tratar um erro cria outro:</b> os negativos cortaram os falsos malignos, mas o DCIS caiu de 3 para 2 de 8 lâminas. Cada versão acerta classes diferentes.</li>
+        <li><b>Rótulo errado por semanas:</b> o UDH, benigno no BRACS, estava agrupado como atípico. A correção mudou os números, mas não a conclusão; parte do ganho no atípico de 22/10 vinha dele.</li>
         <li><b>Poucos dados de lâmina:</b> 79 lâminas de treino contra as 395 do BRACS. Baixar as 379 restantes leva cerca de 40 horas.</li>
         <li><b>Teste reaproveitado:</b> as 57 lâminas já foram usadas em vários testes. Nada foi ajustado nelas, mas repetir comparações aumenta a chance de um ganho por acaso. A confirmação deve usar as 30 lâminas de teste ainda não usadas.</li>
         <li><b>Limiares em poucas lâminas superajustam:</b> a regra de proporção de 22/10 chegou a 0,87 nas 18 lâminas de desenvolvimento e caiu para 0,35 no teste.</li>
@@ -571,7 +571,7 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
       </ul>
     </div>
     <div class="exemplo painel">
-      <h3>Exemplo de resultado: campos enviados ao modelo de linguagem (BRACS_264)</h3>
+      <h3>Exemplo de resultado: campos enviados ao modelo de linguagem (BRACS_264, classificador de 06/11)</h3>
       <pre class="saida">Classe sugerida pelo classificador: benigno
 Probabilidades: benigno 0.40, atípico 0.33,
   DCIS 0.15, carcinoma invasivo 0.12
@@ -632,44 +632,53 @@ com invasive carcinoma e probabilidade ≥ 0.90; encontrados 0).</pre>
     <div class="painel">
       <h3>Teste da regra, nas 15 lâminas fora das usadas para criá-la</h3>
       <div class="barras">
-        <div class="barra"><span class="nome">Com a regra</span><span class="trilho"><i style="width:66.7%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">10/15</span></div>
+        <div class="barra"><span class="nome">Com a regra</span><span class="trilho"><i style="width:60%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">9/15</span></div>
         <div class="barra cinza"><span class="nome">Sem a regra</span><span class="trilho"><i style="width:33.3%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">5/15</span></div>
       </div>
       <span class="legenda-acaso">acaso (25%, 4 classes)</span>
       <div class="tabela"><table>
         <thead><tr><th></th><th class="num">Benigno</th><th class="num">Atípico</th><th class="num">DCIS</th><th class="num">IC</th><th class="num">Total</th></tr></thead>
         <tbody>
-          <tr><td>Sem a regra</td><td class="num">1/4</td><td class="num">0/6</td><td class="num">1/1</td><td class="num">3/4</td><td class="num">5/15</td></tr>
-          <tr class="vence"><td>Com a regra</td><td class="num">4/4</td><td class="num">1/6</td><td class="num">1/1</td><td class="num">4/4</td><td class="num"><b>10/15</b></td></tr>
+          <tr><td>Sem a regra</td><td class="num">1/6</td><td class="num">0/4</td><td class="num">1/1</td><td class="num">3/4</td><td class="num">5/15</td></tr>
+          <tr class="vence"><td>Com a regra</td><td class="num">4/6</td><td class="num">0/4</td><td class="num">1/1</td><td class="num">4/4</td><td class="num"><b>9/15</b></td></tr>
         </tbody>
       </table></div>
-      <p class="nota">Cada célula: lâminas certas / lâminas daquela classe. O total é a soma das colunas.</p>
-      <span class="selo ok">passou: IC 3 → 4 de 4; benignas 1 → 4 de 4</span>
+      <p class="nota">Cada célula: lâminas certas / lâminas daquela classe, com o rótulo oficial. O total é a soma das colunas.</p>
+      <span class="selo ok">passou: IC 3 → 4 de 4; benignas 1 → 4 de 6</span>
     </div>
     <div class="painel destaque">
       <h3>Teste externo: 57 lâminas do conjunto de teste oficial</h3>
       <span class="selo parcial">passou no critério por pouco · 57 lâminas de 31 pacientes nunca usados</span>
       <div class="barras">
-        <div class="barra"><span class="nome">Com a regra</span><span class="trilho"><i style="width:28.1%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">16/57</span></div>
-        <div class="barra cinza"><span class="nome">Sem a regra</span><span class="trilho"><i style="width:22.8%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">13/57</span></div>
+        <div class="barra"><span class="nome">Com a regra</span><span class="trilho"><i style="width:29.8%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">17/57</span></div>
+        <div class="barra cinza"><span class="nome">Sem a regra</span><span class="trilho"><i style="width:24.6%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">14/57</span></div>
       </div>
       <span class="legenda-acaso">acaso (25%, 4 classes)</span>
       <div class="tabela"><table>
         <thead><tr><th></th><th class="num">Benigno</th><th class="num">Atípico</th><th class="num">DCIS</th><th class="num">IC</th><th class="num">Total</th></tr></thead>
         <tbody>
-          <tr><td>Sem a regra</td><td class="num">0/13</td><td class="num">1/24</td><td class="num">7/8</td><td class="num">5/12</td><td class="num">13/57</td></tr>
-          <tr class="vence"><td>Com a regra</td><td class="num">0/13</td><td class="num">1/24</td><td class="num">8/8</td><td class="num">7/12</td><td class="num"><b>16/57</b></td></tr>
+          <tr><td>Sem a regra</td><td class="num">1/20</td><td class="num">1/17</td><td class="num">7/8</td><td class="num">5/12</td><td class="num">14/57</td></tr>
+          <tr class="vence"><td>Com a regra</td><td class="num">1/20</td><td class="num">1/17</td><td class="num">8/8</td><td class="num">7/12</td><td class="num"><b>17/57</b></td></tr>
           <tr><td>Respostas malignas</td><td class="num" colspan="4"></td><td class="num">55/57</td></tr>
         </tbody>
       </table></div>
-      <p class="nota">Cada célula: lâminas certas / lâminas daquela classe (13 + 24 + 8 + 12 = 57). Com a regra: 0 + 1 + 8 + 7 = 16 certas.</p>
+      <p class="nota">Cada célula: lâminas certas / lâminas daquela classe, com o rótulo oficial (20 + 17 + 8 + 12 = 57). Com a regra: 1 + 1 + 8 + 7 = 17 certas.</p>
       <p class="nota">A regra ajuda no carcinoma invasivo (5 → 7 de 12), mas a pipeline chama de maligno 55 das 57 lâminas. O ganho nas benignas visto no desenvolvimento não se repetiu. O problema vem antes do modelo de linguagem: o roteador busca o que parece suspeito e o descritor quase nunca diz "atípico".</p>
     </div>
   </div>
   <div class="painel destaque">
-    <h3>Em teste: o modelo de linguagem só redige</h3>
+    <h3>O modelo de linguagem só redige</h3>
     <p>A classe passa a vir do classificador da lâmina, e o modelo recebe campos fixos: classe, probabilidades, confiança, proporções e regiões. Uma checagem automática confere o texto: a classe é a sugerida? Os números e as coordenadas citados existem na evidência? A comparação é com os 57 pré-laudos antigos.</p>
-    <span class="selo ref">em andamento: 29 de 57 pré-laudos · critério fixado antes: classe igual em ≥ 90% dos textos e menos números sem sustentação que nos antigos</span>
+    <div class="tabela"><table>
+      <thead><tr><th></th><th class="num">Só redige (novo)</th><th class="num">Modelo decide (antigo)</th></tr></thead>
+      <tbody>
+        <tr><td>Classe do texto igual à sugerida</td><td class="num">57/57</td><td class="num">—</td></tr>
+        <tr class="vence"><td>Números sem sustentação</td><td class="num">0 de 791</td><td class="num">11 de 523 (2,1%)</td></tr>
+        <tr><td>Coordenadas inventadas</td><td class="num">0 de 175</td><td class="num">2 de 178</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">57 lâminas do teste. A checagem não detecta achados morfológicos inventados; na leitura de 3 textos, não houve nenhum. O texto quase só reorganiza os campos. A classe veio do classificador de 06/11 (agrupamento antigo).</p>
+    <span class="selo ok">passou</span>
   </div>
 
   <div class="painel">
@@ -750,9 +759,9 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
       <tr><td>1. Filtro de tecido</td><td><span class="selo ok">resolvido</span></td><td>—</td></tr>
       <tr><td>2. Roteador</td><td><span class="selo parcial">bom em lâminas malignas</span></td><td>métrica para lâminas benignas e atípicas</td></tr>
       <tr><td>3. Descritor</td><td><span class="selo parcial">bom no DCIS × IC; negativos cortam falsos malignos; atípico ainda fraco</span></td><td>recuperar o DCIS sem perder as benignas</td></tr>
-      <tr><td>3½. Decisão da lâmina</td><td><span class="selo parcial">27/57, acurácia balanceada 0,47; separar benigno de atípico é o ponto fraco</span></td><td>MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas</td></tr>
+      <tr><td>3½. Decisão da lâmina</td><td><span class="selo parcial">29/57, acurácia balanceada 0,51; separar benigno de atípico é o ponto fraco</span></td><td>MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas</td></tr>
       <tr><td>4. Agregação</td><td><span class="selo parcial">regra ajuda no IC</span></td><td>trocar a contagem dos 32 patches pelos campos fixos</td></tr>
-      <tr><td>5. Síntese</td><td><span class="selo parcial">deixa de decidir a classe; redação em teste</span></td><td>checagem automática do texto e avaliação por patologista</td></tr>
+      <tr><td>5. Síntese</td><td><span class="selo ok">só redige; texto fiel aos campos (0 números sem sustentação)</span></td><td>avaliação por patologista; texto mais informativo</td></tr>
     </tbody>
   </table></div>
   <p class="nota">Ressalvas gerais: 2 lâminas por classe no desenvolvimento; as anotações do BRACS marcam regiões, não cada célula; o rótulo da lâmina é o da lesão mais grave.</p>

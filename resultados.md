@@ -1,6 +1,6 @@
 # Resultados — Pipeline Ideia 01
 
-Estado em 22/10/2026. Um resumo de cada teste, com números, critério e se passou. Detalhes, tabelas completas e discussão ficam nos arquivos indicados em cada seção. Ordem cronológica dos testes: [linha_do_tempo.md](linha_do_tempo.md).
+Estado em 07/11/2026. Um resumo de cada teste, com números, critério e se passou. Detalhes, tabelas completas e discussão ficam nos arquivos indicados em cada seção. Ordem cronológica dos testes: [linha_do_tempo.md](linha_do_tempo.md).
 
 ## Dados e métricas
 
@@ -13,6 +13,8 @@ Estado em 22/10/2026. Um resumo de cada teste, com números, critério e se pass
 | BRACS — DCIS+IC | `BRACS_773`, `BRACS_295`, com DCIS e IC na mesma lâmina | testes de DCIS vs. IC |
 | BACH | 100 imagens *in situ* + 100 de invasivo, outra instituição (Porto) | generalização |
 | NuCLS | 1.744 campos de mama do TCGA, núcleos classificados por patologista | validação do CellViT |
+
+> **Correção de 07/11/2026 — agrupamento das classes.** Até 06/11, o projeto colocava o UDH em atípico. No BRACS, benigno = N, PB, UDH; atípico = FEA, ADH; maligno = DCIS, IC (as contagens do artigo só fecham assim, e o FTP oficial guarda o UDH na pasta de benignos). Os resultados por patch e por lâmina anteriores a essa data usam o agrupamento antigo e estão marcados. As tabelas de pré-laudo foram repontuadas com o rótulo oficial; os testes da decisão da lâmina foram refeitos (seção "Rótulo oficial do BRACS").
 
 **Métricas**
 
@@ -63,6 +65,8 @@ Detalhes: `Testes/Pipeline01/estagio2_roteador/`, `Testes/Pipeline01/estagio3_de
 
 ### Benigno / atípico / maligno
 
+*Agrupamento antigo (UDH em atípico); ver a correção de 07/11.*
+
 | Método | 8 lâminas novas (benigno / atípico / maligno / média) | Passou? |
 |---|---|---|
 | Zero-shot, banco original | — / — / — / 44,8% | referência |
@@ -101,6 +105,8 @@ Controle com rótulos embaralhados: AUC média 0,38–0,46.
 Detalhes: `Testes/Pipeline01/estagio3_descritores/resultados.md` (seções do plano UNI2-h), scripts em `Testes/Pipeline01/validacao/`.
 
 ### Descritor hierárquico (categoria → DCIS/IC → texto), 4 classes finais, 18 lâminas, lâmina de fora
+
+*Agrupamento antigo (UDH em atípico); ver a correção de 07/11.*
 
 | Método | Benigno | Atípico | DCIS | IC | Média | Passou? |
 |---|---|---|---|---|---|---|
@@ -154,26 +160,28 @@ O modelo segue a maioria dos patches (na lâmina de IC, o componente invasivo é
 
 ### Avaliação sistemática do pré-laudo e regra do componente invasivo (Gemma 3 4B)
 
-Classificação final do pré-laudo (benigno / atípico / DCIS / IC) contra o rótulo da lâmina no BRACS.
+Classificação final do pré-laudo (benigno / atípico / DCIS / IC) contra o rótulo da lâmina no BRACS, repontuada com o rótulo oficial (entre parênteses, o valor com o agrupamento antigo).
 
 | | Sem regra (v1) | Com regra (v2) | Passou? |
 |---|---|---|---|
-| 18 lâminas | 6/18 (33%): benigno 1/5, atípico 0/6, DCIS 2/2, IC 3/5 | — | descritivo |
-| 15 lâminas fora das usadas pra criar a regra | 5/15 (33%), IC 3/4 | **10/15 (67%), IC 4/4** | **sim** (critério: mais IC e acurácia não menor) |
+| 18 lâminas | 6/18 (33%): benigno 1/7, atípico 0/4, DCIS 2/2, IC 3/5 | — | descritivo |
+| 15 lâminas fora das usadas pra criar a regra | 5/15 (33%), IC 3/4 | **9/15 (60%), IC 4/4** (antes: 10/15) | **sim** (critério: mais IC e acurácia não menor) |
 
-Regra (estágio 4): se ≥ 2 patches com carcinoma invasivo e P ≥ 0,90, o prompt diz "componente invasivo presente" e que ele define o diagnóstico; senão, "não detectado". Sem a regra, o modelo chama de maligno 17 de 18 lâminas; com ela, acerta as 4 benignas. O atípico continua errado (1/6), e duas atípicas viram IC.
+Regra (estágio 4): se ≥ 2 patches com carcinoma invasivo e P ≥ 0,90, o prompt diz "componente invasivo presente" e que ele define o diagnóstico; senão, "não detectado". Sem a regra, o modelo chama de maligno 17 de 18 lâminas; com ela, 10 de 15. Benignas: 1 → 4 de 6. O atípico continua errado (0/4).
 
 **Teste externo** — 57 lâminas do conjunto de teste oficial do BRACS (31 pacientes nunca usados), pipeline congelada:
 
 | | Sem regra | Com regra | Passou? |
 |---|---|---|---|
-| 57 lâminas | 13/57 (23%), IC 5/12 | **16/57 (28%), IC 7/12** | sim, por pouco |
-| Benigno / atípico | 0/13 · 1/24 | 0/13 · 1/24 | — |
+| 57 lâminas | 14/57 (25%), IC 5/12 (antes: 13/57) | **17/57 (30%), IC 7/12** (antes: 16/57) | sim, por pouco |
+| Benigno / atípico | 1/20 · 1/17 | 1/20 · 1/17 | — |
 | Respostas malignas | 55 de 57 | 55 de 57 | — |
 
 A regra se confirma no IC, mas a pipeline chama quase tudo de maligno: o acerto total fica perto do acaso de 4 classes (25%). O ganho nas benignas visto no desenvolvimento não se repetiu. Conferência de 20 pré-laudos: a extração erra em ~10%, e em metade o texto não se decide por uma classe (a extração escolhe DCIS); várias lâminas benignas têm evidência com predominância de patches benignos. Detalhes: `Testes/Pipeline01/estagio5_sintese/resultados.md`.
 
 ## Classificação da lâmina inteira e descritor treinado nas RoIs (22/10)
+
+*Agrupamento antigo (UDH em atípico); ver a correção de 07/11.*
 
 Script: `Testes/Pipeline01/validacao/lamina_inteira.py`, fixado antes (commit `c3bfa00`). Descritor "rois": hierarquia UNI2-h treinada com até 16 patches por RoI de treino do BRACS (23.669 patches de 3.402 RoIs; 1 recorte ilegível pulado). Classe da lâmina por regra de proporção sobre 2.000 patches sorteados (f_mal ≥ t_m → IC se f_ic ≥ t_ic, senão DCIS; senão f_at ≥ t_a → atípico; senão benigno), limiares escolhidos nas 18 lâminas de desenvolvimento. Critério: E2 > E0 e E2 > E1 em acurácia balanceada nas 57 lâminas do teste externo.
 
@@ -183,12 +191,15 @@ Script: `Testes/Pipeline01/validacao/lamina_inteira.py`, fixado antes (commit `c
 | E1 — regra de proporção + descritor atual | 11 | 0 | 0 | 7 | 18/57 | 0,36 | — |
 | E2 — regra de proporção + descritor das RoIs | 5 | 10 | 0 | 7 | 22/57 | 0,35 | **não** |
 
-- **O descritor das RoIs resolve o atípico:** 1 → 10 de 24 lâminas (nos patches das RoIs de validação: benigno 77%, atípico 41%, maligno 89%). E2 tem o maior número de lâminas certas.
+- **Repontuado com o rótulo oficial (07/11):** E1 25/57 (acurácia balanceada 0,37; benigno 18/20, atípico 0/17), E2 19/57 (0,31; benigno 7/20, atípico 5/17). Parte do ganho no atípico vinha das lâminas UDH, que são benignas.
+- **O descritor das RoIs melhora o atípico:** 1 → 10 de 24 lâminas no agrupamento antigo (nos patches das RoIs de validação: benigno 77%, atípico 41%, maligno 89%). E2 tem o maior número de lâminas certas.
 - **Os limiares se ajustaram demais às 18 lâminas de desenvolvimento** (acurácia balanceada 0,87 lá, 0,35 no teste). O limiar de IC ficou em 5% (`t_ic` = 0,05 em E2, 0,10 em E1): E1 e E2 nunca dizem DCIS (0 de 8). Só havia 2 lâminas de DCIS no desenvolvimento.
 - **Cada versão acerta classes diferentes:** E0 os malignos, E1 as benignas, E2 o atípico.
 - **Próximo passo:** calibrar ou aprender a decisão da lâmina com mais lâminas rotuladas — as 65 de validação oficiais do BRACS (baixadas por partes, guardando só os embeddings), sem tocar nas de teste.
 
 ## Decisão da lâmina inteira por classificador (26/10 a 06/11)
+
+*Agrupamento antigo (UDH em atípico). Refeito com o rótulo oficial em 07/11: ver a seção seguinte.*
 
 Todos os testes usam as 57 lâminas do teste externo, com critério fixado em commit antes de rodar (`6b0ad76`, `21cb292`). Treino em 79 lâminas (61 de validação oficial + 18 de desenvolvimento). Atributos da lâmina: 12 números calculados a partir do descritor sobre até 2.000 patches (frações por classe, médias e percentis altos das probabilidades). Métrica: acurácia balanceada nas 4 classes (acaso = 0,25).
 
@@ -205,17 +216,52 @@ Todos os testes usam as 57 lâminas do teste externo, com critério fixado em co
 - **Lâminas benignas como negativos: passou.** Até 500 patches de cada uma das 26 lâminas benignas do treino entram como exemplos benignos no descritor (sem usar os do mesmo paciente ao descrever uma lâmina). A fração de patches falsos DCIS + IC nas lâminas benignas do teste caiu de 23% para 7%, sem perda nos patches malignos das RoIs de validação (89%). Custo: o DCIS cai para 1 de 8 lâminas; a maioria vai para benigno ou atípico.
 - **Ressalva:** as 57 lâminas já foram usadas em vários testes. Nada foi ajustado nelas, mas repetir comparações no mesmo conjunto aumenta a chance de um ganho por acaso, e os intervalos se sobrepõem. A confirmação deve usar as 30 lâminas de teste oficiais ainda não usadas.
 
-**Comparação com os números publicados** (lâmina inteira, 3 classes: benigno, atípico, maligno). Script: `Testes/Pipeline01/validacao/comparacao_literatura.py`.
+**Comparação com os números publicados** (lâmina inteira, 3 classes: benigno, atípico, maligno). Valores do projeto refeitos com o rótulo oficial em 07/11 (`validacao/rotulo_oficial.py`); a versão de 06/11 (`comparacao_literatura.py`) usava o agrupamento antigo e dava 0,496 e 0,523.
 
 | Método | Treino | Teste | Acurácia balanceada (3 classes) |
 |---|---|---|---|
 | UNI + ABMIL (Chen et al., Nature Medicine 2024, Extended Data Table 19) | 395 lâminas | 87 lâminas | 0,687 (0,617–0,760) |
 | ResNet-50 ImageNet + ABMIL (mesma tabela) | 395 lâminas | 87 lâminas | 0,552 (0,490–0,607) |
-| Hierárquico, descritor com negativos (exploratório) | 79 lâminas | 57 das 87 | 0,523 |
-| Classificador 4 classes, descritor com negativos | 79 lâminas | 57 das 87 | 0,496 |
-| E0 — modelo de linguagem decide | — | 57 das 87 | 0,347 |
+| Hierárquico, descritor com negativos (sem critério) | 79 lâminas | 57 das 87 | 0,560 |
+| Classificador 4 classes, descritor com negativos | 79 lâminas | 57 das 87 | 0,518 |
+| E0 — modelo de linguagem decide | — | 57 das 87 | 0,370 |
 
-A comparação é indicativa, não direta: os conjuntos de teste e de treino diferem, e o UNI2-h usado aqui é outro modelo. Nas 7 classes, o mesmo artigo reporta 0,468 (0,393–0,550); a pipeline não prevê as 7. A distância até 0,687 sugere o que o MIL com as 379 lâminas de treino pode acrescentar. No artigo do ACMIL (arXiv 2311.07125, Tabela 1), com outra métrica (F1 macro em 3 classes, características SSL), ABMIL chega a 0,680 e ACMIL a 0,722.
+A comparação é indicativa, não direta: os conjuntos de teste e de treino diferem, e o UNI2-h usado aqui é outro modelo. Nas 7 classes, o mesmo artigo reporta 0,468 (0,393–0,550); a pipeline não prevê as 7. O UNI + ABMIL usa o mesmo agrupamento oficial. A distância até 0,687 sugere o que o MIL com as 379 lâminas de treino pode acrescentar. No artigo do ACMIL (arXiv 2311.07125, Tabela 1), com outra métrica (F1 macro em 3 classes, características SSL), ABMIL chega a 0,680 e ACMIL a 0,722.
+
+## Rótulo oficial do BRACS: correção e reteste (07/11)
+
+Script: `Testes/Pipeline01/validacao/rotulo_oficial.py`, fixado antes (commit `095320c`). Descritor, negativos (agora 34 lâminas: N, PB e UDH) e classificador da lâmina refeitos com o rótulo oficial; treino nas mesmas 79 lâminas, teste nas mesmas 57 (benigno 20, atípico 17, DCIS 8, IC 12).
+
+| Forma de decidir | Benigno (20) | Atípico (17) | DCIS (8) | IC (12) | Acertos | Acurácia balanceada (4 classes) | 3 classes | Passou? |
+|---|---|---|---|---|---|---|---|---|
+| E0 — modelo de linguagem decide (repontuado) | 1 | 1 | 8 | 7 | 17/57 | 0,423 | 0,370 | referência |
+| Classificador + negativos de 06/11 (repontuado) | 9 | 8 | 1 | 11 | 29/57 | 0,491 | 0,524 | referência do C1 |
+| Classificador, descritor das RoIs | 7 | 3 | 3 | 11 | 24/57 | 0,455 | 0,425 | — |
+| **Classificador + negativos (refeito)** | 10 | 6 | 2 | 11 | 29/57 | **0,505** (IC 95% 0,40–0,63) | 0,518 | **C1: sim, por pouco** |
+| Hierárquico + negativos (refeito, sem critério) | 10 | 9 | 1 | 11 | 31/57 | 0,518 | 0,560 | — |
+
+| Versão binária (descritor com negativos) | AUC | Limiar do treino (sens. ≥ 0,90) | Limiar 0,5 | Passou? |
+|---|---|---|---|---|
+| Maligno × resto (C2) | 0,83 | sens. 20/20, espec. 0/37 | sens. 13/20, espec. 30/37 (43/57) | **não** |
+| Suspeito (FEA, ADH, DCIS, IC) × benigno (C3) | 0,66 | sens. 35/37, espec. 5/20 | sens. 26/37, espec. 10/20 (36/57) | **não** |
+
+- **A correção não muda o quadro geral:** tirar a decisão do modelo de linguagem e usar negativos benignos continua sendo a melhor combinação (17 → 29 de 57 lâminas; 0,42 → 0,51). Os patches falsos DCIS + IC nas 20 benignas do teste caem de 21% para 7%.
+- **Maligno × resto separa bem (AUC 0,83), mas o limiar não transfere:** o limiar que garante 90% de sensibilidade no treino zera a especificidade no teste. Dizer sempre "não maligno" já acerta 37/57.
+- **Benigno × atípico continua o ponto fraco** (AUC 0,66). Na validação cruzada do treino, a AUC é 0,88; a queda para 0,66 no teste mostra que a estimativa no treino é otimista.
+- **Por patch, nas RoIs de validação** (rótulo oficial): benigno 84% → 88% com negativos; atípico 35% → 37%; maligno 90% → 87%.
+
+## Modelo de linguagem só redige, com checagem automática do texto (07/11)
+
+Script: `Testes/Pipeline01/validacao/prelaudo_campos.py`, fixado antes (commit `21cb292`). A classe vem do classificador da lâmina (versão de 06/11, agrupamento antigo); o Gemma 3 4B recebe campos fixos (classe, probabilidades, confiança, proporções, 3 regiões) e só redige. A checagem automática compara cada número e coordenada do texto com a evidência que o modelo recebeu, e é aplicada também aos 57 pré-laudos antigos (modelo decidindo). Critério: classe do texto igual à sugerida em ≥ 90% e fração de números sem sustentação não maior que a dos antigos.
+
+| | Pré-laudos novos (só redige) | Pré-laudos antigos (modelo decide) |
+|---|---|---|
+| Classe do texto igual à sugerida | **57/57** | — |
+| Números checados / sem sustentação | 791 / **0** | 523 / 11 (2,1%, em 4 textos) |
+| Coordenadas citadas / inventadas | 175 / **0** | 178 / 2 |
+| Tempo médio por pré-laudo | 68 s | — |
+
+**Passou.** O texto fica fiel aos campos: nos casos de confiança baixa, diz que a confiança é baixa e que as proporções são mistas. Limitações: a checagem não detecta achados morfológicos inventados (na leitura de 3 textos, não houve nenhum); e o texto quase só reorganiza os campos, acrescentando pouca informação. A classe final é a do classificador: com o rótulo oficial, 19/57 (acurácia balanceada 0,425) para a versão de 06/11 usada aqui; a versão corrigida com negativos chega a 29/57.
 
 ## Anotações oficiais do BRACS
 
@@ -231,5 +277,5 @@ Detalhes: `Testes/Pipeline01/validacao/problemas_e_metrica.md`.
 3. Comparar a imagem com frases (zero-shot) é o gargalo do estágio 3: fica no acaso no DCIS vs. IC, mesmo quando o embedding contém a informação.
 4. Uma camada treinada em cima do UNI2-h separa DCIS de IC e generaliza pra outra instituição; no atípico, falta dado.
 5. A medida dos núcleos separa DCIS de IC, mas os valores não são confiáveis: mesmo com a classificação de núcleos treinada no NuCLS (tumor 0,83 / 0,88), a medida não bate com a anotação (Spearman 0,35).
-6. A pipeline roda de ponta a ponta até o pré-laudo, mas em lâminas novas (57 do teste oficial) chama 55 de 57 de malignas: acerta DCIS e IC (com a regra, 8/8 e 7/12) e erra quase todas as benignas e atípicas, ficando em 28% nas 4 classes (acaso = 25%). A regra do componente invasivo ajuda no IC; o problema principal está nos estágios 2 e 3, que mandam evidência maligna de lâminas benignas e atípicas.
-7. Tirar a decisão do modelo de linguagem e treinar o descritor com lâminas benignas como negativos leva o acerto de 16 para 27 de 57 lâminas (acurácia balanceada 0,41 → 0,47), e os patches falsos malignos nas lâminas benignas caem de 23% para 7%. Ainda está abaixo do publicado com MIL (0,50 contra 0,69 em 3 classes, comparação indicativa). Separar benigno de atípico no nível da lâmina continua sendo o ponto mais difícil.
+6. A pipeline roda de ponta a ponta até o pré-laudo, mas em lâminas novas (57 do teste oficial) chama 55 de 57 de malignas: acerta DCIS e IC (com a regra, 8/8 e 7/12) e erra quase todas as benignas e atípicas, ficando em 17 de 57 (rótulo oficial). A regra do componente invasivo ajuda no IC; o problema principal está nos estágios 2 e 3, que mandam evidência maligna de lâminas benignas e atípicas.
+7. Tirar a decisão do modelo de linguagem e treinar o descritor com lâminas benignas como negativos leva o acerto de 17 para 29 de 57 lâminas (acurácia balanceada 0,42 → 0,51, rótulo oficial), e os patches falsos malignos nas lâminas benignas caem de 21% para 7%. Ainda está abaixo do publicado com MIL (0,52–0,56 contra 0,69 em 3 classes, comparação indicativa). Separar benigno de atípico no nível da lâmina continua sendo o ponto mais difícil.

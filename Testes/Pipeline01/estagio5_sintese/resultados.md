@@ -42,8 +42,8 @@ Script: [../validacao/prelaudo_avaliacao.py](../validacao/prelaudo_avaliacao.py)
 | `BRACS_1507` | N | benigno | benigno ✓ | benigno ✓ |
 | `BRACS_1641` | N | benigno | DCIS ✗ | benigno ✓ |
 | `BRACS_1320` | PB | benigno | DCIS ✗ | benigno ✓ |
-| `BRACS_1592` | UDH | atípico | DCIS ✗ | atípico ✓ |
-| `BRACS_1617` | UDH | atípico | IC ✗ | IC ✗ |
+| `BRACS_1592` | UDH | benigno* | DCIS ✗ | atípico ✗ |
+| `BRACS_1617` | UDH | benigno* | IC ✗ | IC ✗ |
 | `BRACS_1271` | ADH | atípico | IC ✗ | DCIS ✗ |
 | `BRACS_1494` | ADH | atípico | IC ✗ | IC ✗ |
 | `BRACS_1774` | FEA | atípico | DCIS ✗ | DCIS ✗ |
@@ -54,12 +54,14 @@ Script: [../validacao/prelaudo_avaliacao.py](../validacao/prelaudo_avaliacao.py)
 
 | | Sem regra (v1) | Com regra (v2) |
 |---|---|---|
-| **A)** 18 lâminas | 6/18 (33%) — benigno 1/5, atípico 0/6, DCIS 2/2, IC 3/5 | — |
-| **B)** 15 lâminas fora | 5/15 (33%) — IC 3/4 | **10/15 (67%)** — IC **4/4** |
+| **A)** 18 lâminas | 6/18 (33%) — benigno 1/7, atípico 0/4, DCIS 2/2, IC 3/5 | — |
+| **B)** 15 lâminas fora | 5/15 (33%) — IC 3/4 | **9/15 (60%)** — IC **4/4** |
 
-- **B passou no critério** (IC 3 → 4 de 4; acurácia 5 → 10 de 15).
+\* Rótulo oficial do BRACS (UDH é benigno), corrigido em 07/11/2026. Com o agrupamento antigo (UDH em atípico), a coluna "Real" dizia atípico, `BRACS_1592` com regra contava como acerto e B dava 10/15.
+
+- **B passou no critério** (IC 3 → 4 de 4; acurácia 5 → 9 de 15).
 - **Sem a regra, o modelo é alarmista:** chama de DCIS ou carcinoma invasivo quase tudo — 17 das 18 respostas são malignas, com só 7 lâminas malignas.
-- **O maior ganho da regra veio das lâminas benignas** (1 → 4 de 4), não só do IC: a linha "componente invasivo não detectado" deixa o modelo menos alarmista. Não era o efeito esperado quando a regra foi escrita.
+- **O maior ganho da regra veio das lâminas benignas** (1 → 4 de 6), não só do IC: a linha "componente invasivo não detectado" deixa o modelo menos alarmista. Não era o efeito esperado quando a regra foi escrita.
 - **O atípico continua errado** (1 de 6 com a regra): o descritor quase não reconhece atípico, e duas lâminas atípicas (`BRACS_1617`, `BRACS_1494`) viram carcinoma invasivo — a regra também propaga os falsos positivos de IC do estágio 3.
 - **Ressalvas:** 15 lâminas, uma execução por versão, um só modelo; diferença de 5 lâminas. O rótulo da lâmina no BRACS é o da lesão mais grave anotada, não um laudo completo.
 

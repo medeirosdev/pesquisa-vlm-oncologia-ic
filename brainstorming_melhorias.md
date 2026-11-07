@@ -47,7 +47,7 @@ Custo = tempo de máquina e de trabalho. Impacto = o quanto deve mexer no gargal
 
 | Ideia | Motivo | Custo | Impacto |
 |---|---|---|---|
-| **Treinar o descritor com as 3.655 RoIs de treino**, em vez das 18 lâminas | Multiplica os exemplos, sobretudo do atípico (UDH 387, FEA 624, ADH 387) | baixo (embeddings do UNI2-h + uma camada) | alto |
+| **Treinar o descritor com as 3.655 RoIs de treino**, em vez das 18 lâminas | Multiplica os exemplos, sobretudo do atípico (FEA 624, ADH 387) | baixo (embeddings do UNI2-h + uma camada) | alto |
 | Calibrar as probabilidades e permitir "não sei" (abstenção) | Hoje sai "1,00" até no erro; calibração com abstenção reduz falsos positivos | baixo | médio a alto |
 | Mais de uma escala (40x + 10x ou 5x) | DCIS × IC e o atípico dependem da arquitetura do ducto, que um patch de 128 µm não mostra | médio | médio a alto |
 | MLP pequena no lugar da regressão logística | Com milhares de exemplos, um classificador um pouco maior pode ajudar | baixo | médio |

@@ -1,13 +1,16 @@
 # Tarefas pendentes
 
-Estado em 06/11/2026. Resultados em [resultados.md](resultados.md); histórico em [linha_do_tempo.md](linha_do_tempo.md); ideias em [brainstorming_melhorias.md](brainstorming_melhorias.md).
+Estado em 07/11/2026. Resultados em [resultados.md](resultados.md); histórico em [linha_do_tempo.md](linha_do_tempo.md); ideias em [brainstorming_melhorias.md](brainstorming_melhorias.md).
 
-Ordem sugerida: 1) terminar a redação e a checagem do texto; 2) terminar o pacote com cotas; 3) concentração espacial e recuperar o DCIS; 4) MIL, depois do download do treino; 5) confirmar nas 30 lâminas de teste não usadas.
+Ordem sugerida: 1) resolver a cobrança do GitHub e publicar a página; 2) concentração espacial e recuperar o DCIS; 3) refazer o pacote com cotas com o descritor corrigido; 4) MIL, depois do download do treino; 5) confirmar nas 30 lâminas de teste não usadas.
 
-## Testes em andamento (pausados em 25/10, retomam de onde pararam)
+Desde 07/11, todo teste usa o agrupamento oficial do BRACS (UDH em benigno). Resultados anteriores usam o agrupamento antigo e estão marcados em `resultados.md`.
 
-- [x] **Classificador da lâmina inteira**: 21/57, acurácia balanceada 0,424 (passou, dentro do ruído). Ver `resultados.md`.
-- [ ] **Pacote com cota fixa por classe** (`validacao/pacote_cotas.py`, pré-registro `b7505c7`): 8 benignos, 6 atípicos, 6 DCIS, 6 IC; braços A (suspeitos), B (cotas), C (cotas + proporção), com Gemma 3 4B decidindo, nas 61 de validação. Critério: acurácia balanceada C > A. Parou em 30 de 183 pré-laudos (~3 h; precisa do Ollama do HD). Rodar depois da redação, um de cada vez.
+## Testes em andamento
+
+- [x] **Classificador da lâmina inteira**: refeito com o rótulo oficial (`validacao/rotulo_oficial.py`): com negativos, 29/57, acurácia balanceada 0,505 (passou por pouco). Ver `resultados.md`.
+- [x] **Corrigir o agrupamento do UDH** (era atípico; no BRACS é benigno): código corrigido, testes de lâmina refeitos ou repontuados.
+- [ ] **Pacote com cota fixa por classe** (`validacao/pacote_cotas.py`, pré-registro `b7505c7`): 8 benignos, 6 atípicos, 6 DCIS, 6 IC; braços A (suspeitos), B (cotas), C (cotas + proporção), com Gemma 3 4B decidindo, nas 61 de validação. Critério: acurácia balanceada C > A. Parou em 30 de 183 pré-laudos. **Precisa recomeçar do zero:** os prompts vêm do descritor com o agrupamento antigo. Regerar com `--etapa descrever` (descritor corrigido) e só então rodar `--etapa sintetizar` (~3 h; Ollama do HD).
 
 Comandos (na pasta `Testes/Pipeline01`):
 
@@ -33,38 +36,39 @@ systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 \
 
 ## Decisão da lâmina (o gargalo)
 
-- [x] **Triagem binária**: não passou (sensibilidade 0,95, especificidade 0, AUC 0,52; com negativos, exploratório: 0,98, 0,15, 0,65).
-- [x] **Abstenção**: passou, ganho pequeno (decide em 56% das lâminas, 0,478 contra 0,424).
+- [x] **Triagem binária**: não passou. Rótulo oficial, com negativos: maligno × resto AUC 0,83, suspeito × benigno AUC 0,66; nos dois, o limiar do treino com sensibilidade ≥ 0,90 derruba a especificidade no teste.
+- [x] **Abstenção**: passou, ganho pequeno (agrupamento antigo; não refeita).
 - [ ] ★ **Concentração espacial dos patches suspeitos** como atributo da lâmina (hipótese vinda de dois mapas de calor: na lâmina de IC formam um bloco; na benigna ficam espalhados). Pode ajudar a separar benigno de atípico, o ponto mais fraco. Fixar critério antes.
 - [ ] Confirmar a melhor versão nas 30 lâminas de teste oficiais ainda não usadas (exige baixar).
 - [ ] **MIL com atenção** (ABMIL/CLAM; TransMIL depois) nas lâminas de treino, depois que os embeddings do treino estiverem prontos. A atenção também escolhe os patches (roteador) e explica a decisão.
-- [x] **Hierárquico no nível da lâmina**: passou por pouco (0,437); com negativos, exploratório, 0,490 (29/57). Falta confirmar com critério fixado antes.
+- [x] **Hierárquico no nível da lâmina**: rótulo oficial, com negativos, 31/57, 0,518 (0,560 em 3 classes), sem critério. Falta confirmar com critério fixado antes.
 
 ## Descritor
 
-- [x] **Lâminas benignas como negativos**: passou, o melhor até aqui (27/57, 0,470; falsos DCIS + IC nas benignas 23% → 7%).
-- [ ] ★ **Recuperar o DCIS**: com os negativos, o DCIS caiu de 4 para 1 de 8 lâminas.
+- [x] **Lâminas benignas como negativos**: o melhor até aqui. Rótulo oficial: 29/57, 0,505; falsos DCIS + IC nas benignas 21% → 7%.
+- [ ] ★ **Recuperar o DCIS**: com os negativos, o DCIS fica em 1–2 de 8 lâminas.
 - [ ] **Outros codificadores** (CONCH, Virchow2, H-optimus) no lugar do UNI2-h, sobretudo pro atípico. Exigem pedir acesso no Hugging Face.
 - [ ] **Duas escalas** (40x + 10x): DCIS × IC e o atípico dependem da arquitetura do ducto. Exige baixar as lâminas de novo.
 - [ ] Reduzir a confusão maligno → atípico; métrica pro estágio 2 em lâminas benignas/atípicas (da lista antiga).
 
 ## Explicabilidade
 
-- [x] **Mapa de calor da lâmina**: `scripts/mapas_de_calor.py`; 4 exemplos na página. Falta refazer com o descritor com negativos.
+- [x] **Mapa de calor da lâmina**: `scripts/mapas_de_calor.py`; 4 exemplos na página. Falta refazer com o descritor corrigido e com negativos.
 - [x] **Coeficientes do classificador da lâmina**: em `resultados/classificador_lamina/resumo.json`.
 
 ## Texto (estágio 5) e avaliação
 
-- [ ] **Modelo de linguagem só redige**, a partir de campos fixos: rodando em 06/11 (`validacao/prelaudo_campos.py --etapa redigir`, 57 pré-laudos). Depois: `--etapa checar`.
-- [ ] **Checagem automática do texto**: pronta no mesmo script; roda quando a redação terminar.
+- [x] **Modelo de linguagem só redige**, a partir de campos fixos (`validacao/prelaudo_campos.py`): passou (classe igual à sugerida em 57/57; 0 números sem sustentação, contra 2,1% nos antigos). Os campos vieram do classificador de 06/11 (agrupamento antigo); a checagem do texto não depende disso.
+- [x] **Checagem automática do texto**: no mesmo script. Não detecta achados morfológicos inventados; isso fica para a leitura por patologista.
+- [ ] Refazer os campos com o classificador corrigido (rótulo oficial + negativos) antes de usar os textos como exemplo.
 - [ ] ★ **Avaliação por patologista**: 10–15 pré-laudos com rubrica (clareza, utilidade, erros, alucinações).
-- [x] **Comparar com os números publicados no BRACS**: UNI + ABMIL, 3 classes, 0,687; aqui, 0,496 (indicativa). Ver `resultados.md`.
+- [x] **Comparar com os números publicados no BRACS**: UNI + ABMIL, 3 classes, 0,687; aqui, 0,518 (0,560 no hierárquico), comparação indicativa. Ver `resultados.md`.
 
 ## Documentação e repositório
 
-- [ ] Página `docs/visao_geral`: atualizada com a seção "Decisão da lâmina", figuras e tabela final; falta o resultado da redação e do pacote com cotas, e publicar.
-- [ ] Atualizar `resultados.md` e `linha_do_tempo.md` com a redação e o pacote com cotas quando terminarem.
-- [ ] Enviar ao GitHub os commits locais ainda não enviados (desde `c611a32`).
+- [ ] **Publicar a página**: os commits estão no GitHub, mas a publicação falhou em 07/11 porque a conta está bloqueada por cobrança ("account is locked due to a billing issue"). Depois de resolver em GitHub → Settings → Billing, um novo push em `docs/` publica de novo.
+- [ ] Atualizar `resultados.md`, `linha_do_tempo.md` e a página com o pacote com cotas quando for refeito.
+- [ ] Decidir as edições de 07/11 ainda sem commit em `docs/` (datasets, pipelines, metodologia, modelos-locais, index), nos READMEs, na `linha_do_tempo.md` e no `brainstorming_melhorias.md`.
 
 ## Observação
 

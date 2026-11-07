@@ -26,13 +26,13 @@ Brancati et al., 2022 — *BRACS: A Dataset for BReAst Carcinoma Subtyping in H&
 - **WSI** — lâminas inteiras em `.svs`, formato piramidal. Usadas pra testar a pipeline de ponta a ponta (filtro de tecido, roteador, descritores).
 - **BRACS_RoI** — recortes já extraídos pelo próprio dataset, um por região anotada, organizados por classe. Usados como verdade de campo (ground-truth) pra validar os estágios da pipeline.
 
-**Sete classes, agrupadas em três categorias** (classificação oficial do BRACS):
+**Sete classes, agrupadas em três categorias** (classificação oficial do BRACS; até 06/11/2026 o projeto agrupava o UDH em atípico, por engano):
 
 | Categoria | Classe | Sigla |
 |---|---|---|
 | Benigno | Normal | N |
 | Benigno | Patológico benigno | PB |
-| Atípico | Hiperplasia ductal usual | UDH |
+| Benigno | Hiperplasia ductal usual | UDH |
 | Atípico | Atipia epitelial plana | FEA |
 | Atípico | Hiperplasia ductal atípica | ADH |
 | Maligno | Carcinoma ductal *in situ* | DCIS |
