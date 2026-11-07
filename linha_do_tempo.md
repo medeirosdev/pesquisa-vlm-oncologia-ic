@@ -130,6 +130,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 | 07/11 | **Correção do agrupamento:** o UDH estava em atípico desde o início; no BRACS é benigno. Código corrigido; tabelas de pré-laudo repontuadas (teste externo: 16 → 17 de 57 com a regra; teste da regra: 10 → 9 de 15) e testes da decisão da lâmina refeitos (`validacao/rotulo_oficial.py`). Classificador + negativos: 29/57, acurácia balanceada 0,505 — passou por pouco (0,491 na versão antiga repontuada). Maligno × resto: AUC 0,83; suspeito × benigno: AUC 0,66; as duas triagens não passaram. Parte do ganho no atípico de 22/10 vinha das lâminas UDH |
 | 07/11 | Modelo de linguagem só redige, a partir de campos fixos (57 lâminas): classe do texto igual à sugerida em 57/57, nenhum número nem coordenada sem sustentação (antigos: 2,1% dos números) — passou. O texto quase só reorganiza os campos |
 | 07/11 | Publicação da página falhou: conta do GitHub bloqueada por cobrança; o site segue na versão de 19/10 |
+| 07/11 | Resposta em conjunto (benigno, atípico, "benigno ou atípico", maligno): acerto do conjunto 0,70, respostas exatas 0,44 — não passou (critério 0,75 e 0,50). A margem escolhida no treino ficou no máximo e a resposta virou quase "maligno × não maligno" |
 
 ## Onde paramos
 

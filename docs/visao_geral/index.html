@@ -555,6 +555,20 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
     <span class="selo ref">rodando · critério fixado antes: nas 37 lâminas benignas e atípicas do teste, AUC benigno × atípico com os 4 números novos ≥ AUC sem eles + 0,05, e ≥ 0,70</span>
   </div>
 
+  <div class="painel">
+    <h3>Resposta em conjunto: "benigno ou atípico"</h3>
+    <p>Quando o classificador não separa benigno de atípico, responde "benigno ou atípico" em vez de chutar. Medem-se juntos o acerto do conjunto (a classe real está na resposta?) e as respostas exatas (uma classe só), para o recuo não virar resposta vaga sempre.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Nas 57 lâminas</th><th class="num">Acerto do conjunto</th><th class="num">Respostas exatas</th></tr></thead>
+      <tbody>
+        <tr><td>Sem recuo (3 classes)</td><td class="num">0,53</td><td class="num">1,00</td></tr>
+        <tr><td>Com recuo</td><td class="num">0,70</td><td class="num">0,44</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Critério: acerto do conjunto ≥ 0,75 e respostas exatas ≥ 0,50. A margem de recuo, escolhida no treino, ficou no máximo, e a resposta virou quase "maligno × não maligno": 26 das 37 benignas e atípicas recebem "benigno ou atípico"; 6 de 20 malignas também.</p>
+    <span class="selo falha">não passou</span>
+  </div>
+
   <h3>Mapas de calor: onde o sistema viu cada coisa</h3>
   <p class="nota">Primeira lâmina de cada classe real do teste, sem escolha por acerto. Esquerda: classe prevista de cada patch. Direita: probabilidade de não ser benigno. Só 2.000 patches de cada lâmina foram classificados, por isso o aspecto pontilhado. Descritor das regiões, sem os negativos, e classificador da lâmina de 06/11 (agrupamento antigo); os rótulos reais das quatro lâminas não mudam com a correção.</p>
   <div class="figuras mapas">

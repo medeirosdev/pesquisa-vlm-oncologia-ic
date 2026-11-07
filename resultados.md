@@ -263,6 +263,25 @@ Script: `Testes/Pipeline01/validacao/prelaudo_campos.py`, fixado antes (commit `
 
 **Passou.** O texto fica fiel aos campos: nos casos de confiança baixa, diz que a confiança é baixa e que as proporções são mistas. Limitações: a checagem não detecta achados morfológicos inventados (na leitura de 3 textos, não houve nenhum); e o texto quase só reorganiza os campos, acrescentando pouca informação. A classe final é a do classificador: com o rótulo oficial, 19/57 (acurácia balanceada 0,425) para a versão de 06/11 usada aqui; a versão corrigida com negativos chega a 29/57.
 
+## Resposta em conjunto: benigno, atípico, "benigno ou atípico", maligno (07/11)
+
+Script: `Testes/Pipeline01/validacao/resposta_em_conjunto.py`, fixado antes (commit `6392791`). Quando o classificador da lâmina (descritor com negativos, rótulo oficial) não separa benigno de atípico, responde "benigno ou atípico". Medem-se juntos o **acerto do conjunto** (a classe real está na resposta?) e as **respostas exatas** (uma classe só). A margem de recuo `d` foi escolhida no treino como a menor com acerto do conjunto ≥ 0,80; nenhuma chegou lá (máximo 0,797), e a regra usou a maior da grade, 0,45. Critério: nas 57, acerto do conjunto ≥ 0,75 e respostas exatas ≥ 0,50.
+
+| Nas 57 lâminas | Acerto do conjunto | Respostas exatas |
+|---|---|---|
+| Sem recuo (3 classes) | 0,53 | 1,00 |
+| **Com recuo (d = 0,45)** | **0,70** (IC 95% 0,59–0,81) | 0,44 |
+| Só benignas e atípicas, sem recuo | 0,43 | 1,00 |
+| Só benignas e atípicas, com recuo | 0,70 | 0,30 |
+
+| Classe real | benigno | atípico | benigno ou atípico | maligno |
+|---|---|---|---|---|
+| Benigno (20) | 0 | 2 | 13 | 5 |
+| Atípico (17) | 0 | 0 | 13 | 4 |
+| Maligno (20) | — | — | 6 | 14 |
+
+**Não passou** (0,70 e 0,44). Com o recuo máximo, a resposta vira na prática "maligno × não maligno": 26 das 37 lâminas benignas e atípicas recebem "benigno ou atípico", o que é verdadeiro mas pouco específico. Os erros que importam continuam: 6 de 20 malignas caem em "benigno ou atípico", e 9 benignas ou atípicas são chamadas de malignas. No treino, a curva mostra a troca: d = 0,20 dava 0,77 de acerto do conjunto com 80% de respostas exatas; o alvo de 0,80 era alto demais para o que o classificador separa hoje. A métrica fica pronta para os próximos testes (concentração espacial, MIL, as 30 lâminas de teste não usadas).
+
 ## Anotações oficiais do BRACS
 
 - `.qpdata` lidas com o QuPath e exportadas pra GeoJSON: 387 de 387 lâminas; totais por classe iguais aos do artigo.
