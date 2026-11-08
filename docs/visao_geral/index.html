@@ -548,11 +548,18 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
     </div>
   </div>
 
-  <div class="painel destaque">
-    <h3>Em teste: concentração espacial dos patches suspeitos</h3>
-    <p>Hipótese vinda dos mapas de calor abaixo: numa lesão de verdade, os patches suspeitos formam um foco; numa lâmina benigna, os falsos positivos ficam espalhados. Para cada patch suspeito (atípico, DCIS ou IC), conta-se quantos dos seus 8 vizinhos mais próximos também são suspeitos. Isso gera 4 números a mais por lâmina: o agrupamento dos suspeitos, dos malignos e dos atípicos, e a fração de patches suspeitos em foco.</p>
-    <p class="nota">Usar vizinhos mais próximos, e não uma distância fixa, deixa a medida comparável entre lâminas grandes e pequenas. Em dados sintéticos, um foco compacto dá 19,6 e a mesma quantidade espalhada ao acaso dá cerca de 1.</p>
-    <span class="selo ref">rodando · critério fixado antes: nas 37 lâminas benignas e atípicas do teste, AUC benigno × atípico com os 4 números novos ≥ AUC sem eles + 0,05, e ≥ 0,70</span>
+  <div class="painel">
+    <h3>Concentração espacial dos patches suspeitos</h3>
+    <p>Hipótese vinda dos mapas de calor abaixo: numa lesão, os patches suspeitos formam um foco; numa lâmina benigna, os falsos positivos ficam espalhados. Quatro números a mais por lâmina, com os 8 vizinhos mais próximos de cada patch: o agrupamento dos suspeitos, dos malignos e dos atípicos, e a fração de suspeitos em foco.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Benigno × atípico (37 lâminas)</th><th class="num">AUC</th></tr></thead>
+      <tbody>
+        <tr><td>12 atributos</td><td class="num">0,58</td></tr>
+        <tr><td>12 + 4 espaciais</td><td class="num">0,61</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Critério: ganho de pelo menos 0,05 e AUC de pelo menos 0,70. A hipótese não se sustentou: nas lâminas benignas, os suspeitos também ficam agrupados, cerca de 4 vezes acima do acaso, quase como nas atípicas (4,5). Os falsos positivos vêm em regiões inteiras que o descritor confunde, e os dois mapas que sugeriram a ideia não representavam o conjunto.</p>
+    <span class="selo falha">não passou</span>
   </div>
 
   <div class="painel">
@@ -780,7 +787,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
       <tr><td>1. Filtro de tecido</td><td><span class="selo ok">resolvido</span></td><td>—</td></tr>
       <tr><td>2. Roteador</td><td><span class="selo parcial">bom em lâminas malignas</span></td><td>métrica para lâminas benignas e atípicas</td></tr>
       <tr><td>3. Descritor</td><td><span class="selo parcial">bom no DCIS × IC; negativos cortam falsos malignos; atípico ainda fraco</span></td><td>recuperar o DCIS sem perder as benignas</td></tr>
-      <tr><td>3½. Decisão da lâmina</td><td><span class="selo parcial">29/57, acurácia balanceada 0,51; separar benigno de atípico é o ponto fraco</span></td><td>concentração espacial dos patches suspeitos (em teste); MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas</td></tr>
+      <tr><td>3½. Decisão da lâmina</td><td><span class="selo parcial">29/57, acurácia balanceada 0,51; separar benigno de atípico é o ponto fraco</span></td><td>MIL com as 379 lâminas de treino (o descritor por patch não separa benigno de atípico); confirmar nas 30 lâminas de teste não usadas</td></tr>
       <tr><td>4. Agregação</td><td><span class="selo parcial">regra ajuda no IC</span></td><td>trocar a contagem dos 32 patches pelos campos fixos</td></tr>
       <tr><td>5. Síntese</td><td><span class="selo ok">só redige; texto fiel aos campos (0 números sem sustentação)</span></td><td>avaliação por patologista; texto mais informativo</td></tr>
     </tbody>
@@ -789,7 +796,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
 </section>
 
 <footer>
-  <p>Pipeline Ideia 01 · orientação Prof. João Batista Florindo · situação em 07/11/2026. Modelos: QuiltNet-B-32, UNI2-h, CellViT-256, Gemma 3 4B e MedGemma 4B, todos rodando localmente.</p>
+  <p>Pipeline Ideia 01 · orientação Prof. João Batista Florindo · situação em 08/11/2026. Modelos: QuiltNet-B-32, UNI2-h, CellViT-256, Gemma 3 4B e MedGemma 4B, todos rodando localmente.</p>
   <p>Imagens de lâminas: BRACS (Brancati et al., <i>BRACS: A Dataset for BReAst Carcinoma Subtyping in H&amp;E Histology Images</i>, Database, 2022), licença CC BY-NC 4.0. Núcleos anotados: NuCLS (Amgad et al., GigaScience, 2022), CC0. Imagens do BACH não são reproduzidas (licença CC BY-NC-ND); só os resultados numéricos.</p>
 </footer>
 

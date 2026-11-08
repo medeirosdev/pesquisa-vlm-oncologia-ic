@@ -282,6 +282,28 @@ Script: `Testes/Pipeline01/validacao/resposta_em_conjunto.py`, fixado antes (com
 
 **Não passou** (0,70 e 0,44). Com o recuo máximo, a resposta vira na prática "maligno × não maligno": 26 das 37 lâminas benignas e atípicas recebem "benigno ou atípico", o que é verdadeiro mas pouco específico. Os erros que importam continuam: 6 de 20 malignas caem em "benigno ou atípico", e 9 benignas ou atípicas são chamadas de malignas. No treino, a curva mostra a troca: d = 0,20 dava 0,77 de acerto do conjunto com 80% de respostas exatas; o alvo de 0,80 era alto demais para o que o classificador separa hoje. A métrica fica pronta para os próximos testes (concentração espacial, MIL, as 30 lâminas de teste não usadas).
 
+## Concentração espacial dos patches suspeitos (08/11)
+
+Script: `Testes/Pipeline01/validacao/concentracao_espacial.py`, fixado antes (commit `3a62bd4`). Hipótese vinda de dois mapas de calor: numa lesão, os patches suspeitos formam um foco; numa lâmina benigna, os falsos positivos ficam espalhados. Quatro atributos novos por lâmina, com os 8 vizinhos mais próximos de cada patch na amostra: enriquecimento dos suspeitos, dos malignos e dos atípicos (1 = espalhados ao acaso) e fração de suspeitos em foco. Descritor com negativos e rótulo oficial; os 12 atributos antigos conferem exatamente com `rotulo_oficial.py`. Critério: nas 37 lâminas benignas e atípicas do teste, AUC benigno × atípico com os atributos novos ≥ AUC sem eles + 0,05, e ≥ 0,70.
+
+| | Sem os espaciais (12 atributos) | Com os espaciais (16) |
+|---|---|---|
+| AUC benigno × atípico (37 lâminas) | 0,582 | 0,609 (diferença: IC 95% −0,04 a +0,10) |
+| AUC suspeito × benigno (57) | 0,655 | 0,674 |
+| Classificador, 4 classes (57) | 29/57, 0,505 | 30/57, 0,524 |
+| Hierárquico, 4 classes (57) | 31/57, 0,518 | 31/57, 0,518 |
+
+**Não passou.** A hipótese não se sustentou: nas lâminas benignas do teste, os patches suspeitos também ficam agrupados, cerca de 4 vezes acima do acaso, quase como nas atípicas (4,5). Os falsos positivos não são espalhados; vêm em regiões inteiras de tecido que o descritor confunde. Os dois mapas que sugeriram a ideia não representavam o conjunto.
+
+| Média no teste | Enriquecimento dos suspeitos | dos malignos | dos atípicos | Suspeitos em foco |
+|---|---|---|---|---|
+| Benigno | 3,96 | 2,90 | 5,09 | 0,04 |
+| Atípico | 4,51 | 3,76 | 6,28 | 0,04 |
+| DCIS | 4,04 | 6,14 | 7,53 | 0,07 |
+| IC | 1,49 | 1,67 | 2,53 | 0,51 |
+
+No IC, o enriquecimento é baixo porque os suspeitos ocupam metade da lâmina: com tanta área suspeita, a razão contra o acaso fica perto de 1. Sem os atributos espaciais, a AUC benigno × atípico só nessas 37 lâminas é 0,58, perto do acaso: o descritor por patch, como está, não separa as duas classes no nível da lâmina.
+
 ## Anotações oficiais do BRACS
 
 - `.qpdata` lidas com o QuPath e exportadas pra GeoJSON: 387 de 387 lâminas; totais por classe iguais aos do artigo.

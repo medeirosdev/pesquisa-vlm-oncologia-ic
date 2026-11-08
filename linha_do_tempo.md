@@ -131,6 +131,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 | 07/11 | Modelo de linguagem só redige, a partir de campos fixos (57 lâminas): classe do texto igual à sugerida em 57/57, nenhum número nem coordenada sem sustentação (antigos: 2,1% dos números) — passou. O texto quase só reorganiza os campos |
 | 07/11 | Publicação da página falhou: conta do GitHub bloqueada por cobrança; o site segue na versão de 19/10 |
 | 07/11 | Resposta em conjunto (benigno, atípico, "benigno ou atípico", maligno): acerto do conjunto 0,70, respostas exatas 0,44 — não passou (critério 0,75 e 0,50). A margem escolhida no treino ficou no máximo e a resposta virou quase "maligno × não maligno" |
+| 08/11 | Concentração espacial dos patches suspeitos (4 atributos com os 8 vizinhos mais próximos): AUC benigno × atípico 0,58 → 0,61 — não passou (critério +0,05 e ≥ 0,70). Nas benignas, os falsos positivos também ficam agrupados (~4× o acaso, quase como nas atípicas). Sem os espaciais, benigno × atípico fica perto do acaso: o descritor por patch não separa as duas classes no nível da lâmina |
 
 ## Onde paramos
 

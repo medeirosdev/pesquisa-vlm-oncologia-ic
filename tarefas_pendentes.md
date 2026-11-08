@@ -1,8 +1,8 @@
 # Tarefas pendentes
 
-Estado em 07/11/2026 (tarde). Resultados em [resultados.md](resultados.md); histórico em [linha_do_tempo.md](linha_do_tempo.md); ideias em [brainstorming_melhorias.md](brainstorming_melhorias.md).
+Estado em 08/11/2026. Resultados em [resultados.md](resultados.md); histórico em [linha_do_tempo.md](linha_do_tempo.md); ideias em [brainstorming_melhorias.md](brainstorming_melhorias.md).
 
-Ordem sugerida: 1) resolver a cobrança do GitHub e publicar a página; 2) concentração espacial e recuperar o DCIS; 3) refazer o pacote com cotas com o descritor corrigido; 4) MIL, depois do download do treino; 5) confirmar nas 30 lâminas de teste não usadas.
+Ordem sugerida: 1) resolver a cobrança do GitHub e publicar a página; 2) baixar as 379 lâminas de treino e testar o MIL (o descritor por patch não separa benigno de atípico: AUC 0,58); 3) recuperar o DCIS; 4) refazer o pacote com cotas com o descritor corrigido; 5) confirmar nas 30 lâminas de teste não usadas.
 
 Desde 07/11, todo teste usa o agrupamento oficial do BRACS (UDH em benigno). Resultados anteriores usam o agrupamento antigo e estão marcados em `resultados.md`.
 
@@ -38,7 +38,7 @@ systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 \
 
 - [x] **Triagem binária**: não passou. Rótulo oficial, com negativos: maligno × resto AUC 0,83, suspeito × benigno AUC 0,66; nos dois, o limiar do treino com sensibilidade ≥ 0,90 derruba a especificidade no teste.
 - [x] **Abstenção**: passou, ganho pequeno (agrupamento antigo; não refeita).
-- [ ] ★ **Concentração espacial dos patches suspeitos** como atributo da lâmina (hipótese vinda de dois mapas de calor: na lâmina de IC formam um bloco; na benigna ficam espalhados). Pode ajudar a separar benigno de atípico, o ponto mais fraco. Fixar critério antes.
+- [x] **Concentração espacial dos patches suspeitos**: não passou (AUC benigno × atípico 0,58 → 0,61). Nas benignas, os falsos positivos também ficam agrupados.
 - [ ] Confirmar a melhor versão nas 30 lâminas de teste oficiais ainda não usadas (exige baixar).
 - [x] **Resposta em conjunto** (benigno, atípico, "benigno ou atípico", maligno): não passou (acerto do conjunto 0,70, respostas exatas 0,44). A métrica fica para os próximos testes; o alvo de 0,80 no treino foi alto demais.
 - [ ] **MIL com atenção** (ABMIL/CLAM; TransMIL depois) nas lâminas de treino, depois que os embeddings do treino estiverem prontos. A atenção também escolhe os patches (roteador) e explica a decisão.
