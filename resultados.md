@@ -333,6 +333,23 @@ Script: `Testes/Pipeline01/validacao/mil_atencao.py`, fixado antes (commit `c701
   No classificador com descritor, a AUC benigno × atípico de 0,85 na validação cruzada caiu para 0,58 no teste externo; no MIL, a queda foi menor (0,92 → 0,78).
 - **Ressalvas:** 57 lâminas reaproveitadas em vários testes (nada foi ajustado nelas, e o MIL não usou nenhum limiar); intervalo largo. Treinado com 79 lâminas; as 379 de treino ainda não baixadas devem ajudar. A atenção por patch ficou salva para mapas de calor (`resultados/mil_atencao/`).
 
+## A atenção do MIL cai nas lesões anotadas? (09/11)
+
+Script: `Testes/Pipeline01/validacao/atencao_nas_lesoes.py`, fixado antes (commit `87d2de8`). Nas 29 lâminas do teste externo com rótulo atípico, DCIS ou IC que têm anotação oficial de lesão, compara-se a fração dos 5% de patches de maior atenção que cai dentro das lesões anotadas com a fração de todos os patches da amostra que cai nelas (referência: o que um sorteio acertaria). Coordenadas do GeoJSON conferidas contra o estágio 1 (diferença de poucos pixels). Critério: acima da referência em ≥ 70% das lâminas e razão somada ≥ 2.
+
+| 29 lâminas | Lâminas acima da referência | Topo na lesão (média) | Referência (média) | Razão |
+|---|---|---|---|---|
+| **Atenção do MIL** | 21 (72%) | 11,5% | 2,3% | **5,0** |
+| P(não benigno) do descritor | 24 (83%) | 8,8% | 2,3% | 3,9 |
+
+| Por classe (razão: MIL / descritor) | Lâminas | MIL acima da referência |
+|---|---|---|
+| Atípico | 14 | 9 (64%) — razão 8,8 / 6,6 |
+| DCIS | 5 | 5 (100%) — razão 4,9 / 4,2 |
+| IC | 10 | 7 (70%) — razão 4,3 / 3,1 |
+
+**Passou.** Os patches que mais pesam na decisão do MIL estão 5 vezes mais dentro das lesões do que o acaso: a atenção serve de explicação e de roteador. O descritor também aponta para as lesões, em mais lâminas, mas com concentração menor. As frações absolutas são baixas porque as anotações cobrem só 2,3% dos patches da amostra e marcam regiões, não toda a lesão.
+
 ## Anotações oficiais do BRACS
 
 - `.qpdata` lidas com o QuPath e exportadas pra GeoJSON: 387 de 387 lâminas; totais por classe iguais aos do artigo.

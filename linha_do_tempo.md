@@ -134,6 +134,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 | 08/11 | Concentração espacial dos patches suspeitos (4 atributos com os 8 vizinhos mais próximos): AUC benigno × atípico 0,58 → 0,61 — não passou (critério +0,05 e ≥ 0,70). Nas benignas, os falsos positivos também ficam agrupados (~4× o acaso, quase como nas atípicas). Sem os espaciais, benigno × atípico fica perto do acaso: o descritor por patch não separa as duas classes no nível da lâmina |
 | 09/11 | **MIL com atenção (ABMIL)**, treinado direto no rótulo de 79 lâminas, a partir dos embeddings dos 2.000 patches: 38/57, acurácia balanceada 0,626 (IC 95% 0,52–0,75); benigno × atípico AUC 0,58 → 0,78 — passou nos dois critérios. Em 3 classes, 0,68 (UNI + ABMIL publicado: 0,687). O DCIS continua fraco (2/8). Próximo: MIL com as 379 lâminas de treino |
 | 09/11 | MIL em validação cruzada por paciente nas 79 lâminas de treino (sem usar as 57): 57/79, acurácia balanceada 0,680, benigno × atípico AUC 0,92 — passou. Classificador com descritor na mesma divisão: 46/79, 0,509 |
+| 09/11 | A atenção do MIL cai nas lesões anotadas: nas 29 lâminas de teste com lesão anotada, os 5% de patches de maior atenção ficam 5× mais nas lesões que o acaso (11,5% contra 2,3%; 21 de 29 lâminas) — passou. Descritor: 3,9× |
 
 ## Onde paramos
 
