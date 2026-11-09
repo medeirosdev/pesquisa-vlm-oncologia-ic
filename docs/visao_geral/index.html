@@ -179,7 +179,7 @@ footer { margin-top: 40px; color: var(--tinta-2); font-size: 0.88rem; border-top
   <div class="fatos">
     <div class="fato"><b class="num">18 + 61 + 57</b><span>lâminas do BRACS: desenvolvimento, validação oficial e teste oficial</span></div>
     <div class="fato"><b class="num">0,95</b><span>AUC DCIS × carcinoma invasivo em outra instituição (BACH)</span></div>
-    <div class="fato"><b class="num">17 → 29 de 57</b><span>lâminas certas ao tirar a decisão do modelo de linguagem (acurácia balanceada 0,42 → 0,51; acaso = 0,25)</span></div>
+    <div class="fato"><b class="num">17 → 38 de 57</b><span>lâminas certas: do modelo de linguagem decidindo ao MIL com atenção treinado com 79 lâminas (acurácia balanceada 0,42 → 0,63; acaso = 0,25)</span></div>
     <div class="fato"><b class="num">4 GB</b><span>de GPU: tudo roda localmente, sem enviar dados do paciente</span></div>
   </div>
 </header>
@@ -476,6 +476,29 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
   <div class="cab eo"><span class="marca">3½</span><h2>Decisão da lâmina inteira</h2><p>Etapa nova. Em vez de o modelo de linguagem decidir a classe a partir de 32 patches, um classificador usa até 2.000 patches de cada lâmina: 12 números (frações por classe, médias e percentis altos das probabilidades) entram numa regressão logística treinada com o rótulo de 79 lâminas. O modelo de linguagem passa a só redigir.</p></div>
 
   <div class="painel destaque">
+    <h3>Novo: MIL com atenção, treinado direto no rótulo da lâmina</h3>
+    <p>Em vez de passar pelo descritor de cada patch, um modelo de MIL com atenção (Ilse et al., 2018) recebe os embeddings do UNI2-h dos 2.000 patches e aprende a classe com o rótulo de 79 lâminas. A atenção indica quais patches pesaram na decisão.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Nas 57 lâminas</th><th class="num">Benigno</th><th class="num">Atípico</th><th class="num">DCIS</th><th class="num">IC</th><th class="num">Total</th><th class="num">Acurácia balanceada</th></tr></thead>
+      <tbody>
+        <tr><td>Classificador + negativos</td><td class="num">10/20</td><td class="num">6/17</td><td class="num">2/8</td><td class="num">11/12</td><td class="num">29/57</td><td class="num">0,505</td></tr>
+        <tr class="vence"><td><b>MIL com atenção</b></td><td class="num">15/20</td><td class="num">10/17</td><td class="num">2/8</td><td class="num">11/12</td><td class="num"><b>38/57</b></td><td class="num"><b>0,626</b></td></tr>
+      </tbody>
+    </table></div>
+    <div class="tabela"><table>
+      <thead><tr><th></th><th class="num">Descritor</th><th class="num">MIL</th></tr></thead>
+      <tbody>
+        <tr><td>AUC benigno × atípico (37 lâminas)</td><td class="num">0,58</td><td class="num"><b>0,78</b></td></tr>
+        <tr><td>AUC maligno × resto</td><td class="num">0,83</td><td class="num">0,88</td></tr>
+        <tr><td>Acurácia balanceada em 3 classes</td><td class="num">0,52</td><td class="num">0,68</td></tr>
+        <tr><td>Resposta em conjunto: acerto / exatas</td><td class="num">0,70 / 0,44</td><td class="num">0,83 / 0,70</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Critérios fixados antes: acurácia balanceada &gt; 0,505 e AUC benigno × atípico ≥ 0,70. Intervalo de 95%: 0,52–0,75. Nenhum paciente em comum entre treino e teste; nenhum limiar escolhido no teste. Em 3 classes, 0,68 fica perto do UNI + ABMIL publicado (0,687, com 395 lâminas de treino), comparação indicativa. O DCIS continua fraco.</p>
+    <span class="selo ok">passou nos dois critérios</span>
+  </div>
+
+  <div class="painel">
     <h3>Teste nas 57 lâminas: acurácia balanceada nas 4 classes (rótulo oficial)</h3>
     <div class="barras">
       <div class="barra"><span class="nome">Hierárquico + negativos (sem critério)</span><span class="trilho"><i style="width:51.8%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,518</span></div>
@@ -787,7 +810,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
       <tr><td>1. Filtro de tecido</td><td><span class="selo ok">resolvido</span></td><td>—</td></tr>
       <tr><td>2. Roteador</td><td><span class="selo parcial">bom em lâminas malignas</span></td><td>métrica para lâminas benignas e atípicas</td></tr>
       <tr><td>3. Descritor</td><td><span class="selo parcial">bom no DCIS × IC; negativos cortam falsos malignos; atípico ainda fraco</span></td><td>recuperar o DCIS sem perder as benignas</td></tr>
-      <tr><td>3½. Decisão da lâmina</td><td><span class="selo parcial">29/57, acurácia balanceada 0,51; separar benigno de atípico é o ponto fraco</span></td><td>MIL com as 379 lâminas de treino (o descritor por patch não separa benigno de atípico); confirmar nas 30 lâminas de teste não usadas</td></tr>
+      <tr><td>3½. Decisão da lâmina</td><td><span class="selo ok">MIL com 79 lâminas: 38/57, acurácia balanceada 0,63; benigno × atípico AUC 0,78</span></td><td>MIL com as 379 lâminas de treino; mapas de atenção; confirmar nas 30 lâminas de teste não usadas</td></tr>
       <tr><td>4. Agregação</td><td><span class="selo parcial">regra ajuda no IC</span></td><td>trocar a contagem dos 32 patches pelos campos fixos</td></tr>
       <tr><td>5. Síntese</td><td><span class="selo ok">só redige; texto fiel aos campos (0 números sem sustentação)</span></td><td>avaliação por patologista; texto mais informativo</td></tr>
     </tbody>
@@ -796,7 +819,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
 </section>
 
 <footer>
-  <p>Pipeline Ideia 01 · orientação Prof. João Batista Florindo · situação em 08/11/2026. Modelos: QuiltNet-B-32, UNI2-h, CellViT-256, Gemma 3 4B e MedGemma 4B, todos rodando localmente.</p>
+  <p>Pipeline Ideia 01 · orientação Prof. João Batista Florindo · situação em 09/11/2026. Modelos: QuiltNet-B-32, UNI2-h, CellViT-256, Gemma 3 4B e MedGemma 4B, todos rodando localmente.</p>
   <p>Imagens de lâminas: BRACS (Brancati et al., <i>BRACS: A Dataset for BReAst Carcinoma Subtyping in H&amp;E Histology Images</i>, Database, 2022), licença CC BY-NC 4.0. Núcleos anotados: NuCLS (Amgad et al., GigaScience, 2022), CC0. Imagens do BACH não são reproduzidas (licença CC BY-NC-ND); só os resultados numéricos.</p>
 </footer>
 

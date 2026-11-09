@@ -132,6 +132,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 | 07/11 | Publicação da página falhou: conta do GitHub bloqueada por cobrança; o site segue na versão de 19/10 |
 | 07/11 | Resposta em conjunto (benigno, atípico, "benigno ou atípico", maligno): acerto do conjunto 0,70, respostas exatas 0,44 — não passou (critério 0,75 e 0,50). A margem escolhida no treino ficou no máximo e a resposta virou quase "maligno × não maligno" |
 | 08/11 | Concentração espacial dos patches suspeitos (4 atributos com os 8 vizinhos mais próximos): AUC benigno × atípico 0,58 → 0,61 — não passou (critério +0,05 e ≥ 0,70). Nas benignas, os falsos positivos também ficam agrupados (~4× o acaso, quase como nas atípicas). Sem os espaciais, benigno × atípico fica perto do acaso: o descritor por patch não separa as duas classes no nível da lâmina |
+| 09/11 | **MIL com atenção (ABMIL)**, treinado direto no rótulo de 79 lâminas, a partir dos embeddings dos 2.000 patches: 38/57, acurácia balanceada 0,626 (IC 95% 0,52–0,75); benigno × atípico AUC 0,58 → 0,78 — passou nos dois critérios. Em 3 classes, 0,68 (UNI + ABMIL publicado: 0,687). O DCIS continua fraco (2/8). Próximo: MIL com as 379 lâminas de treino |
 
 ## Onde paramos
 

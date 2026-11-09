@@ -1,8 +1,8 @@
 # Tarefas pendentes
 
-Estado em 08/11/2026. Resultados em [resultados.md](resultados.md); histórico em [linha_do_tempo.md](linha_do_tempo.md); ideias em [brainstorming_melhorias.md](brainstorming_melhorias.md).
+Estado em 09/11/2026. Resultados em [resultados.md](resultados.md); histórico em [linha_do_tempo.md](linha_do_tempo.md); ideias em [brainstorming_melhorias.md](brainstorming_melhorias.md).
 
-Ordem sugerida: 1) resolver a cobrança do GitHub e publicar a página; 2) baixar as 379 lâminas de treino e testar o MIL (o descritor por patch não separa benigno de atípico: AUC 0,58); 3) recuperar o DCIS; 4) refazer o pacote com cotas com o descritor corrigido; 5) confirmar nas 30 lâminas de teste não usadas.
+Ordem sugerida: 1) resolver a cobrança do GitHub e publicar a página; 2) baixar as 379 lâminas de treino e treinar o MIL com elas (o MIL com 79 lâminas já chegou a 38/57); 3) recuperar o DCIS; 4) refazer o pacote com cotas com o descritor corrigido; 5) confirmar nas 30 lâminas de teste não usadas.
 
 Desde 07/11, todo teste usa o agrupamento oficial do BRACS (UDH em benigno). Resultados anteriores usam o agrupamento antigo e estão marcados em `resultados.md`.
 
@@ -41,7 +41,10 @@ systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 \
 - [x] **Concentração espacial dos patches suspeitos**: não passou (AUC benigno × atípico 0,58 → 0,61). Nas benignas, os falsos positivos também ficam agrupados.
 - [ ] Confirmar a melhor versão nas 30 lâminas de teste oficiais ainda não usadas (exige baixar).
 - [x] **Resposta em conjunto** (benigno, atípico, "benigno ou atípico", maligno): não passou (acerto do conjunto 0,70, respostas exatas 0,44). A métrica fica para os próximos testes; o alvo de 0,80 no treino foi alto demais.
-- [ ] **MIL com atenção** (ABMIL/CLAM; TransMIL depois) nas lâminas de treino, depois que os embeddings do treino estiverem prontos. A atenção também escolhe os patches (roteador) e explica a decisão.
+- [x] **MIL com atenção, versão pequena (79 lâminas)**: passou nos dois critérios: 38/57, acurácia balanceada 0,626; benigno × atípico AUC 0,78 (descritor: 0,58).
+- [ ] ★ **MIL com as 379 lâminas de treino** (depois do download): mesmo modelo, critério fixado antes. Comparar também com CLAM/TransMIL.
+- [ ] ★ **Mapas de atenção do MIL** (atenção salva em `resultados/mil_atencao/`): roteador e explicabilidade.
+- [ ] Pré-laudo com a classe do MIL e as regiões de maior atenção como campos.
 - [x] **Hierárquico no nível da lâmina**: rótulo oficial, com negativos, 31/57, 0,518 (0,560 em 3 classes), sem critério. Falta confirmar com critério fixado antes.
 
 ## Descritor

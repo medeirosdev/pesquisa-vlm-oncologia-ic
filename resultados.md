@@ -304,6 +304,27 @@ Script: `Testes/Pipeline01/validacao/concentracao_espacial.py`, fixado antes (co
 
 No IC, o enriquecimento é baixo porque os suspeitos ocupam metade da lâmina: com tanta área suspeita, a razão contra o acaso fica perto de 1. Sem os atributos espaciais, a AUC benigno × atípico só nessas 37 lâminas é 0,58, perto do acaso: o descritor por patch, como está, não separa as duas classes no nível da lâmina.
 
+## MIL com atenção (ABMIL), 79 lâminas de treino (09/11)
+
+Script: `Testes/Pipeline01/validacao/mil_atencao.py`, fixado antes (commit `c701a1d`). O modelo aprende a classe da lâmina direto do rótulo, a partir dos embeddings do UNI2-h dos 2.000 patches da amostra, sem o descritor por patch. Atenção com porta (Ilse et al., 2018), 40 épocas, média de 5 sementes, sem ajuste de hiperparâmetro. Treino: as mesmas 79 lâminas (42 pacientes); teste: as mesmas 57 (31 pacientes, nenhum em comum com o treino). Critérios: C1 acurácia balanceada nas 4 classes > 0,505 (classificador com negativos); C2 AUC benigno × atípico ≥ 0,70.
+
+| Nas 57 lâminas | Benigno (20) | Atípico (17) | DCIS (8) | IC (12) | Acertos | Acurácia balanceada | Passou? |
+|---|---|---|---|---|---|---|---|
+| Classificador + negativos (07/11) | 10 | 6 | 2 | 11 | 29/57 | 0,505 | referência |
+| **ABMIL** | **15** | **10** | 2 | 11 | **38/57** | **0,626** (IC 95% 0,52–0,75) | **C1: sim** |
+
+| | Descritor (melhor versão) | ABMIL |
+|---|---|---|
+| AUC benigno × atípico (37 lâminas) | 0,58 | **0,78** (C2: sim) |
+| AUC maligno × resto | 0,83 | 0,88 |
+| Acurácia balanceada em 3 classes | 0,52–0,56 | 0,68 |
+| Resposta em conjunto (d = 0,45): acerto / exatas | 0,70 / 0,44 | 0,83 / 0,70 |
+
+- **Passou nos dois critérios, com folga.** Aprender da lâmina inteira resolve boa parte do benigno × atípico, que o descritor por patch não separava (0,58 → 0,78).
+- **Em 3 classes, 0,68**, perto do UNI + ABMIL publicado (0,687 com 395 lâminas de treino e as 87 de teste). A comparação continua indicativa: outro teste, outro modelo base, 57 lâminas.
+- **O DCIS continua fraco** (2/8): 6 das 20 lâminas malignas saem como benignas ou atípicas; só 1 benigna ou atípica sai como maligna.
+- **Ressalvas:** 57 lâminas reaproveitadas em vários testes (nada foi ajustado nelas, e o MIL não usou nenhum limiar); intervalo largo. Treinado com 79 lâminas; as 379 de treino ainda não baixadas devem ajudar. A atenção por patch ficou salva para mapas de calor (`resultados/mil_atencao/`).
+
 ## Anotações oficiais do BRACS
 
 - `.qpdata` lidas com o QuPath e exportadas pra GeoJSON: 387 de 387 lâminas; totais por classe iguais aos do artigo.
@@ -320,3 +341,4 @@ Detalhes: `Testes/Pipeline01/validacao/problemas_e_metrica.md`.
 5. A medida dos núcleos separa DCIS de IC, mas os valores não são confiáveis: mesmo com a classificação de núcleos treinada no NuCLS (tumor 0,83 / 0,88), a medida não bate com a anotação (Spearman 0,35).
 6. A pipeline roda de ponta a ponta até o pré-laudo, mas em lâminas novas (57 do teste oficial) chama 55 de 57 de malignas: acerta DCIS e IC (com a regra, 8/8 e 7/12) e erra quase todas as benignas e atípicas, ficando em 17 de 57 (rótulo oficial). A regra do componente invasivo ajuda no IC; o problema principal está nos estágios 2 e 3, que mandam evidência maligna de lâminas benignas e atípicas.
 7. Tirar a decisão do modelo de linguagem e treinar o descritor com lâminas benignas como negativos leva o acerto de 17 para 29 de 57 lâminas (acurácia balanceada 0,42 → 0,51, rótulo oficial), e os patches falsos malignos nas lâminas benignas caem de 21% para 7%. Ainda está abaixo do publicado com MIL (0,52–0,56 contra 0,69 em 3 classes, comparação indicativa). Separar benigno de atípico no nível da lâmina continua sendo o ponto mais difícil.
+8. Um MIL com atenção, treinado direto no rótulo de só 79 lâminas, supera tudo o que passa pelo descritor por patch: 38 de 57 lâminas (acurácia balanceada 0,63), e benigno × atípico sobe de AUC 0,58 para 0,78. É o caminho principal daqui pra frente; falta mais treino (379 lâminas) e confirmação nas 30 lâminas de teste não usadas.
