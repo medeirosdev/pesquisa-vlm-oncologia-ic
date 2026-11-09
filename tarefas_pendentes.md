@@ -41,7 +41,7 @@ systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 \
 - [x] **Concentração espacial dos patches suspeitos**: não passou (AUC benigno × atípico 0,58 → 0,61). Nas benignas, os falsos positivos também ficam agrupados.
 - [ ] Confirmar a melhor versão nas 30 lâminas de teste oficiais ainda não usadas (exige baixar).
 - [x] **Resposta em conjunto** (benigno, atípico, "benigno ou atípico", maligno): não passou (acerto do conjunto 0,70, respostas exatas 0,44). A métrica fica para os próximos testes; o alvo de 0,80 no treino foi alto demais.
-- [x] **MIL com atenção, versão pequena (79 lâminas)**: passou nos dois critérios: 38/57, acurácia balanceada 0,626; benigno × atípico AUC 0,78 (descritor: 0,58).
+- [x] **MIL com atenção, versão pequena (79 lâminas)**: passou nos dois critérios: 38/57, acurácia balanceada 0,626; benigno × atípico AUC 0,78 (descritor: 0,58). Confirmado em validação cruzada por paciente nas 79: 57/79, 0,680; benigno × atípico 0,92.
 - [ ] ★ **MIL com as 379 lâminas de treino** (depois do download): mesmo modelo, critério fixado antes. Comparar também com CLAM/TransMIL.
 - [ ] ★ **Mapas de atenção do MIL** (atenção salva em `resultados/mil_atencao/`): roteador e explicabilidade.
 - [ ] Pré-laudo com a classe do MIL e as regiões de maior atenção como campos.

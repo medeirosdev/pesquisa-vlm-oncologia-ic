@@ -323,6 +323,14 @@ Script: `Testes/Pipeline01/validacao/mil_atencao.py`, fixado antes (commit `c701
 - **Passou nos dois critérios, com folga.** Aprender da lâmina inteira resolve boa parte do benigno × atípico, que o descritor por patch não separava (0,58 → 0,78).
 - **Em 3 classes, 0,68**, perto do UNI + ABMIL publicado (0,687 com 395 lâminas de treino e as 87 de teste). A comparação continua indicativa: outro teste, outro modelo base, 57 lâminas.
 - **O DCIS continua fraco** (2/8): 6 das 20 lâminas malignas saem como benignas ou atípicas; só 1 benigna ou atípica sai como maligna.
+- **Confirmação em validação cruzada** (`validacao/mil_validacao_cruzada.py`, fixado antes, commit `4666c80`): o mesmo MIL, sem mudança, em 5 partes por paciente nas 79 lâminas de treino, sem usar as 57. Critério: acurácia balanceada ≥ 0,55 e AUC benigno × atípico ≥ 0,70. **Passou:**
+
+| Validação cruzada nas 79 | Benigno (34) | Atípico (17) | DCIS (11) | IC (17) | Acertos | Acurácia balanceada | AUC benigno × atípico | AUC maligno × resto |
+|---|---|---|---|---|---|---|---|---|
+| Classificador + negativos | 25 | 6 | 2 | 13 | 46/79 | 0,509 | 0,851 | 0,779 |
+| **ABMIL** | 28 | 11 | 6 | 12 | **57/79** | **0,680** | **0,915** | **0,914** |
+
+  No classificador com descritor, a AUC benigno × atípico de 0,85 na validação cruzada caiu para 0,58 no teste externo; no MIL, a queda foi menor (0,92 → 0,78).
 - **Ressalvas:** 57 lâminas reaproveitadas em vários testes (nada foi ajustado nelas, e o MIL não usou nenhum limiar); intervalo largo. Treinado com 79 lâminas; as 379 de treino ainda não baixadas devem ajudar. A atenção por patch ficou salva para mapas de calor (`resultados/mil_atencao/`).
 
 ## Anotações oficiais do BRACS
