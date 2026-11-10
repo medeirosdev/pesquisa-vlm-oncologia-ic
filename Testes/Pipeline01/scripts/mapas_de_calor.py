@@ -10,6 +10,8 @@ Uso (venv do projeto):
     .venv/bin/python scripts/mapas_de_calor.py BRACS_264 BRACS_1003728 [--docs]
 Opção --docs: salva também em docs/visao_geral/img/ (JPEG reduzido, pra página).
 Opção --reducao 64: miniatura mais reduzida, pra lâminas que estouram a memória.
+Opção --atencao: painel (b) com a atenção do MIL (validacao/mil_atencao.py), em percentil dentro da lâmina, e os
+contornos das lesões anotadas pelos patologistas; painel (a) com o descritor corrigido (concentracao_espacial.py).
 """
 
 import argparse
@@ -36,8 +38,8 @@ DOCS_IMG = Path(__file__).resolve().parents[3] / "docs" / "visao_geral" / "img"
 SAIDA = RESULTADOS_DIR / "mapas_de_calor"
 
 
-def arquivo_probs(s):
-    for pasta in ("prelaudo_campos", "pacote_cotas"):
+def arquivo_probs(s, pastas=("prelaudo_campos", "pacote_cotas")):
+    for pasta in pastas:
         f = RESULTADOS_DIR / pasta / f"{s}_probs.npz"
         if f.exists():
             return f
@@ -53,14 +55,26 @@ def predito_classificador(s):
     return None
 
 
-def desenhar(s, docs=False, reducao=32):
+def predito_mil(s):
+    f = RESULTADOS_DIR / "mil_atencao" / "resumo.json"
+    if f.exists():
+        r = json.loads(f.read_text(encoding="utf-8")).get("por_lamina", {})
+        if s in r:
+            return r[s]["predito"]
+    return None
+
+
+def desenhar(s, docs=False, reducao=32, atencao=False):
     from lamina_inteira import classe_final
-    z = np.load(arquivo_probs(s))
+    z = np.load(arquivo_probs(s, ("concentracao_espacial/probs",) if atencao else ("prelaudo_campos", "pacote_cotas")))
     p1, p2, xy = z["p1"], z["p2"], z["xy"]
     cat, sub = p1.argmax(1), p2.argmax(1)
     classe = np.where(cat == 0, "benigno", np.where(cat == 1, "atipico", np.where(sub == 0, "DCIS", "IC")))
     conf = p1.max(1) * np.where(cat == 2, p2.max(1), 1.0)
     nao_benigno = 1 - p1[:, 0]
+    if atencao:  # percentil da atenção dentro da lâmina: a escala absoluta depende do número de patches
+        att = np.load(RESULTADOS_DIR / "mil_atencao" / f"{s}_atencao.npy")
+        nao_benigno = np.argsort(np.argsort(att)) / max(len(att) - 1, 1)
 
     svs = Path(ler_caminhos()["laminas_dir"]) / f"{s}.svs"
     if svs.exists():
@@ -82,19 +96,27 @@ def desenhar(s, docs=False, reducao=32):
         eixos[1].add_patch(plt.Rectangle((x0 / ds, y0 / ds), lado, lado, color=mapa(float(v)), alpha=0.75, lw=0))
     eixos[0].legend(handles=[Patch(color=CORES[c], label=NOME_PT[c]) for c in CORES], loc="lower left", fontsize=8, framealpha=0.9)
     sm = plt.cm.ScalarMappable(cmap=mapa, norm=plt.Normalize(0, 1))
-    fig.colorbar(sm, ax=eixos[1], fraction=0.035, pad=0.02, label="P(não benigno)")
+    fig.colorbar(sm, ax=eixos[1], fraction=0.035, pad=0.02, label="percentil da atenção" if atencao else "P(não benigno)")
     eixos[0].set_title("classe prevista de cada patch (opacidade = confiança)", fontsize=10)
-    eixos[1].set_title("probabilidade de não ser benigno", fontsize=10)
+    eixos[1].set_title("atenção do MIL (contorno: lesão anotada)" if atencao else "probabilidade de não ser benigno", fontsize=10)
     real = classe_final(info_lamina(s)["rotulo"])
-    pred = predito_classificador(s)
-    fig.suptitle(f"{s} · rótulo real: {NOME_PT[real]}" + (f" · classificador da lâmina: {NOME_PT[pred]}" if pred else ""), fontsize=11)
+    if atencao:
+        from atencao_nas_lesoes import poligonos_de_lesao
+        for poli in poligonos_de_lesao(s):
+            v = poli.vertices / ds
+            eixos[1].plot(np.r_[v[:, 0], v[:, 0][:1]], np.r_[v[:, 1], v[:, 1][:1]], color="#00b3b3", lw=1.2)
+        pred, quem = predito_mil(s), "MIL"
+    else:
+        pred, quem = predito_classificador(s), "classificador da lâmina"
+    fig.suptitle(f"{s} · rótulo real: {NOME_PT[real]}" + (f" · {quem}: {NOME_PT[pred]}" if pred else ""), fontsize=11)
     fig.tight_layout()
     SAIDA.mkdir(parents=True, exist_ok=True)
-    fig.savefig(SAIDA / f"{s}.png")
+    nome = f"atencao_{s}" if atencao else s
+    fig.savefig(SAIDA / f"{nome}.png")
     if docs:
-        fig.savefig(DOCS_IMG / f"mapa_{s}.jpg", dpi=80, pil_kwargs={"quality": 82})
+        fig.savefig(DOCS_IMG / f"mapa_{nome}.jpg", dpi=80, pil_kwargs={"quality": 82})
     plt.close(fig)
-    print(f"  {s}: {SAIDA / f'{s}.png'}", flush=True)
+    print(f"  {s}: {SAIDA / f'{nome}.png'}", flush=True)
 
 
 if __name__ == "__main__":
@@ -102,6 +124,7 @@ if __name__ == "__main__":
     p.add_argument("laminas", nargs="+")
     p.add_argument("--docs", action="store_true")
     p.add_argument("--reducao", type=int, default=32, help="redução da miniatura; 64 pra lâminas grandes")
+    p.add_argument("--atencao", action="store_true", help="painel (b) com a atenção do MIL e as lesões anotadas")
     a = p.parse_args()
     for s in a.laminas:
-        desenhar(s, a.docs, a.reducao)
+        desenhar(s, a.docs, a.reducao, a.atencao)
