@@ -513,6 +513,15 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
     <span class="selo ok">passou</span>
   </div>
 
+  <h3>Mapas de atenção do MIL</h3>
+  <p class="nota">As mesmas quatro lâminas dos mapas do descritor. Esquerda: classe de cada patch pelo descritor. Direita: atenção do MIL, em percentil dentro da lâmina (escuro = pesou mais na decisão), com o contorno das lesões anotadas pelos patologistas em azul-esverdeado.</p>
+  <div class="figuras mapas">
+    <figure><img src="img/mapa_atencao_BRACS_1284.jpg" alt="Mapa de atenção de uma lâmina de carcinoma invasivo, com atenção alta sobre a área tumoral e as regiões anotadas" loading="lazy"><figcaption><span class="selo ok">certo</span> BRACS_1284, carcinoma invasivo (MIL: IC, 1,00). A atenção alta cobre a área do tumor e as regiões anotadas.</figcaption></figure>
+    <figure><img src="img/mapa_atencao_BRACS_1330.jpg" alt="Mapa de atenção de uma lâmina benigna" loading="lazy"><figcaption><span class="selo ok">certo</span> BRACS_1330, benigna (MIL: benigno, 0,85). Na versão com descritor, essa lâmina saía como atípica.</figcaption></figure>
+    <figure><img src="img/mapa_atencao_BRACS_1283.jpg" alt="Mapa de atenção de uma lâmina de DCIS" loading="lazy"><figcaption><span class="selo falha">errado</span> BRACS_1283, DCIS (MIL: atípico, 0,95). O DCIS é a classe mais fraca do MIL.</figcaption></figure>
+    <figure><img src="img/mapa_atencao_BRACS_1003691.jpg" alt="Mapa de atenção de uma lâmina atípica com uma lesão anotada pequena" loading="lazy"><figcaption><span class="selo falha">errado</span> BRACS_1003691, atípica (MIL: benigno, 0,76). A lesão anotada é pequena: dos 8 patches da amostra dentro dela, 2 estão entre os 4% de maior atenção e os outros 6 têm atenção baixa.</figcaption></figure>
+  </div>
+
   <div class="painel">
     <h3>Teste nas 57 lâminas: acurácia balanceada nas 4 classes (rótulo oficial)</h3>
     <div class="barras">
@@ -747,6 +756,28 @@ com invasive carcinoma e probabilidade ≥ 0.90; encontrados 0).</pre>
     <span class="selo ok">passou</span>
   </div>
 
+  <div class="painel destaque">
+    <h3>Pré-laudo com o MIL: classe do MIL, regiões de maior atenção</h3>
+    <p>A classe e a confiança vêm do MIL; as regiões citadas são os 3 patches de maior atenção, os que mais pesaram na decisão, cada um com a descrição do descritor. O modelo de linguagem só redige.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>57 pré-laudos</th><th class="num">Com o MIL</th><th class="num">Modelo decide (antigo)</th></tr></thead>
+      <tbody>
+        <tr><td>Classe do texto igual à sugerida</td><td class="num">57/57</td><td class="num">—</td></tr>
+        <tr><td>Números sem sustentação</td><td class="num">0 de 791</td><td class="num">11 de 523</td></tr>
+        <tr><td>Coordenadas inventadas</td><td class="num">0 de 267</td><td class="num">2 de 178</td></tr>
+        <tr class="vence"><td>Classe final certa</td><td class="num">38/57</td><td class="num">17/57</td></tr>
+        <tr><td>Regiões citadas dentro da lesão anotada</td><td class="num">18 de 93</td><td class="num">7 de 93 (descritor)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Passou no critério fixado antes (classe igual em ≥ 90% e números sem sustentação não maiores que nos antigos). Regiões dentro da lesão: lâminas atípicas, DCIS e IC com anotação; as anotações cobrem só ~2% dos patches.</p>
+    <span class="selo ok">passou</span>
+    <p><b>Problema que a checagem automática não pega:</b> em 15 lâminas, o MIL sugere benigno, mas regiões de maior atenção são descritas pelo descritor como atípicas ou malignas. Só 1 dos 15 textos aponta a contradição; os outros a justificam. Exemplo (BRACS_1003691, atípica):</p>
+    <pre class="saida">Benigno [...] A presença de um patch de ductal carcinoma
+in situ (1.00) com alta probabilidade (0.99) influenciou
+a sugestão de benignidade.</pre>
+    <p class="nota">Os números estão todos certos, mas o raciocínio não: um patch de DCIS não sustenta benignidade. Isso reforça a leitura dos textos por patologista e pede uma regra nos campos que sinalize a contradição.</p>
+  </div>
+
   <div class="painel">
     <h3>Como o modelo de linguagem se comporta</h3>
     <ul class="limpa">
@@ -827,14 +858,14 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
       <tr><td>3. Descritor</td><td><span class="selo parcial">bom no DCIS × IC; negativos cortam falsos malignos; atípico ainda fraco</span></td><td>recuperar o DCIS sem perder as benignas</td></tr>
       <tr><td>3½. Decisão da lâmina</td><td><span class="selo ok">MIL com 79 lâminas: 38/57, acurácia balanceada 0,63; benigno × atípico AUC 0,78</span></td><td>MIL com as 379 lâminas de treino; mapas de atenção; confirmar nas 30 lâminas de teste não usadas</td></tr>
       <tr><td>4. Agregação</td><td><span class="selo parcial">regra ajuda no IC</span></td><td>trocar a contagem dos 32 patches pelos campos fixos</td></tr>
-      <tr><td>5. Síntese</td><td><span class="selo ok">só redige; texto fiel aos campos (0 números sem sustentação)</span></td><td>avaliação por patologista; texto mais informativo</td></tr>
+      <tr><td>5. Síntese</td><td><span class="selo parcial">só redige, com a classe do MIL; números fiéis, mas justifica contradições em vez de apontá-las</span></td><td>sinalizar contradições nos campos; avaliação por patologista</td></tr>
     </tbody>
   </table></div>
   <p class="nota">Ressalvas gerais: 2 lâminas por classe no desenvolvimento; as anotações do BRACS marcam regiões, não cada célula; o rótulo da lâmina é o da lesão mais grave.</p>
 </section>
 
 <footer>
-  <p>Pipeline Ideia 01 · orientação Prof. João Batista Florindo · situação em 09/11/2026. Modelos: QuiltNet-B-32, UNI2-h, CellViT-256, Gemma 3 4B e MedGemma 4B, todos rodando localmente.</p>
+  <p>Pipeline Ideia 01 · orientação Prof. João Batista Florindo · situação em 10/11/2026. Modelos: QuiltNet-B-32, UNI2-h, CellViT-256, Gemma 3 4B e MedGemma 4B, todos rodando localmente.</p>
   <p>Imagens de lâminas: BRACS (Brancati et al., <i>BRACS: A Dataset for BReAst Carcinoma Subtyping in H&amp;E Histology Images</i>, Database, 2022), licença CC BY-NC 4.0. Núcleos anotados: NuCLS (Amgad et al., GigaScience, 2022), CC0. Imagens do BACH não são reproduzidas (licença CC BY-NC-ND); só os resultados numéricos.</p>
 </footer>
 

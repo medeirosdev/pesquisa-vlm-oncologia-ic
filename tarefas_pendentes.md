@@ -1,6 +1,6 @@
 # Tarefas pendentes
 
-Estado em 09/11/2026. Resultados em [resultados.md](resultados.md); histórico em [linha_do_tempo.md](linha_do_tempo.md); ideias em [brainstorming_melhorias.md](brainstorming_melhorias.md).
+Estado em 10/11/2026. Resultados em [resultados.md](resultados.md); histórico em [linha_do_tempo.md](linha_do_tempo.md); ideias em [brainstorming_melhorias.md](brainstorming_melhorias.md).
 
 Ordem sugerida: 1) resolver a cobrança do GitHub e publicar a página; 2) baixar as 379 lâminas de treino e treinar o MIL com elas (o MIL com 79 lâminas já chegou a 38/57); 3) recuperar o DCIS; 4) refazer o pacote com cotas com o descritor corrigido; 5) confirmar nas 30 lâminas de teste não usadas.
 
@@ -44,8 +44,9 @@ systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 \
 - [x] **MIL com atenção, versão pequena (79 lâminas)**: passou nos dois critérios: 38/57, acurácia balanceada 0,626; benigno × atípico AUC 0,78 (descritor: 0,58). Confirmado em validação cruzada por paciente nas 79: 57/79, 0,680; benigno × atípico 0,92.
 - [ ] ★ **MIL com as 379 lâminas de treino** (depois do download): mesmo modelo, critério fixado antes. Comparar também com CLAM/TransMIL.
 - [x] **A atenção do MIL cai nas lesões?** Passou: os 5% de maior atenção ficam 5× mais nas lesões anotadas que o acaso (21 de 29 lâminas).
-- [ ] ★ **Mapas de atenção do MIL** para a página e o orientador (atenção salva em `resultados/mil_atencao/`).
-- [ ] Pré-laudo com a classe do MIL e as regiões de maior atenção como campos.
+- [x] **Mapas de atenção do MIL**: 4 exemplos na página (`scripts/mapas_de_calor.py --atencao`).
+- [x] **Pré-laudo com o MIL**: passou (57/57 classe igual; 0 números sem sustentação; 38/57 classe final). Mas em 15 lâminas "benigno" com região de atenção maligna/atípica, só 1 texto aponta a contradição.
+- [ ] ★ **Sinalizar contradições nos campos** (ex.: "atenção: regiões de maior peso descritas como malignas, apesar da classe benigna") e medir de novo.
 - [x] **Hierárquico no nível da lâmina**: rótulo oficial, com negativos, 31/57, 0,518 (0,560 em 3 classes), sem critério. Falta confirmar com critério fixado antes.
 
 ## Descritor

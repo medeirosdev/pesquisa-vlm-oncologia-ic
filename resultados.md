@@ -350,6 +350,20 @@ Script: `Testes/Pipeline01/validacao/atencao_nas_lesoes.py`, fixado antes (commi
 
 **Passou.** Os patches que mais pesam na decisão do MIL estão 5 vezes mais dentro das lesões do que o acaso: a atenção serve de explicação e de roteador. O descritor também aponta para as lesões, em mais lâminas, mas com concentração menor. As frações absolutas são baixas porque as anotações cobrem só 2,3% dos patches da amostra e marcam regiões, não toda a lesão.
 
+## Pré-laudo com o MIL e mapas de atenção (10/11)
+
+Script: `Testes/Pipeline01/validacao/prelaudo_mil.py`, fixado antes (commit `29a4192`). A classe e a confiança vêm do MIL; as regiões citadas são os 3 patches de maior atenção, cada um com a descrição do descritor; o Gemma 3 4B só redige, com as instruções e a checagem de `prelaudo_campos.py`. Critério: classe do texto igual à sugerida em ≥ 90% e fração de números sem sustentação não maior que a dos pré-laudos antigos.
+
+| 57 pré-laudos | Com o MIL | Modelo decide (antigo) |
+|---|---|---|
+| Classe do texto igual à sugerida | 57/57 | — |
+| Números sem sustentação | 0 de 791 | 11 de 523 (2,1%) |
+| Coordenadas inventadas | 0 de 267 | 2 de 178 |
+| Classe final certa | 38/57 (acurácia balanceada 0,626) | 17/57 |
+| Regiões citadas dentro da lesão anotada (lâminas não benignas com anotação) | 18 de 93 | 7 de 93 (regiões do descritor, `prelaudo_campos.py`) |
+
+**Passou.** Problema que a checagem não pega: em 15 lâminas o MIL sugere benigno, mas regiões de maior atenção são descritas como atípicas ou malignas; só 1 dos 15 textos aponta a contradição, e os outros a justificam (ex.: BRACS_1003691, "a presença de um patch de ductal carcinoma in situ [...] influenciou a sugestão de benignidade"). Contagem por expressões no texto ("contradição", "no entanto", "embora"...), sem leitura completa dos 15. Mapas de atenção de 4 lâminas: `scripts/mapas_de_calor.py --atencao`, em `docs/visao_geral/img/mapa_atencao_*.jpg`.
+
 ## Anotações oficiais do BRACS
 
 - `.qpdata` lidas com o QuPath e exportadas pra GeoJSON: 387 de 387 lâminas; totais por classe iguais aos do artigo.

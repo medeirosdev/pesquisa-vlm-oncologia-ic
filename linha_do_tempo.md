@@ -135,6 +135,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 | 09/11 | **MIL com atenção (ABMIL)**, treinado direto no rótulo de 79 lâminas, a partir dos embeddings dos 2.000 patches: 38/57, acurácia balanceada 0,626 (IC 95% 0,52–0,75); benigno × atípico AUC 0,58 → 0,78 — passou nos dois critérios. Em 3 classes, 0,68 (UNI + ABMIL publicado: 0,687). O DCIS continua fraco (2/8). Próximo: MIL com as 379 lâminas de treino |
 | 09/11 | MIL em validação cruzada por paciente nas 79 lâminas de treino (sem usar as 57): 57/79, acurácia balanceada 0,680, benigno × atípico AUC 0,92 — passou. Classificador com descritor na mesma divisão: 46/79, 0,509 |
 | 09/11 | A atenção do MIL cai nas lesões anotadas: nas 29 lâminas de teste com lesão anotada, os 5% de patches de maior atenção ficam 5× mais nas lesões que o acaso (11,5% contra 2,3%; 21 de 29 lâminas) — passou. Descritor: 3,9× |
+| 10/11 | Mapas de atenção do MIL (4 lâminas) na página. Pré-laudo com a classe do MIL e as 3 regiões de maior atenção: classe do texto igual em 57/57, nenhum número nem coordenada sem sustentação, 38/57 certas; regiões citadas na lesão anotada 18/93 (descritor: 7/93) — passou. Mas em 15 lâminas "benigno" com região de atenção atípica ou maligna, só 1 texto aponta a contradição |
 
 ## Onde paramos
 
