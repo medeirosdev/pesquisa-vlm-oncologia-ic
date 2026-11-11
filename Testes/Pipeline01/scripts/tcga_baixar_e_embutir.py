@@ -6,6 +6,7 @@ Diferença: o TCGA mistura lâminas de 20x e 40x. O lado do patch no nível 0 sa
 (MPP da descrição Aperio), pra cobrir sempre 128 µm de tecido: 512 px a 0,25 µm/px, 256 px a 0,5 µm/px.
 
 Saída: resultados/tcga_pulmao/<file_id>/amostra2000.npy, amostra2000_xy.csv e meta.json. Retoma de onde parou.
+Baixa até ADIANTE lâminas em paralelo enquanto a GPU processa a atual (o download do GDC é lento por conexão).
 
 Uso (venv do projeto, HD montado):
     .venv/bin/python scripts/tcga_baixar_e_embutir.py scripts/lista_tcga_pulmao.tsv
@@ -28,6 +29,7 @@ from comum.lamina import RESULTADOS_DIR, Lamina, raiz_hd
 from comum.tecido import LIMIAR_TECIDO, mascara_tecido
 
 N_AMOSTRA = 2000
+ADIANTE = 3
 LADO_UM = 128.0
 SAIDA = RESULTADOS_DIR / "tcga_pulmao"
 
@@ -72,33 +74,44 @@ def embutir(caminho, pasta):
     return {"mpp": res, "lado_px": lado, "n_tecido": len(xy), "n_amostra": len(amostra)}
 
 
+def baixar(l, svs):
+    if svs.exists() and svs.stat().st_size == int(l["bytes"]):
+        return
+    r = subprocess.run(["wget", "-q", "--continue", "--tries=5", "--timeout=60", "-O", str(svs),
+                        f"https://api.gdc.cancer.gov/data/{l['file_id']}"])
+    if r.returncode != 0 or svs.stat().st_size != int(l["bytes"]):
+        raise RuntimeError("download incompleto")
+
+
 def main():
+    from concurrent.futures import ThreadPoolExecutor
     linhas = list(csv.DictReader(open(sys.argv[1], encoding="utf-8"), delimiter="\t"))
     tmp = Path(raiz_hd()) / "TCGA_pulmao_tmp"
     tmp.mkdir(exist_ok=True)
-    falhas = []
-    for i, l in enumerate(linhas, 1):
-        pasta = SAIDA / l["file_id"]
-        if (pasta / "meta.json").exists():
-            continue
-        pasta.mkdir(parents=True, exist_ok=True)
-        svs, t0 = tmp / l["file_name"], time.time()
-        try:
-            if not svs.exists() or svs.stat().st_size != int(l["bytes"]):
-                r = subprocess.run(["wget", "-q", "--continue", "--tries=5", "--timeout=60", "-O", str(svs),
-                                    f"https://api.gdc.cancer.gov/data/{l['file_id']}"])
-                if r.returncode != 0 or svs.stat().st_size != int(l["bytes"]):
-                    raise RuntimeError("download incompleto")
-            meta = {**{k: l[k] for k in ("file_name", "projeto", "paciente", "conjunto")}, **embutir(svs, pasta)}
-            (pasta / "meta.json").write_text(json.dumps(meta, indent=1), encoding="utf-8")
-            svs.unlink()
-            print(f"[{i}/{len(linhas)}] {l['projeto']} {l['paciente']}: {meta['n_amostra']} de {meta['n_tecido']} patches, "
-                  f"{meta['mpp']:.3f} µm/px, lado {meta['lado_px']} px ({time.time() - t0:.0f} s)", flush=True)
-        except Exception as e:  # noqa: BLE001 — registra e segue
-            falhas.append(l["file_id"])
-            print(f"[{i}/{len(linhas)}] {l['file_name']}: ERRO {type(e).__name__}: {e}", flush=True)
+    pendentes = [(i, l) for i, l in enumerate(linhas, 1) if not (SAIDA / l["file_id"] / "meta.json").exists()]
+    falhas, downloads = [], {}
+    with ThreadPoolExecutor(max_workers=ADIANTE) as ex:
+        for j, (i, l) in enumerate(pendentes):
+            for _, prox in pendentes[j:j + ADIANTE]:  # mantém até ADIANTE downloads em andamento
+                if prox["file_id"] not in downloads:
+                    downloads[prox["file_id"]] = ex.submit(baixar, prox, tmp / prox["file_name"])
+            pasta = SAIDA / l["file_id"]
+            pasta.mkdir(parents=True, exist_ok=True)
+            svs, t0 = tmp / l["file_name"], time.time()
+            try:
+                downloads.pop(l["file_id"]).result()
+                print(f"  [{i}] baixada (espera {time.time() - t0:.0f} s); calculando embeddings", flush=True)
+                meta = {**{k: l[k] for k in ("file_name", "projeto", "paciente", "conjunto")}, **embutir(svs, pasta)}
+                (pasta / "meta.json").write_text(json.dumps(meta, indent=1), encoding="utf-8")
+                svs.unlink()
+                print(f"[{i}/{len(linhas)}] {l['projeto']} {l['paciente']}: {meta['n_amostra']} de {meta['n_tecido']} patches, "
+                      f"{meta['mpp']:.3f} µm/px, lado {meta['lado_px']} px ({time.time() - t0:.0f} s)", flush=True)
+            except Exception as e:  # noqa: BLE001 — registra e segue
+                falhas.append(l["file_id"])
+                print(f"[{i}/{len(linhas)}] {l['file_name']}: ERRO {type(e).__name__}: {e}", flush=True)
+                if svs.exists():
+                    svs.unlink()
     print(f"\nconcluído; falhas: {falhas or 'nenhuma'}")
-
 
 if __name__ == "__main__":
     main()
