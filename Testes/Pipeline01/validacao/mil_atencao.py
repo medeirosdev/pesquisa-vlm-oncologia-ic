@@ -70,12 +70,12 @@ class ABMIL(nn.Module):
         return self.cls((a.unsqueeze(-1) * h).sum(0)), a
 
 
-def treinar(X, y, semente, dispositivo):
+def treinar(X, y, semente, dispositivo, k=4):
     torch.manual_seed(semente)
     rng = random.Random(semente)
-    modelo = ABMIL().to(dispositivo)
-    cont = np.bincount(y, minlength=4)
-    peso = torch.tensor(len(y) / (4 * np.maximum(cont, 1)), dtype=torch.float32, device=dispositivo)
+    modelo = ABMIL(k=k).to(dispositivo)
+    cont = np.bincount(y, minlength=k)
+    peso = torch.tensor(len(y) / (k * np.maximum(cont, 1)), dtype=torch.float32, device=dispositivo)
     opt = torch.optim.Adam(modelo.parameters(), lr=TAXA, weight_decay=DECAIMENTO)
     perda = nn.CrossEntropyLoss(weight=peso)
     idx = list(range(len(X)))
