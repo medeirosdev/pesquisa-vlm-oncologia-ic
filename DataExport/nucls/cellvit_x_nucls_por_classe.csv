@@ -1,0 +1,5 @@
+classe,anotados,fracao_detectada,pareados,recall_entre_pareados,precisao_entre_pareados
+neoplasico,21296,0.861,18337,0.461,0.856
+conjuntivo,9132,0.817,7462,0.8,0.444
+inflamatorio,20594,0.929,19136,0.375,0.908
+epitelial,552,0.908,501,0.198,0.007

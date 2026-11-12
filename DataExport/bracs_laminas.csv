@@ -1,0 +1,4 @@
+lamina,rotulo_bracs,conjunto,mpp,tiles,tiles_por_classe,nucleos,nucleos_por_tipo
+BRACS_295,IC,Training,0.2524,500,"{""DCIS"": 250, ""IC"": 250}",136319,"{""conjuntivo"": 44046, ""neoplasico"": 74639, ""inflamatorio"": 16354, ""?"": 1124, ""epitelial"": 149, ""morto"": 7}"
+BRACS_748,IC,Training,0.2519,507,"{""DCIS"": 250, ""IC"": 257}",241426,"{""neoplasico"": 140203, ""conjuntivo"": 73663, ""?"": 2074, ""inflamatorio"": 15218, ""epitelial"": 10253, ""morto"": 15}"
+BRACS_773,IC,Training,0.2519,500,"{""IC"": 250, ""DCIS"": 250}",187260,"{""conjuntivo"": 79701, ""inflamatorio"": 23253, ""neoplasico"": 78071, ""?"": 922, ""morto"": 16, ""epitelial"": 5297}"

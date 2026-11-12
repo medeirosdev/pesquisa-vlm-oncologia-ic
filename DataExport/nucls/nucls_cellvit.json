@@ -1,0 +1,52 @@
+{
+  "encontrados_por_classe": {
+    "neoplasico": 0.861,
+    "conjuntivo": 0.817,
+    "inflamatorio": 0.929,
+    "epitelial": 0.908
+  },
+  "n_anotados": {
+    "neoplasico": 21296,
+    "conjuntivo": 9132,
+    "inflamatorio": 20594,
+    "epitelial": 552
+  },
+  "matriz_confusao_anotado_para_cellvit": {
+    "neoplasico": {
+      "epitelial": 6800,
+      "neoplasico": 8454,
+      "conjuntivo": 2469,
+      "?": 187,
+      "inflamatorio": 427
+    },
+    "conjuntivo": {
+      "conjuntivo": 5970,
+      "epitelial": 727,
+      "neoplasico": 391,
+      "inflamatorio": 286,
+      "?": 88
+    },
+    "inflamatorio": {
+      "epitelial": 5997,
+      "conjuntivo": 4750,
+      "inflamatorio": 7179,
+      "?": 319,
+      "neoplasico": 891
+    },
+    "epitelial": {
+      "conjuntivo": 242,
+      "?": 4,
+      "epitelial": 99,
+      "neoplasico": 142,
+      "inflamatorio": 14
+    }
+  },
+  "neoplasico": {
+    "sensibilidade": 0.461,
+    "valor_preditivo": 0.856
+  },
+  "conjuntivo": {
+    "sensibilidade": 0.8,
+    "valor_preditivo": 0.444
+  }
+}
