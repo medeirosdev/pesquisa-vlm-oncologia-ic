@@ -364,6 +364,21 @@ Script: `Testes/Pipeline01/validacao/prelaudo_mil.py`, fixado antes (commit `29a
 
 **Passou.** Problema que a checagem não pega: em 15 lâminas o MIL sugere benigno, mas regiões de maior atenção são descritas como atípicas ou malignas; só 1 dos 15 textos aponta a contradição, e os outros a justificam (ex.: BRACS_1003691, "a presença de um patch de ductal carcinoma in situ [...] influenciou a sugestão de benignidade"). Contagem por expressões no texto ("contradição", "no entanto", "embora"...), sem leitura completa dos 15. Mapas de atenção de 4 lâminas: `scripts/mapas_de_calor.py --atencao`, em `docs/visao_geral/img/mapa_atencao_*.jpg`.
 
+## Generalização pra pulmão: TCGA LUAD × LUSC (11–12/11)
+
+Pergunta: o mesmo pipeline (patches de tecido de 128 µm, UNI2-h, MIL com atenção), sem nenhum ajuste, funciona em outro órgão? Tarefa: adenocarcinoma (TCGA-LUAD) × carcinoma escamoso (TCGA-LUSC), lâminas de diagnóstico do TCGA (acesso aberto). Fixado antes de baixar (commit `4d1d4de`): 100 pacientes de cada projeto, uma lâmina por paciente, sorteio com semente 0; treino 60 + 60, teste 40 + 40, pacientes diferentes; lado do patch em pixels pela resolução da lâmina; modelo e treino de `mil_atencao.py`, com 2 classes. Critério: AUC ≥ 0,85 E acurácia balanceada ≥ 0,75 no teste. Scripts: `Testes/Pipeline01/scripts/tcga_baixar_e_embutir.py`, `Testes/Pipeline01/validacao/tcga_mil.py`.
+
+| Teste (78 lâminas) | Resultado |
+|---|---|
+| AUC LUAD × LUSC | **0,981** (IC 95% 0,953–1,0) |
+| Acurácia balanceada | **0,949** |
+| Acerto por classe | LUAD 37/39, LUSC 37/39 |
+| Acerto por resolução | 0,25 µm/px (40x): 64/68; 0,50 µm/px (20x): 8/8; 0,23 µm/px: 2/2 |
+
+**Passou.** Ficaram de fora 3 das 200 lâminas: 2 sem resolução no arquivo (a regra exige o lado de 128 µm; `TCGA-05-5428`, treino, e `TCGA-05-5429`, teste) e 1 com download incompleto (`TCGA-O2-A52V`, LUSC, teste). Treino: 119 lâminas.
+
+Leitura: LUAD × LUSC é uma tarefa mais fácil que a do BRACS (dois carcinomas de morfologia bem diferente, sem a fronteira benigno × atípico); serve pra mostrar que o pipeline não depende de nada específico da mama, não que o problema da mama esteja resolvido. Uma primeira execução (12/11, 01h24) caiu antes de calcular qualquer número: a internet caiu às 00h31 no meio do download e o teste rodou sem lâminas LUSC no conjunto de teste; o download foi retomado e o teste rodou de novo, sem mudança na regra.
+
 ## Anotações oficiais do BRACS
 
 - `.qpdata` lidas com o QuPath e exportadas pra GeoJSON: 387 de 387 lâminas; totais por classe iguais aos do artigo.
@@ -381,3 +396,4 @@ Detalhes: `Testes/Pipeline01/validacao/problemas_e_metrica.md`.
 6. A pipeline roda de ponta a ponta até o pré-laudo, mas em lâminas novas (57 do teste oficial) chama 55 de 57 de malignas: acerta DCIS e IC (com a regra, 8/8 e 7/12) e erra quase todas as benignas e atípicas, ficando em 17 de 57 (rótulo oficial). A regra do componente invasivo ajuda no IC; o problema principal está nos estágios 2 e 3, que mandam evidência maligna de lâminas benignas e atípicas.
 7. Tirar a decisão do modelo de linguagem e treinar o descritor com lâminas benignas como negativos leva o acerto de 17 para 29 de 57 lâminas (acurácia balanceada 0,42 → 0,51, rótulo oficial), e os patches falsos malignos nas lâminas benignas caem de 21% para 7%. Ainda está abaixo do publicado com MIL (0,52–0,56 contra 0,69 em 3 classes, comparação indicativa). Separar benigno de atípico no nível da lâmina continua sendo o ponto mais difícil.
 8. Um MIL com atenção, treinado direto no rótulo de só 79 lâminas, supera tudo o que passa pelo descritor por patch: 38 de 57 lâminas (acurácia balanceada 0,63), e benigno × atípico sobe de AUC 0,58 para 0,78. É o caminho principal daqui pra frente; falta mais treino (379 lâminas) e confirmação nas 30 lâminas de teste não usadas.
+9. O mesmo pipeline, sem ajuste, generaliza pra pulmão: no TCGA, adenocarcinoma × carcinoma escamoso, AUC 0,98 e acurácia balanceada 0,95 em 78 lâminas de teste, com lâminas de 20x e 40x. A tarefa é mais fácil que a da mama; mostra que nada no pipeline é específico de mama.

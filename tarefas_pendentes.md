@@ -1,8 +1,8 @@
 # Tarefas pendentes
 
-Estado em 10/11/2026. Resultados em [resultados.md](resultados.md); histórico em [linha_do_tempo.md](linha_do_tempo.md); ideias em [brainstorming_melhorias.md](brainstorming_melhorias.md).
+Estado em 13/11/2026. Resultados em [resultados.md](resultados.md); histórico em [linha_do_tempo.md](linha_do_tempo.md); ideias em [brainstorming_melhorias.md](brainstorming_melhorias.md).
 
-Ordem sugerida: 1) resolver a cobrança do GitHub e publicar a página; 2) baixar as 379 lâminas de treino e treinar o MIL com elas (o MIL com 79 lâminas já chegou a 38/57); 3) recuperar o DCIS; 4) refazer o pacote com cotas com o descritor corrigido; 5) confirmar nas 30 lâminas de teste não usadas.
+Ordem sugerida: 1) resolver a cobrança do GitHub; 2) baixar as 379 lâminas de treino e treinar o MIL com elas (o MIL com 79 lâminas já chegou a 38/57); 3) recuperar o DCIS; 4) refazer o pacote com cotas com o descritor corrigido; 5) confirmar nas 30 lâminas de teste não usadas.
 
 Desde 07/11, todo teste usa o agrupamento oficial do BRACS (UDH em benigno). Resultados anteriores usam o agrupamento antigo e estão marcados em `resultados.md`.
 
@@ -46,6 +46,8 @@ systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 \
 - [x] **A atenção do MIL cai nas lesões?** Passou: os 5% de maior atenção ficam 5× mais nas lesões anotadas que o acaso (21 de 29 lâminas).
 - [x] **Mapas de atenção do MIL**: 4 exemplos na página (`scripts/mapas_de_calor.py --atencao`).
 - [x] **Pré-laudo com o MIL**: passou (57/57 classe igual; 0 números sem sustentação; 38/57 classe final). Mas em 15 lâminas "benigno" com região de atenção maligna/atípica, só 1 texto aponta a contradição.
+- [x] **Generalização pra pulmão (TCGA LUAD × LUSC)**: passou. Mesmo pipeline e MIL, sem ajuste: AUC 0,981, acurácia balanceada 0,949 em 78 lâminas de teste (197 de 200 baixadas). Tarefa mais fácil que a da mama.
+- [ ] Outros órgãos ou tarefas mais difíceis no TCGA (ex.: subtipos, graduação), se fizer sentido pro projeto.
 - [ ] ★ **Sinalizar contradições nos campos** (ex.: "atenção: regiões de maior peso descritas como malignas, apesar da classe benigna") e medir de novo.
 - [x] **Hierárquico no nível da lâmina**: rótulo oficial, com negativos, 31/57, 0,518 (0,560 em 3 classes), sem critério. Falta confirmar com critério fixado antes.
 
@@ -72,7 +74,7 @@ systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 \
 
 ## Documentação e repositório
 
-- [ ] **Publicar a página**: os commits estão no GitHub, mas a publicação falhou em 07/11 porque a conta está bloqueada por cobrança ("account is locked due to a billing issue"). Depois de resolver em GitHub → Settings → Billing, um novo push em `docs/` publica de novo.
+- [ ] **Publicação automática da página**: o deploy pelo GitHub Actions falha porque a conta está bloqueada por cobrança ("account is locked due to a billing issue"). Enquanto isso, a página é publicada à mão com `mkdocs gh-deploy` a partir de uma cópia limpa do último commit. Depois de resolver em GitHub → Settings → Billing, um push em `docs/` volta a publicar sozinho.
 - [ ] Atualizar `resultados.md`, `linha_do_tempo.md` e a página com o pacote com cotas quando for refeito.
 - [ ] Decidir as edições de 07/11 ainda sem commit em `docs/` (datasets, pipelines, metodologia, modelos-locais, index), nos READMEs, na `linha_do_tempo.md` e no `brainstorming_melhorias.md`.
 
