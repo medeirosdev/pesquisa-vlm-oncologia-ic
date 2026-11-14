@@ -85,11 +85,18 @@ def baixar_arquivo(remoto):
         return final
     saida = ""
     for _ in range(2):
-        if not z.exists():
+        for espera in (60, 120, 300, 600, 900, 0):  # 429 (limite de requisições do Kaggle): espera e tenta de novo
+            if z.exists():
+                break
             r = subprocess.run([KAGGLE, "competitions", "download", "-c", COMPETICAO, "-f", remoto, "-p", str(raiz), "-q"],
                                capture_output=True, text=True, timeout=1800)
             saida = f"{r.stdout.strip()[-200:]} {r.stderr.strip()[-200:]}"
+            if "429" not in saida or not espera:
+                break
+            time.sleep(espera)
         if not z.exists():
+            if "429" in saida:
+                raise RuntimeError(f"{remoto}: limite de requisições do Kaggle persistiu")
             break
         try:
             with zipfile.ZipFile(z) as zf:
@@ -108,7 +115,7 @@ def baixar_arquivo(remoto):
 
 def baixar(l):
     img = baixar_arquivo(f"train_images/{l['image_id']}.tiff")
-    try:
+    try:  # só "arquivo não encontrado" conta como biópsia sem máscara; limite do Kaggle levanta RuntimeError
         mask = baixar_arquivo(f"train_label_masks/{l['image_id']}_mask.tiff")
     except FileNotFoundError:
         mask = None
