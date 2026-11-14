@@ -423,6 +423,23 @@ Leitura:
 - Máscaras: 16 biópsias de treino do Radboud não têm máscara no PANDA (confirmado pela resposta do Kaggle); ficaram de fora só do treino do descritor (584 biópsias). As 300 de teste têm máscara.
 - Execução: (1) a primeira tentativa de download falhou nas primeiras biópsias porque o Kaggle CLI 2.x grava o arquivo noutra pasta; corrigido só o caminho (commit `747763b`). (2) No fim do download, o Kaggle limitou as requisições (erro 429): as últimas 39 biópsias (todas Karolinska ISUP 5) falharam e 1 máscara foi tratada como inexistente. Uma rodada com 861 biópsias foi descartada sem registro dos números; o script passou a esperar e tentar de novo no 429 (commit `9fedbee`), as biópsias sem máscara foram reprocessadas (1 recuperou a máscara) e tudo rodou de novo com as 900. (3) A máquina reiniciou durante o treino do descritor; retomado desse passo. Nenhuma mudança na regra. Espaço usado no HD: 29 GB.
 
+## Próstata: MIL com atenção em grafo (GAT-MIL) × ABMIL (14/11)
+
+Pergunta: o colapso em ISUP 3 vem da falta de informação espacial (o ABMIL trata a biópsia como um saco de patches) ou da troca de centro? GAT-MIL: cada patch ligado aos 8 vizinhos da grade (média de 7,1 arestas por patch, contando o próprio; todas as biópsias do PANDA cabem na amostra, então o grafo é completo); uma camada de atenção entre vizinhos (GATv2, 4 cabeças, residual) antes do pooling do ABMIL; mesma receita de treino, 5 sementes, nenhum ajuste. Fixado antes de rodar (commit `6c698d7`): G1, entre centros (treino nas 600 do Radboud, teste nas 300 do Karolinska); G2, dentro do centro (validação cruzada em 5 partes nas 600 do Radboud, estratificada por ISUP). Critério de cada um: kappa(GAT-MIL) − kappa(ABMIL) > 0 com o limite inferior do IC 95% pareado (bootstrap, 2.000) > 0. Scripts: `Testes/Pipeline01/mil/gat_mil/gat_mil.py` (genérico) e `Testes/Pipeline01/mil/gat_mil/gat_mil_panda.py`. Resultados em `Testes/Pipeline01/resultados/gat_mil_panda/`.
+
+| Cenário | Kappa ABMIL | Kappa GAT-MIL | Diferença (IC 95%) | Critério |
+|---|---|---|---|---|
+| G1: Radboud → Karolinska (300) | 0,237 (0,138–0,336) | **0,436** (0,330–0,540) | **+0,199** (0,114–0,289) | **passou** |
+| G2: dentro do Radboud (600) | 0,784 (0,739–0,827) | **0,806** (0,762–0,846) | **+0,021** (0,002–0,042) | **passou** |
+
+Também reportado (sem critério), ABMIL → GAT-MIL: G1, AUC benigno × câncer 0,940 → 0,963, acurácia exata 0,270 → 0,370, a ±1 grau 0,617 → 0,710, previstos como ISUP 3 209 → 129 de 300, benignas certas 4 → 12 de 50, ISUP 5 certas 7 → 14 de 50; G2, AUC 0,957 → 0,968, acurácia exata 0,592 → 0,613. O kappa do ABMIL no G1 é o mesmo do `panda_mil.py` (0,237).
+
+Leitura:
+- Pela leitura combinada escrita antes, G1 e G2 passando = a informação espacial ajuda, inclusive em outro centro. O ganho é grande entre centros (+0,20) e pequeno dentro do centro (+0,02, com o limite inferior do IC quase em zero).
+- O problema maior continua sendo a troca de centro: dentro do Radboud os dois modelos graduam bem (kappa ~0,80), no Karolinska caem pra 0,24–0,44. Não está separado se o ganho do GAT-MIL no G1 vem da arquitetura das glândulas ou de a mistura com os vizinhos deixar o embedding menos sensível à coloração; as duas coisas são compatíveis com o resultado.
+- Ressalva do G2: o PANDA não informa o paciente, e a mesma pessoa pode cair no treino e no teste de uma parte; isso infla os dois modelos igualmente.
+- Próximo passo: repetir a comparação no BRACS e no TCGA (o código do GAT-MIL é genérico) e atacar a troca de centro (normalização de cor ou treino com os dois centros).
+
 ## Anotações oficiais do BRACS
 
 - `.qpdata` lidas com o QuPath e exportadas pra GeoJSON: 387 de 387 lâminas; totais por classe iguais aos do artigo.
@@ -441,3 +458,4 @@ Detalhes: `Testes/Pipeline01/notas/problemas_e_metrica.md`.
 7. Tirar a decisão do modelo de linguagem e treinar o descritor com lâminas benignas como negativos leva o acerto de 17 para 29 de 57 lâminas (acurácia balanceada 0,42 → 0,51, rótulo oficial), e os patches falsos malignos nas lâminas benignas caem de 21% para 7%. Ainda está abaixo do publicado com MIL (0,52–0,56 contra 0,69 em 3 classes, comparação indicativa). Separar benigno de atípico no nível da lâmina continua sendo o ponto mais difícil.
 8. Um MIL com atenção, treinado direto no rótulo de só 79 lâminas, supera tudo o que passa pelo descritor por patch: 38 de 57 lâminas (acurácia balanceada 0,63), e benigno × atípico sobe de AUC 0,58 para 0,78. É o caminho principal daqui pra frente; falta mais treino (379 lâminas) e confirmação nas 30 lâminas de teste não usadas.
 9. A receita de classificação da lâmina (UNI2-h + MIL, mesma configuração), retreinada com lâminas de pulmão, funciona em outro órgão: no TCGA, adenocarcinoma × carcinoma escamoso, AUC 0,98 e acurácia balanceada 0,95 em 78 lâminas de teste, com lâminas de 20x e 40x. A tarefa é mais fácil que a da mama. No pulmão, o pré-laudo manteve os números e coordenadas fiéis (78 textos), mas o descritor por patch, treinado em outro conjunto (LungHist700), descreveu mal as regiões de maior atenção nas lâminas de adenocarcinoma (21 de 39), e o texto quase nunca aponta quando a região discorda do tipo sugerido (3 de 27).
+10. Numa tarefa de graduação (próstata, PANDA, treino num centro e teste em outro), a mesma receita detecta câncer (AUC 0,94) mas não gradua (kappa 0,24, quase tudo vira ISUP 3). Dentro do mesmo centro gradua bem (kappa 0,78), então o problema principal é a troca de centro. Dar ao MIL a vizinhança dos patches (GAT-MIL) melhora a graduação nos dois cenários, muito entre centros (kappa 0,24 → 0,44) e pouco dentro do centro (0,78 → 0,81). O pré-laudo continua fiel aos campos (60/60) e continua sem apontar regiões discordantes (1 de 35).

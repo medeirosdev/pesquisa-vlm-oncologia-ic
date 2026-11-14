@@ -566,6 +566,20 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
     <span class="selo parcial">detecta câncer; não gradua</span>
   </div>
 
+  <div class="painel destaque">
+    <h3>MIL com atenção em grafo (GAT-MIL) na próstata</h3>
+    <p>O MIL com atenção trata a biópsia como um saco de patches, sem saber quem é vizinho de quem, e o Gleason é a arquitetura das glândulas. No GAT-MIL, cada patch é ligado aos 8 vizinhos encostados e, antes da decisão, mistura o próprio embedding com o deles, com um peso aprendido por vizinho. Mesmo treino do MIL, sem ajuste. Comparação pareada com o MIL atual em dois cenários, com critério fixado antes: o GAT-MIL ganha em kappa, com o limite inferior do IC 95% da diferença acima de zero.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Cenário</th><th class="num">MIL atual</th><th class="num">GAT-MIL</th><th class="num">Diferença (IC 95%)</th></tr></thead>
+      <tbody>
+        <tr class="vence"><td>Treino no Radboud, teste no Karolinska (300)</td><td class="num">0,237</td><td class="num"><b>0,436</b></td><td class="num"><span class="selo ok">+0,199</span> (0,114–0,289)</td></tr>
+        <tr><td>Dentro do Radboud, validação cruzada (600)</td><td class="num">0,784</td><td class="num"><b>0,806</b></td><td class="num"><span class="selo ok">+0,021</span> (0,002–0,042)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Kappa quadrático do grau ISUP. Entre centros, as biópsias previstas como ISUP 3 caem de 209 para 129 de 300, e o benigno × câncer sobe de AUC 0,940 para 0,963. A vizinhança ajuda nos dois cenários, mas o problema maior é a troca de centro: dentro do Radboud os dois modelos graduam bem, no Karolinska não. Dentro do Radboud, a mesma pessoa pode ter biópsias no treino e no teste (o PANDA não informa o paciente), o que favorece os dois modelos igualmente. Próximo passo: a mesma comparação no BRACS e no TCGA.</p>
+    <span class="selo ok">passou nos dois cenários</span>
+  </div>
+
   <h3>Mapas de atenção do MIL</h3>
   <p class="nota">As mesmas quatro lâminas dos mapas do descritor. Esquerda: classe de cada patch pelo descritor. Direita: atenção do MIL, em percentil dentro da lâmina (escuro = pesou mais na decisão), com o contorno das lesões anotadas pelos patologistas em azul-esverdeado.</p>
   <div class="figuras mapas">
@@ -909,7 +923,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
       <tr><td>1. Filtro de tecido</td><td><span class="selo ok">resolvido</span></td><td>—</td></tr>
       <tr><td>2. Roteador</td><td><span class="selo parcial">bom em lâminas malignas</span></td><td>métrica para lâminas benignas e atípicas</td></tr>
       <tr><td>3. Descritor</td><td><span class="selo parcial">bom no DCIS × IC; negativos cortam falsos malignos; atípico ainda fraco</span></td><td>recuperar o DCIS sem perder as benignas</td></tr>
-      <tr><td>3½. Decisão da lâmina</td><td><span class="selo ok">MIL com 79 lâminas: 38/57, acurácia balanceada 0,63; benigno × atípico AUC 0,78; no pulmão (TCGA), AUC 0,98; na próstata (PANDA), detecta câncer (AUC 0,94) mas não gradua (kappa 0,24)</span></td><td>MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas; MIL com atenção em grafo (GAT-MIL) para a graduação</td></tr>
+      <tr><td>3½. Decisão da lâmina</td><td><span class="selo ok">MIL com 79 lâminas: 38/57, acurácia balanceada 0,63; benigno × atípico AUC 0,78; no pulmão (TCGA), AUC 0,98; na próstata (PANDA), detecta câncer (AUC 0,94) mas gradua mal (kappa 0,24; com o GAT-MIL, 0,44)</span></td><td>MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas; GAT-MIL no BRACS e no TCGA</td></tr>
       <tr><td>4. Agregação</td><td><span class="selo parcial">regra ajuda no IC</span></td><td>trocar a contagem dos 32 patches pelos campos fixos</td></tr>
       <tr><td>5. Síntese</td><td><span class="selo parcial">só redige, com a classe do MIL; números fiéis, mas justifica contradições em vez de apontá-las; no pulmão, 78/78 fiéis e discordância apontada em 3 de 27; na próstata, 60/60 fiéis e 1 de 35</span></td><td>sinalizar contradições nos campos; avaliação por patologista</td></tr>
     </tbody>
