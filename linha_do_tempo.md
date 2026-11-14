@@ -72,7 +72,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 | 25/09 | Baixadas 7 lâminas do BRACS pelo FTP oficial (uma por classe: N, PB, UDH, FEA, ADH, DCIS, IC) + as anotações `.qpdata` originais |
 | 25/09 | `Testes/Pipeline01` reorganizado: uma pasta por estágio, código compartilhado em `comum/`, resultados por lâmina em `resultados/` |
 | 25/09 | Scripts corrigidos pra lâminas com pirâmide diferente (nível escolhido pelo fator de redução, não pela posição) |
-| 25/09 | Pipeline inteira rodada nas 8 lâminas — ver `Testes/Pipeline01/resultados_multilaminas.md` |
+| 25/09 | Pipeline inteira rodada nas 8 lâminas — ver `Testes/Pipeline01/notas/resultados_multilaminas.md` |
 | 25/09 | Estágio 1 se confirma nas 8 (cobertura dos RoIs entre 74% e 100%; a exceção, 38% na lâmina normal, é efeito da caixa retangular em volta de um lóbulo pequeno) |
 | 25/09 | Estágio 2 nas 8: só claramente acima do acaso na lâmina de DCIS |
 | 25/09 | Estágio 3: descritor só tinha frases suspeitas (descrevia tecido normal como "stromal invasion"). Banco refeito com o espectro inteiro (benigno / atípico / maligno) |
@@ -80,7 +80,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 | 25/09 | Pista da borda **não** se repete de forma consistente nas outras lâminas (poucos RoIs por lâmina, 2 a 16) |
 | 25/09 | Viés pró-"benigno": tirar a frase genérica "normal breast tissue" piorou (51% → 45%), revertido. O atrator real era "normal terminal duct lobular unit" (o DCIS cresce dentro de lóbulos) |
 | 25/09 | Frase do lóbulo trocada por "normal lobule with open lumina and two cell layers": média 52%, maligno 33% → 43%, benigno 65% → 52% |
-| 25/09 | Mesmo truque nas outras frases, uma de cada vez (14 testadas, regra fixada antes: média +0,5 ponto). 2 aceitas: média 52% → 56,5%. Reescrever o nome da própria classe piorou. Ver `Testes/Pipeline01/validacao/experimento_frases.md` |
+| 25/09 | Mesmo truque nas outras frases, uma de cada vez (14 testadas, regra fixada antes: média +0,5 ponto). 2 aceitas: média 52% → 56,5%. Reescrever o nome da própria classe piorou. Ver `Testes/Pipeline01/descritor/bracs/experimento_frases.md` |
 | 25/09 | Baixadas mais 8 lâminas (uma por classe + uma N extra), de pacientes que não aparecem na primeira leva — 16 lâminas no total |
 | 25/09 | `recall_roi.py` passa a escolher a escala recorte → lâmina (na `BRACS_297` o nível 0 tem o dobro da resolução dos recortes; 0/31 → 31/31 RoIs localizados) |
 | 25/09 | Teste fora da amostra, nas 8 lâminas novas: a troca do lóbulo se confirma (44,8% → 53,2%); as 2 trocas do experimento frase a frase não (53,2% → 52,7%) e foram retiradas |
@@ -127,7 +127,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 | 24/10 | Embeddings UNI2-h de 61 das 63 lâminas de validação oficial, baixando e apagando cada lâmina. Pacote com cota fixa por classe (8/6/6/6) fixado antes de rodar; teste com o modelo de linguagem pausado em 30 de 183 pré-laudos |
 | 26/10 | Classificador da lâmina inteira (12 atributos + logística, treino em 79 lâminas): 21/57, acurácia balanceada 0,424 contra 0,406 — passou, dentro do ruído (IC 95% 0,31–0,53). Hierárquico: 0,437, passou por pouco. Abstenção: decide em 56% das lâminas, 0,478 — passou, ganho pequeno. Triagem binária: especificidade 0, AUC 0,52 — não passou |
 | 06/11 | Lâminas benignas como negativos no descritor (agrupamento antigo): 27/57, acurácia balanceada 0,470 — passou, o melhor resultado até aqui. Patches falsos DCIS + IC nas lâminas benignas: 23% → 7%. O DCIS cai para 1 de 8. Comparação com o publicado (UNI + ABMIL, 3 classes): 0,50 contra 0,69, indicativa |
-| 07/11 | **Correção do agrupamento:** o UDH estava em atípico desde o início; no BRACS é benigno. Código corrigido; tabelas de pré-laudo repontuadas (teste externo: 16 → 17 de 57 com a regra; teste da regra: 10 → 9 de 15) e testes da decisão da lâmina refeitos (`validacao/rotulo_oficial.py`). Classificador + negativos: 29/57, acurácia balanceada 0,505 — passou por pouco (0,491 na versão antiga repontuada). Maligno × resto: AUC 0,83; suspeito × benigno: AUC 0,66; as duas triagens não passaram. Parte do ganho no atípico de 22/10 vinha das lâminas UDH |
+| 07/11 | **Correção do agrupamento:** o UDH estava em atípico desde o início; no BRACS é benigno. Código corrigido; tabelas de pré-laudo repontuadas (teste externo: 16 → 17 de 57 com a regra; teste da regra: 10 → 9 de 15) e testes da decisão da lâmina refeitos (`lamina/bracs/rotulo_oficial.py`). Classificador + negativos: 29/57, acurácia balanceada 0,505 — passou por pouco (0,491 na versão antiga repontuada). Maligno × resto: AUC 0,83; suspeito × benigno: AUC 0,66; as duas triagens não passaram. Parte do ganho no atípico de 22/10 vinha das lâminas UDH |
 | 07/11 | Modelo de linguagem só redige, a partir de campos fixos (57 lâminas): classe do texto igual à sugerida em 57/57, nenhum número nem coordenada sem sustentação (antigos: 2,1% dos números) — passou. O texto quase só reorganiza os campos |
 | 07/11 | Publicação da página falhou: conta do GitHub bloqueada por cobrança; o site segue na versão de 19/10 |
 | 07/11 | Resposta em conjunto (benigno, atípico, "benigno ou atípico", maligno): acerto do conjunto 0,70, respostas exatas 0,44 — não passou (critério 0,75 e 0,50). A margem escolhida no treino ficou no máximo e a resposta virou quase "maligno × não maligno" |
@@ -146,7 +146,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 3. **Estágio 3, benigno / atípico / maligno:** ~53–55% nas lâminas novas (acaso = 33%), com zero-shot ou com UNI2-h; o atípico é o ponto fraco.
 4. **Estágio 3, DCIS vs. IC:** com treino, o UNI2-h separa bem (0,96–0,99 no BRACS, 0,95 no BACH). O QuiltNet com treino parecia bom no BRACS mas não generaliza (0,57 no BACH). O zero-shot com frases fica no acaso.
 5. **Método 3 (núcleos):** tem sinal pra separar DCIS de IC, mas os valores da medida não são confiáveis (validação no NuCLS). Treinar a classificação no NuCLS resolveu o tipo do tumor (0,83 / 0,88), mas não a medida (Spearman 0,35): o erro no "conjuntivo" e a própria construção da medida (um vizinho errado já conta) seguram o resultado.
-6. **Problema de métrica registrado:** o rótulo do BRACS é da região marcada, não do patch; a maioria das anotações oficiais é retângulo — ver `Testes/Pipeline01/validacao/problemas_e_metrica.md`.
+6. **Problema de métrica registrado:** o rótulo do BRACS é da região marcada, não do patch; a maioria das anotações oficiais é retângulo — ver `Testes/Pipeline01/notas/problemas_e_metrica.md`.
 
 **Estado técnico a saber:**
 - Venv do projeto (`Testes/Pipeline01/.venv`): QuiltNet e UNI2-h; `transformers==4.34.0` e `timm==1.0.17` instalados na tentativa do KEEP.
@@ -220,10 +220,10 @@ Lista curta do que está pendente agora: [tarefas_pendentes.md](tarefas_pendente
 | Descrição da Pipeline 01 | `docs/pipelines.md`, `Testes/Pipeline01/ideia/` |
 | Código compartilhado | `Testes/Pipeline01/comum/` |
 | Estágios 1 a 4 | `Testes/Pipeline01/estagio1_filtro_tecido/` … `estagio4_agregacao/` |
-| Testes de validação | `Testes/Pipeline01/validacao/` |
+| Testes com critério fixado antes, por etapa | `Testes/Pipeline01/{descritor,roteador,lamina,mil,prelaudo,dcis_ic,nucleos}/` |
 | Detalhes de cada teste do estágio 3 | `Testes/Pipeline01/estagio3_descritores/resultados.md` |
-| Resultados por lâmina (gerado) | `Testes/Pipeline01/resultados_multilaminas.md` |
-| Baixar lâminas, rodar tudo, exportar anotações | `Testes/Pipeline01/scripts/` |
+| Resultados por lâmina (gerado) | `Testes/Pipeline01/notas/resultados_multilaminas.md` |
+| Baixar lâminas, rodar tudo, exportar anotações | `Testes/Pipeline01/dados/` e `Testes/Pipeline01/ferramentas/` |
 | Caminhos das lâminas, RoIs e modelos | `Caminhos/caminhos.md` |
 | Núcleos segmentados (CellViT) | `Testes/Pipeline01/resultados/<lamina>/nucleos/` |
 | Datasets externos | HD: `Dados Gerais/BACH`, `Dados Gerais/NuCLS`; anotações do BRACS em `BRACS/anotacoes/geojson` |

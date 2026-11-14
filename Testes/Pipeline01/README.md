@@ -12,11 +12,19 @@ Transformar uma lâmina gigante (WSI) num texto curto que um modelo local pequen
 | `estagio2_roteador/` | Roteador top-k (escolhe os patches) |
 | `estagio3_descritores/` | Achado textual por patch |
 | `estagio4_agregacao/` | Junta tudo num prompt |
-| `validacao/` | Testes do estágio 3 contra a classe real dos RoIs, e o registro dos problemas de métrica |
-| `scripts/` | Baixar lâminas do BRACS e rodar a pipeline em todas |
+| `dados/` | Por dataset (`bracs/`, `tcga/`, `lunghist700/`, `panda/`): listas, download e embeddings do UNI2-h |
+| `descritor/` | Descritor por patch: banco de frases e camada treinada no BRACS (`bracs/`), pulmão (`pulmao/`) |
+| `roteador/` | Testes do estágio 2 (escolha dos patches) no BRACS |
+| `lamina/` | Decisão da lâmina inteira sem MIL (classificador, agregação, resposta em conjunto) no BRACS |
+| `mil/` | MIL com atenção (`mil_atencao.py`) e testes por dataset (`bracs/`, `tcga/`, `panda/`); `gat_mil/`: MIL com atenção em grafo |
+| `prelaudo/` | Pré-laudo por dataset (`bracs/`, `tcga/`, `panda/`) |
+| `dcis_ic/` | DCIS × carcinoma invasivo: vizinhança, núcleos, BACH |
+| `nucleos/` | Núcleos com o CellViT e validação no NuCLS |
+| `ferramentas/` | Rodar a pipeline em todas as lâminas, mapas de calor, imagens da página, exportação |
+| `notas/` | Registro dos testes de validação, problemas de métrica e tabela de todas as lâminas |
 | `resultados/<lamina>/<estagio>/` | Saídas de cada lâmina (fora do git) |
 
-Cada estágio tem um `resultados.md` com o que foi testado e o que deu. [resultados_multilaminas.md](resultados_multilaminas.md) junta os números de todas as lâminas.
+Cada estágio tem um `resultados.md` com o que foi testado e o que deu. [notas/resultados_multilaminas.md](notas/resultados_multilaminas.md) junta os números de todas as lâminas.
 
 ## Como rodar
 
@@ -28,14 +36,14 @@ Tudo a partir desta pasta, com o venv dela (`.venv/`). Os caminhos das lâminas,
 .venv/bin/python estagio2_roteador/roteador_topk.py --svs BRACS_1370 --banco v2
 
 # a pipeline inteira em todas as lâminas baixadas
-.venv/bin/python scripts/rodar_todas_laminas.py
+.venv/bin/python ferramentas/rodar_todas_laminas.py
 
 # baixar mais lâminas (credenciais do FTP do BRACS por variável de ambiente)
-BRACS_FTP_USER=... BRACS_FTP_PASS=... bash scripts/baixar_laminas.sh
+BRACS_FTP_USER=... BRACS_FTP_PASS=... bash dados/bracs/baixar_laminas.sh
 ```
 
 A ordem importa: o estágio 1 (`recall_roi.py`) gera a verdade de campo que todos os outros usam, e o estágio 2 gera os embeddings que o 3, o 4 e a validação reaproveitam.
 
 ## Dependências do venv
 
-`numpy`, `opencv-python-headless`, `tifffile`, `imagecodecs`, `zarr`, `scikit-image`, `matplotlib`, `open_clip_torch`, `openpyxl`. O teste do KEEP (`validacao/teste_modelo_keep.py`) também precisa de `transformers` e `torchvision`, e ainda não roda por conflito de versão — ver o docstring dele.
+`numpy`, `opencv-python-headless`, `tifffile`, `imagecodecs`, `zarr`, `scikit-image`, `matplotlib`, `open_clip_torch`, `openpyxl`. O teste do KEEP (`descritor/bracs/teste_modelo_keep.py`) também precisa de `transformers` e `torchvision`, e ainda não roda por conflito de versão — ver o docstring dele.

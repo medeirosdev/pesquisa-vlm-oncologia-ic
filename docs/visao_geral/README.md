@@ -9,7 +9,7 @@ A pasta fica dentro de `docs/`, então é publicada junto com o site MkDocs (a A
 ## Regenerar as imagens
 
     cd Testes/Pipeline01
-    .venv/bin/python scripts/gerar_imagens_visao_geral.py
+    .venv/bin/python ferramentas/gerar_imagens_visao_geral.py
 
 O script lê as saídas já calculadas dos estágios (é preciso ter o HD com as lâminas montado).
 
