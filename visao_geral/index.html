@@ -180,7 +180,7 @@ footer { margin-top: 40px; color: var(--tinta-2); font-size: 0.88rem; border-top
     <div class="fato"><b class="num">18 + 61 + 57</b><span>lâminas do BRACS: desenvolvimento, validação oficial e teste oficial</span></div>
     <div class="fato"><b class="num">0,95</b><span>AUC DCIS × carcinoma invasivo em outra instituição (BACH)</span></div>
     <div class="fato"><b class="num">17 → 38 de 57</b><span>lâminas certas: do modelo de linguagem decidindo ao MIL com atenção treinado com 79 lâminas (acurácia balanceada 0,42 → 0,63; acaso = 0,25)</span></div>
-    <div class="fato"><b class="num">0,98</b><span>AUC adenocarcinoma × carcinoma escamoso no pulmão (TCGA), com o mesmo pipeline, sem ajuste</span></div>
+    <div class="fato"><b class="num">0,98</b><span>AUC adenocarcinoma × carcinoma escamoso no pulmão (TCGA), com a mesma receita de classificação retreinada em lâminas de pulmão</span></div>
     <div class="fato"><b class="num">4 GB</b><span>de GPU: tudo roda localmente, sem enviar dados do paciente</span></div>
   </div>
 </header>
@@ -208,6 +208,7 @@ footer { margin-top: 40px; color: var(--tinta-2); font-size: 0.88rem; border-top
           <tr><td>BRACS</td><td>547 lâminas de mama, 4.537 regiões anotadas em 7 classes (N, PB, UDH, FEA, ADH, DCIS, IC)</td><td>18 lâminas de desenvolvimento, 61 da validação oficial e 57 do teste oficial; 3.655 regiões de treino para treinar o descritor</td></tr>
           <tr><td>BACH</td><td>Imagens de microscopia de outra instituição (Porto): 100 <i>in situ</i>, 100 invasivo</td><td>teste de generalização</td></tr>
           <tr><td>TCGA (pulmão)</td><td>Lâminas de diagnóstico de adenocarcinoma (LUAD) e carcinoma escamoso (LUSC) de pulmão, acesso aberto</td><td>200 lâminas sorteadas (120 treino, 80 teste) para testar a generalização a outro órgão</td></tr>
+          <tr><td>LungHist700</td><td>691 imagens de microscópio de pulmão (normal, adenocarcinoma, carcinoma escamoso) de 45 pacientes</td><td>treinar o descritor por patch do pulmão</td></tr>
           <tr><td>NuCLS</td><td>1.744 campos de mama do TCGA, ~59 mil núcleos classificados por patologista</td><td>validar a segmentação de núcleos</td></tr>
         </tbody>
       </table></div>
@@ -517,7 +518,7 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
 
   <div class="painel destaque">
     <h3>Generalização para outro órgão: pulmão (TCGA)</h3>
-    <p>O mesmo pipeline e o mesmo MIL, sem nenhum ajuste, em lâminas de pulmão do TCGA: adenocarcinoma (LUAD) × carcinoma escamoso (LUSC). 100 pacientes de cada tipo, sorteados antes de baixar; treino e teste com pacientes diferentes. O patch continua com 128 µm de lado, com o tamanho em pixels ajustado pela resolução de cada lâmina (20x ou 40x).</p>
+    <p>A mesma receita de classificação da lâmina (UNI2-h congelado e MIL com atenção, com o mesmo código e a mesma configuração de treino), retreinada com lâminas de pulmão do TCGA. O MIL é treinado do zero; o modelo da mama não é reaproveitado. Tarefa: adenocarcinoma (LUAD) × carcinoma escamoso (LUSC). 100 pacientes de cada tipo, sorteados antes de baixar; treino e teste com pacientes diferentes. O patch continua com 128 µm de lado, com o tamanho em pixels ajustado pela resolução de cada lâmina (20x ou 40x).</p>
     <div class="tabela"><table>
       <thead><tr><th>Teste (78 lâminas)</th><th class="num">Resultado</th></tr></thead>
       <tbody>
@@ -527,8 +528,23 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
         <tr><td>Acerto nas lâminas de 20x</td><td class="num">8/8</td></tr>
       </tbody>
     </table></div>
-    <p class="nota">Critério fixado antes de baixar: AUC ≥ 0,85 e acurácia balanceada ≥ 0,75. Treino com 119 lâminas; 3 das 200 ficaram de fora (2 sem resolução no arquivo, 1 com download incompleto). Separar dois carcinomas de morfologia diferente é mais fácil que benigno × atípico na mama: o resultado mostra que o pipeline não depende de nada específico da mama, não que o problema da mama esteja resolvido.</p>
+    <p class="nota">Critério fixado antes de baixar: AUC ≥ 0,85 e acurácia balanceada ≥ 0,75. Treino com 119 lâminas; 3 das 200 ficaram de fora (2 sem resolução no arquivo, 1 com download incompleto). Separar dois carcinomas de morfologia diferente é mais fácil que benigno × atípico na mama: o resultado mostra que a receita de classificação não depende de nada específico da mama, não que o problema da mama esteja resolvido.</p>
     <span class="selo ok">passou</span>
+  </div>
+
+  <div class="painel">
+    <h3>Pulmão: descritor por patch e pré-laudo</h3>
+    <p>O resto da pipeline no pulmão. O descritor por patch (normal, adenocarcinoma, carcinoma escamoso) é treinado no LungHist700, um conjunto de imagens de microscópio com rótulo por imagem, e aplicado às regiões de maior atenção do MIL nas 78 lâminas de teste do TCGA. Os campos e o pré-laudo seguem a versão da mama, sem a regra do componente invasivo e sem as medidas de núcleo, e as instruções do modelo de linguagem pedem para apontar regiões cuja classe difere do tipo sugerido. Critérios fixados antes de rodar.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Teste</th><th>Critério</th><th class="num">Resultado</th></tr></thead>
+      <tbody>
+        <tr><td>Descritor nos pacientes de teste do LungHist700</td><td>acurácia balanceada ≥ 0,80</td><td class="num"><span class="selo ok">0,926</span></td></tr>
+        <tr><td>Descritor nas 3 regiões de maior atenção (TCGA)</td><td>classe real em ≥ 80% das lâminas</td><td class="num"><span class="selo falha">58/78</span> (adeno 21/39, escamoso 37/39)</td></tr>
+        <tr><td>Pré-laudo (78 textos)</td><td>tipo igual ao do MIL em ≥ 90%; nenhum número ou coordenada inventada</td><td class="num"><span class="selo ok">78/78</span>; 0 de 1.035 números; 0 de 436 coordenadas</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Nas lâminas de adenocarcinoma, 36 das 117 regiões de maior atenção são descritas como pulmão normal e 21 como escamoso. Hipóteses não verificadas: o padrão lepídico, que cresce sobre as paredes alveolares, e a diferença entre foto de microscópio (LungHist700) e lâmina escaneada (TCGA). Em 27 lâminas alguma região discorda do tipo sugerido, e só 3 textos apontam a discordância: a regra nas instruções não bastou. A escala do LungHist700 (µm/px) não é informada e foi estimada pelo tamanho dos núcleos de linfócito; a conferência 20x/40x deu 1,65, quando deveria ficar perto de 2.</p>
+    <span class="selo parcial">descritor não passou no TCGA; pré-laudo passou</span>
   </div>
 
   <h3>Mapas de atenção do MIL</h3>
@@ -876,15 +892,15 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
       <tr><td>3. Descritor</td><td><span class="selo parcial">bom no DCIS × IC; negativos cortam falsos malignos; atípico ainda fraco</span></td><td>recuperar o DCIS sem perder as benignas</td></tr>
       <tr><td>3½. Decisão da lâmina</td><td><span class="selo ok">MIL com 79 lâminas: 38/57, acurácia balanceada 0,63; benigno × atípico AUC 0,78; no pulmão (TCGA), AUC 0,98</span></td><td>MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas</td></tr>
       <tr><td>4. Agregação</td><td><span class="selo parcial">regra ajuda no IC</span></td><td>trocar a contagem dos 32 patches pelos campos fixos</td></tr>
-      <tr><td>5. Síntese</td><td><span class="selo parcial">só redige, com a classe do MIL; números fiéis, mas justifica contradições em vez de apontá-las</span></td><td>sinalizar contradições nos campos; avaliação por patologista</td></tr>
+      <tr><td>5. Síntese</td><td><span class="selo parcial">só redige, com a classe do MIL; números fiéis, mas justifica contradições em vez de apontá-las; no pulmão, 78/78 fiéis e discordância apontada em 3 de 27</span></td><td>sinalizar contradições nos campos; avaliação por patologista</td></tr>
     </tbody>
   </table></div>
   <p class="nota">Ressalvas gerais: 2 lâminas por classe no desenvolvimento; as anotações do BRACS marcam regiões, não cada célula; o rótulo da lâmina é o da lesão mais grave.</p>
 </section>
 
 <footer>
-  <p>Pipeline Ideia 01 · orientação Prof. João Batista Florindo · situação em 13/11/2026. Modelos: QuiltNet-B-32, UNI2-h, CellViT-256, Gemma 3 4B e MedGemma 4B, todos rodando localmente.</p>
-  <p>Imagens de lâminas: BRACS (Brancati et al., <i>BRACS: A Dataset for BReAst Carcinoma Subtyping in H&amp;E Histology Images</i>, Database, 2022), licença CC BY-NC 4.0. Núcleos anotados: NuCLS (Amgad et al., GigaScience, 2022), CC0. Lâminas de pulmão: TCGA-LUAD e TCGA-LUSC (NCI Genomic Data Commons, acesso aberto); só resultados numéricos. Imagens do BACH não são reproduzidas (licença CC BY-NC-ND); só os resultados numéricos.</p>
+  <p>Pipeline Ideia 01 · orientação Prof. João Batista Florindo · situação em 14/11/2026. Modelos: QuiltNet-B-32, UNI2-h, CellViT-256, Gemma 3 4B e MedGemma 4B, todos rodando localmente.</p>
+  <p>Imagens de lâminas: BRACS (Brancati et al., <i>BRACS: A Dataset for BReAst Carcinoma Subtyping in H&amp;E Histology Images</i>, Database, 2022), licença CC BY-NC 4.0. Núcleos anotados: NuCLS (Amgad et al., GigaScience, 2022), CC0. Lâminas de pulmão: TCGA-LUAD e TCGA-LUSC (NCI Genomic Data Commons, acesso aberto); só resultados numéricos. Imagens de pulmão para o descritor: LungHist700 (Diosdado et al., Scientific Data, 2024), CC BY 4.0; só resultados numéricos. Imagens do BACH não são reproduzidas (licença CC BY-NC-ND); só os resultados numéricos.</p>
 </footer>
 
 </div>
