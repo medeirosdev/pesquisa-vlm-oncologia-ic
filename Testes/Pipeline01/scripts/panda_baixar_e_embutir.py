@@ -75,32 +75,41 @@ def sortear():
     print(f"{len(saida)} biópsias em {LISTA}")
 
 
-def baixar_arquivo(remoto, destino_dir):
-    """Baixa um arquivo da competição; o Kaggle entrega .zip, extraído aqui com checagem do nome."""
-    destino_dir.mkdir(parents=True, exist_ok=True)
-    nome = Path(remoto).name
-    final = destino_dir / nome
+def baixar_arquivo(remoto):
+    """Baixa um arquivo da competição. O Kaggle CLI 2.x grava em <-p>/<caminho remoto>.zip (recria a pasta do
+    arquivo remoto); o zip é extraído ao lado, com checagem do nome. Zip incompleto é apagado e baixado de novo."""
+    raiz = pasta_panda()
+    final = raiz / remoto
+    z = final.with_name(final.name + ".zip")
     if final.exists() and final.stat().st_size > 0:
         return final
-    r = subprocess.run([KAGGLE, "competitions", "download", "-c", COMPETICAO, "-f", remoto, "-p", str(destino_dir), "-q"],
-                       capture_output=True, text=True, timeout=1800)
-    z = destino_dir / f"{nome}.zip"
-    if z.exists():
-        with zipfile.ZipFile(z) as zf:
-            nomes = zf.namelist()
-            if nomes != [nome]:
-                raise RuntimeError(f"zip inesperado: {nomes}")
-            zf.extractall(destino_dir)
-        z.unlink()
+    saida = ""
+    for _ in range(2):
+        if not z.exists():
+            r = subprocess.run([KAGGLE, "competitions", "download", "-c", COMPETICAO, "-f", remoto, "-p", str(raiz), "-q"],
+                               capture_output=True, text=True, timeout=1800)
+            saida = f"{r.stdout.strip()[-200:]} {r.stderr.strip()[-200:]}"
+        if not z.exists():
+            break
+        try:
+            with zipfile.ZipFile(z) as zf:
+                nomes = zf.namelist()
+                if nomes != [final.name]:
+                    raise RuntimeError(f"zip inesperado: {nomes}")
+                zf.extractall(final.parent)
+            z.unlink()
+            break
+        except zipfile.BadZipFile:
+            z.unlink()
     if not final.exists() or final.stat().st_size == 0:
-        raise FileNotFoundError(f"{remoto}: {r.stdout.strip()[-200:]} {r.stderr.strip()[-200:]}")
+        raise FileNotFoundError(f"{remoto}: {saida}")
     return final
 
 
 def baixar(l):
-    img = baixar_arquivo(f"train_images/{l['image_id']}.tiff", pasta_panda() / "train_images")
+    img = baixar_arquivo(f"train_images/{l['image_id']}.tiff")
     try:
-        mask = baixar_arquivo(f"train_label_masks/{l['image_id']}_mask.tiff", pasta_panda() / "train_label_masks")
+        mask = baixar_arquivo(f"train_label_masks/{l['image_id']}_mask.tiff")
     except FileNotFoundError:
         mask = None
     return img, mask
@@ -159,6 +168,8 @@ def embutir(img, mask, pasta):
 def main():
     from concurrent.futures import ThreadPoolExecutor
     linhas = list(csv.DictReader(open(LISTA, encoding="utf-8"), delimiter="\t"))
+    for sub in ("train_images", "train_label_masks"):  # criadas antes: downloads em paralelo disputavam o mkdir
+        (pasta_panda() / sub).mkdir(parents=True, exist_ok=True)
     pendentes = [(i, l) for i, l in enumerate(linhas, 1) if not (SAIDA / l["image_id"] / "meta.json").exists()]
     falhas, downloads = [], {}
     with ThreadPoolExecutor(max_workers=ADIANTE) as ex:
