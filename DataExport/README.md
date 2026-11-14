@@ -1,6 +1,6 @@
 # DataExport
 
-Dados de núcleos (CellViT) exportados do Pipeline Ideia 01 para outro projeto. Nada foi recalculado: os arquivos reformatam resultados já existentes. Gerados por `Testes/Pipeline01/scripts/exportar_dataexport.py`.
+Dados de núcleos (CellViT) exportados do Pipeline Ideia 01 para outro projeto. Nada foi recalculado: os arquivos reformatam resultados já existentes. Gerados por `Testes/Pipeline01/ferramentas/exportar_dataexport.py`.
 
 ## Pedido
 
@@ -34,11 +34,11 @@ Um núcleo por linha.
 
 Os núcleos da margem podem aparecer repetidos quando as janelas de tiles vizinhos se sobrepõem. Para contar núcleos, usar só `no_tile = 1`.
 
-Amostra: 250 tiles sorteados por classe (DCIS, IC) em cada lâmina, semente 0, entre os tiles que caem numa RoI anotada (sobreposição ≥ 0,5). A BRACS_748 tem 257 tiles de IC salvos (7 além do sorteio). Sem filtro por número de núcleos (no teste original, só entravam tiles com ≥ 20 núcleos neoplásicos). Origem: `validacao/dcis_ic_nucleos.py`.
+Amostra: 250 tiles sorteados por classe (DCIS, IC) em cada lâmina, semente 0, entre os tiles que caem numa RoI anotada (sobreposição ≥ 0,5). A BRACS_748 tem 257 tiles de IC salvos (7 além do sorteio). Sem filtro por número de núcleos (no teste original, só entravam tiles com ≥ 20 núcleos neoplásicos). Origem: `dcis_ic/dcis_ic_nucleos.py`.
 
 ### `nucls/`
 
-NuCLS (Amgad et al., GigaScience 2022; CC0): 1.744 campos de mama do TCGA, conjunto corrigido por patologista. Origem: `validacao/nucls_cellvit.py`.
+NuCLS (Amgad et al., GigaScience 2022; CC0): 1.744 campos de mama do TCGA, conjunto corrigido por patologista. Origem: `nucleos/nucls_cellvit.py`.
 
 - `cellvit_por_fov.csv.gz`: núcleos do CellViT em cada campo, em µm a partir do canto do campo. Sem probabilidade. Imagens reamostradas de 0,2 para 0,25 µm/px antes do CellViT.
 - `nucls_cellvit.json`: resultado original (núcleos anotados por classe, fração detectada e matriz de confusão anotado → CellViT).

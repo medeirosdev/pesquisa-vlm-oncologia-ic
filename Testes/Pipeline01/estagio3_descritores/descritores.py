@@ -20,7 +20,8 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import comum.caminhos  # noqa: E402,F401
 
 import cv2
 import numpy as np
@@ -30,7 +31,6 @@ from comum.bancos import BANCO_DESCRITOR, TEMPLATES_ENSEMBLE
 from comum.lamina import Lamina, dir_resultados, resolver_svs
 from comum.modelo import carregar_embeddings_cacheados, codificar_textos, dispositivo
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "estagio2_roteador"))
 from roteador_topk import gate_diversidade  # noqa: E402
 
 TOP_N_ACHADOS = 2

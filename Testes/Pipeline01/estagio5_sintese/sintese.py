@@ -21,7 +21,8 @@ import time
 import urllib.request
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import comum.caminhos  # noqa: E402,F401
 
 from comum.lamina import dir_resultados, resolver_svs
 from comum.rois import info_lamina

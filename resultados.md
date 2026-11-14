@@ -33,7 +33,7 @@ Estado em 14/11/2026. Um resumo de cada teste, com números, critério e se pass
 | Recall contra os 98 RoIs da `BRACS_748` (11/09) | 98/98 RoIs cobertos, 96% de cobertura | resolvido, congelado |
 | 16 lâminas (25/09) | cobertura dos RoIs 74–100% (exceção: 38% numa lâmina N, efeito da caixa retangular) | confirmado |
 
-Detalhes: `Testes/Pipeline01/estagio1_filtro_tecido/resultados.md`, `Testes/Pipeline01/resultados_multilaminas.md`.
+Detalhes: `Testes/Pipeline01/estagio1_filtro_tecido/resultados.md`, `Testes/Pipeline01/notas/resultados_multilaminas.md`.
 
 ## Estágio 2 — escolha dos patches (roteador)
 
@@ -78,7 +78,7 @@ Detalhes: `Testes/Pipeline01/estagio2_roteador/`, `Testes/Pipeline01/estagio3_de
 | UNI2-h + regressão logística (26/09) | 56% / 17% / 93% / 55,2% | passou por 2 pontos, **dentro do ruído** (controle embaralhado: 42%) |
 | QuiltNet + regressão logística (26/09) | 40,5% | não |
 
-Detalhes: `Testes/Pipeline01/estagio3_descritores/resultados.md`, `Testes/Pipeline01/validacao/experimento_frases.md`.
+Detalhes: `Testes/Pipeline01/estagio3_descritores/resultados.md`, `Testes/Pipeline01/descritor/bracs/experimento_frases.md`.
 
 ### DCIS vs. IC no BRACS (AUC, lâmina avaliada fora do treino)
 
@@ -104,7 +104,7 @@ Controle com rótulos embaralhados: AUC média 0,38–0,46.
 | Núcleos (CellViT), sem treino | 0,63 | — |
 | QuiltNet + regressão logística | 0,57 | — (não generaliza) |
 
-Detalhes: `Testes/Pipeline01/estagio3_descritores/resultados.md` (seções do plano UNI2-h), scripts em `Testes/Pipeline01/validacao/`.
+Detalhes: `Testes/Pipeline01/estagio3_descritores/resultados.md` (seções do plano UNI2-h), scripts em `Testes/Pipeline01/descritor/bracs/` e `Testes/Pipeline01/dcis_ic/`.
 
 ### Descritor hierárquico (categoria → DCIS/IC → texto), 4 classes finais, 18 lâminas, lâmina de fora
 
@@ -185,7 +185,7 @@ A regra se confirma no IC, mas a pipeline chama quase tudo de maligno: o acerto 
 
 *Agrupamento antigo (UDH em atípico); ver a correção de 07/11.*
 
-Script: `Testes/Pipeline01/validacao/lamina_inteira.py`, fixado antes (commit `c3bfa00`). Descritor "rois": hierarquia UNI2-h treinada com até 16 patches por RoI de treino do BRACS (23.669 patches de 3.402 RoIs; 1 recorte ilegível pulado). Classe da lâmina por regra de proporção sobre 2.000 patches sorteados (f_mal ≥ t_m → IC se f_ic ≥ t_ic, senão DCIS; senão f_at ≥ t_a → atípico; senão benigno), limiares escolhidos nas 18 lâminas de desenvolvimento. Critério: E2 > E0 e E2 > E1 em acurácia balanceada nas 57 lâminas do teste externo.
+Script: `Testes/Pipeline01/lamina/bracs/lamina_inteira.py`, fixado antes (commit `c3bfa00`). Descritor "rois": hierarquia UNI2-h treinada com até 16 patches por RoI de treino do BRACS (23.669 patches de 3.402 RoIs; 1 recorte ilegível pulado). Classe da lâmina por regra de proporção sobre 2.000 patches sorteados (f_mal ≥ t_m → IC se f_ic ≥ t_ic, senão DCIS; senão f_at ≥ t_a → atípico; senão benigno), limiares escolhidos nas 18 lâminas de desenvolvimento. Critério: E2 > E0 e E2 > E1 em acurácia balanceada nas 57 lâminas do teste externo.
 
 | | Benigno (13) | Atípico (24) | DCIS (8) | IC (12) | Acertos | Acurácia balanceada | Passou? |
 |---|---|---|---|---|---|---|---|
@@ -218,7 +218,7 @@ Todos os testes usam as 57 lâminas do teste externo, com critério fixado em co
 - **Lâminas benignas como negativos: passou.** Até 500 patches de cada uma das 26 lâminas benignas do treino entram como exemplos benignos no descritor (sem usar os do mesmo paciente ao descrever uma lâmina). A fração de patches falsos DCIS + IC nas lâminas benignas do teste caiu de 23% para 7%, sem perda nos patches malignos das RoIs de validação (89%). Custo: o DCIS cai para 1 de 8 lâminas; a maioria vai para benigno ou atípico.
 - **Ressalva:** as 57 lâminas já foram usadas em vários testes. Nada foi ajustado nelas, mas repetir comparações no mesmo conjunto aumenta a chance de um ganho por acaso, e os intervalos se sobrepõem. A confirmação deve usar as 30 lâminas de teste oficiais ainda não usadas.
 
-**Comparação com os números publicados** (lâmina inteira, 3 classes: benigno, atípico, maligno). Valores do projeto refeitos com o rótulo oficial em 07/11 (`validacao/rotulo_oficial.py`); a versão de 06/11 (`comparacao_literatura.py`) usava o agrupamento antigo e dava 0,496 e 0,523.
+**Comparação com os números publicados** (lâmina inteira, 3 classes: benigno, atípico, maligno). Valores do projeto refeitos com o rótulo oficial em 07/11 (`lamina/bracs/rotulo_oficial.py`); a versão de 06/11 (`comparacao_literatura.py`) usava o agrupamento antigo e dava 0,496 e 0,523.
 
 | Método | Treino | Teste | Acurácia balanceada (3 classes) |
 |---|---|---|---|
@@ -232,7 +232,7 @@ A comparação é indicativa, não direta: os conjuntos de teste e de treino dif
 
 ## Rótulo oficial do BRACS: correção e reteste (07/11)
 
-Script: `Testes/Pipeline01/validacao/rotulo_oficial.py`, fixado antes (commit `095320c`). Descritor, negativos (agora 34 lâminas: N, PB e UDH) e classificador da lâmina refeitos com o rótulo oficial; treino nas mesmas 79 lâminas, teste nas mesmas 57 (benigno 20, atípico 17, DCIS 8, IC 12).
+Script: `Testes/Pipeline01/lamina/bracs/rotulo_oficial.py`, fixado antes (commit `095320c`). Descritor, negativos (agora 34 lâminas: N, PB e UDH) e classificador da lâmina refeitos com o rótulo oficial; treino nas mesmas 79 lâminas, teste nas mesmas 57 (benigno 20, atípico 17, DCIS 8, IC 12).
 
 | Forma de decidir | Benigno (20) | Atípico (17) | DCIS (8) | IC (12) | Acertos | Acurácia balanceada (4 classes) | 3 classes | Passou? |
 |---|---|---|---|---|---|---|---|---|
@@ -254,7 +254,7 @@ Script: `Testes/Pipeline01/validacao/rotulo_oficial.py`, fixado antes (commit `0
 
 ## Modelo de linguagem só redige, com checagem automática do texto (07/11)
 
-Script: `Testes/Pipeline01/validacao/prelaudo_campos.py`, fixado antes (commit `21cb292`). A classe vem do classificador da lâmina (versão de 06/11, agrupamento antigo); o Gemma 3 4B recebe campos fixos (classe, probabilidades, confiança, proporções, 3 regiões) e só redige. A checagem automática compara cada número e coordenada do texto com a evidência que o modelo recebeu, e é aplicada também aos 57 pré-laudos antigos (modelo decidindo). Critério: classe do texto igual à sugerida em ≥ 90% e fração de números sem sustentação não maior que a dos antigos.
+Script: `Testes/Pipeline01/prelaudo/bracs/prelaudo_campos.py`, fixado antes (commit `21cb292`). A classe vem do classificador da lâmina (versão de 06/11, agrupamento antigo); o Gemma 3 4B recebe campos fixos (classe, probabilidades, confiança, proporções, 3 regiões) e só redige. A checagem automática compara cada número e coordenada do texto com a evidência que o modelo recebeu, e é aplicada também aos 57 pré-laudos antigos (modelo decidindo). Critério: classe do texto igual à sugerida em ≥ 90% e fração de números sem sustentação não maior que a dos antigos.
 
 | | Pré-laudos novos (só redige) | Pré-laudos antigos (modelo decide) |
 |---|---|---|
@@ -267,7 +267,7 @@ Script: `Testes/Pipeline01/validacao/prelaudo_campos.py`, fixado antes (commit `
 
 ## Resposta em conjunto: benigno, atípico, "benigno ou atípico", maligno (07/11)
 
-Script: `Testes/Pipeline01/validacao/resposta_em_conjunto.py`, fixado antes (commit `6392791`). Quando o classificador da lâmina (descritor com negativos, rótulo oficial) não separa benigno de atípico, responde "benigno ou atípico". Medem-se juntos o **acerto do conjunto** (a classe real está na resposta?) e as **respostas exatas** (uma classe só). A margem de recuo `d` foi escolhida no treino como a menor com acerto do conjunto ≥ 0,80; nenhuma chegou lá (máximo 0,797), e a regra usou a maior da grade, 0,45. Critério: nas 57, acerto do conjunto ≥ 0,75 e respostas exatas ≥ 0,50.
+Script: `Testes/Pipeline01/lamina/bracs/resposta_em_conjunto.py`, fixado antes (commit `6392791`). Quando o classificador da lâmina (descritor com negativos, rótulo oficial) não separa benigno de atípico, responde "benigno ou atípico". Medem-se juntos o **acerto do conjunto** (a classe real está na resposta?) e as **respostas exatas** (uma classe só). A margem de recuo `d` foi escolhida no treino como a menor com acerto do conjunto ≥ 0,80; nenhuma chegou lá (máximo 0,797), e a regra usou a maior da grade, 0,45. Critério: nas 57, acerto do conjunto ≥ 0,75 e respostas exatas ≥ 0,50.
 
 | Nas 57 lâminas | Acerto do conjunto | Respostas exatas |
 |---|---|---|
@@ -286,7 +286,7 @@ Script: `Testes/Pipeline01/validacao/resposta_em_conjunto.py`, fixado antes (com
 
 ## Concentração espacial dos patches suspeitos (08/11)
 
-Script: `Testes/Pipeline01/validacao/concentracao_espacial.py`, fixado antes (commit `3a62bd4`). Hipótese vinda de dois mapas de calor: numa lesão, os patches suspeitos formam um foco; numa lâmina benigna, os falsos positivos ficam espalhados. Quatro atributos novos por lâmina, com os 8 vizinhos mais próximos de cada patch na amostra: enriquecimento dos suspeitos, dos malignos e dos atípicos (1 = espalhados ao acaso) e fração de suspeitos em foco. Descritor com negativos e rótulo oficial; os 12 atributos antigos conferem exatamente com `rotulo_oficial.py`. Critério: nas 37 lâminas benignas e atípicas do teste, AUC benigno × atípico com os atributos novos ≥ AUC sem eles + 0,05, e ≥ 0,70.
+Script: `Testes/Pipeline01/lamina/bracs/concentracao_espacial.py`, fixado antes (commit `3a62bd4`). Hipótese vinda de dois mapas de calor: numa lesão, os patches suspeitos formam um foco; numa lâmina benigna, os falsos positivos ficam espalhados. Quatro atributos novos por lâmina, com os 8 vizinhos mais próximos de cada patch na amostra: enriquecimento dos suspeitos, dos malignos e dos atípicos (1 = espalhados ao acaso) e fração de suspeitos em foco. Descritor com negativos e rótulo oficial; os 12 atributos antigos conferem exatamente com `rotulo_oficial.py`. Critério: nas 37 lâminas benignas e atípicas do teste, AUC benigno × atípico com os atributos novos ≥ AUC sem eles + 0,05, e ≥ 0,70.
 
 | | Sem os espaciais (12 atributos) | Com os espaciais (16) |
 |---|---|---|
@@ -308,7 +308,7 @@ No IC, o enriquecimento é baixo porque os suspeitos ocupam metade da lâmina: c
 
 ## MIL com atenção (ABMIL), 79 lâminas de treino (09/11)
 
-Script: `Testes/Pipeline01/validacao/mil_atencao.py`, fixado antes (commit `c701a1d`). O modelo aprende a classe da lâmina direto do rótulo, a partir dos embeddings do UNI2-h dos 2.000 patches da amostra, sem o descritor por patch. Atenção com porta (Ilse et al., 2018), 40 épocas, média de 5 sementes, sem ajuste de hiperparâmetro. Treino: as mesmas 79 lâminas (42 pacientes); teste: as mesmas 57 (31 pacientes, nenhum em comum com o treino). Critérios: C1 acurácia balanceada nas 4 classes > 0,505 (classificador com negativos); C2 AUC benigno × atípico ≥ 0,70.
+Script: `Testes/Pipeline01/mil/mil_atencao.py`, fixado antes (commit `c701a1d`). O modelo aprende a classe da lâmina direto do rótulo, a partir dos embeddings do UNI2-h dos 2.000 patches da amostra, sem o descritor por patch. Atenção com porta (Ilse et al., 2018), 40 épocas, média de 5 sementes, sem ajuste de hiperparâmetro. Treino: as mesmas 79 lâminas (42 pacientes); teste: as mesmas 57 (31 pacientes, nenhum em comum com o treino). Critérios: C1 acurácia balanceada nas 4 classes > 0,505 (classificador com negativos); C2 AUC benigno × atípico ≥ 0,70.
 
 | Nas 57 lâminas | Benigno (20) | Atípico (17) | DCIS (8) | IC (12) | Acertos | Acurácia balanceada | Passou? |
 |---|---|---|---|---|---|---|---|
@@ -325,7 +325,7 @@ Script: `Testes/Pipeline01/validacao/mil_atencao.py`, fixado antes (commit `c701
 - **Passou nos dois critérios, com folga.** Aprender da lâmina inteira resolve boa parte do benigno × atípico, que o descritor por patch não separava (0,58 → 0,78).
 - **Em 3 classes, 0,68**, perto do UNI + ABMIL publicado (0,687 com 395 lâminas de treino e as 87 de teste). A comparação continua indicativa: outro teste, outro modelo base, 57 lâminas.
 - **O DCIS continua fraco** (2/8): 6 das 20 lâminas malignas saem como benignas ou atípicas; só 1 benigna ou atípica sai como maligna.
-- **Confirmação em validação cruzada** (`validacao/mil_validacao_cruzada.py`, fixado antes, commit `4666c80`): o mesmo MIL, sem mudança, em 5 partes por paciente nas 79 lâminas de treino, sem usar as 57. Critério: acurácia balanceada ≥ 0,55 e AUC benigno × atípico ≥ 0,70. **Passou:**
+- **Confirmação em validação cruzada** (`mil/bracs/mil_validacao_cruzada.py`, fixado antes, commit `4666c80`): o mesmo MIL, sem mudança, em 5 partes por paciente nas 79 lâminas de treino, sem usar as 57. Critério: acurácia balanceada ≥ 0,55 e AUC benigno × atípico ≥ 0,70. **Passou:**
 
 | Validação cruzada nas 79 | Benigno (34) | Atípico (17) | DCIS (11) | IC (17) | Acertos | Acurácia balanceada | AUC benigno × atípico | AUC maligno × resto |
 |---|---|---|---|---|---|---|---|---|
@@ -337,7 +337,7 @@ Script: `Testes/Pipeline01/validacao/mil_atencao.py`, fixado antes (commit `c701
 
 ## A atenção do MIL cai nas lesões anotadas? (09/11)
 
-Script: `Testes/Pipeline01/validacao/atencao_nas_lesoes.py`, fixado antes (commit `87d2de8`). Nas 29 lâminas do teste externo com rótulo atípico, DCIS ou IC que têm anotação oficial de lesão, compara-se a fração dos 5% de patches de maior atenção que cai dentro das lesões anotadas com a fração de todos os patches da amostra que cai nelas (referência: o que um sorteio acertaria). Coordenadas do GeoJSON conferidas contra o estágio 1 (diferença de poucos pixels). Critério: acima da referência em ≥ 70% das lâminas e razão somada ≥ 2.
+Script: `Testes/Pipeline01/mil/bracs/atencao_nas_lesoes.py`, fixado antes (commit `87d2de8`). Nas 29 lâminas do teste externo com rótulo atípico, DCIS ou IC que têm anotação oficial de lesão, compara-se a fração dos 5% de patches de maior atenção que cai dentro das lesões anotadas com a fração de todos os patches da amostra que cai nelas (referência: o que um sorteio acertaria). Coordenadas do GeoJSON conferidas contra o estágio 1 (diferença de poucos pixels). Critério: acima da referência em ≥ 70% das lâminas e razão somada ≥ 2.
 
 | 29 lâminas | Lâminas acima da referência | Topo na lesão (média) | Referência (média) | Razão |
 |---|---|---|---|---|
@@ -354,7 +354,7 @@ Script: `Testes/Pipeline01/validacao/atencao_nas_lesoes.py`, fixado antes (commi
 
 ## Pré-laudo com o MIL e mapas de atenção (10/11)
 
-Script: `Testes/Pipeline01/validacao/prelaudo_mil.py`, fixado antes (commit `29a4192`). A classe e a confiança vêm do MIL; as regiões citadas são os 3 patches de maior atenção, cada um com a descrição do descritor; o Gemma 3 4B só redige, com as instruções e a checagem de `prelaudo_campos.py`. Critério: classe do texto igual à sugerida em ≥ 90% e fração de números sem sustentação não maior que a dos pré-laudos antigos.
+Script: `Testes/Pipeline01/prelaudo/bracs/prelaudo_mil.py`, fixado antes (commit `29a4192`). A classe e a confiança vêm do MIL; as regiões citadas são os 3 patches de maior atenção, cada um com a descrição do descritor; o Gemma 3 4B só redige, com as instruções e a checagem de `prelaudo_campos.py`. Critério: classe do texto igual à sugerida em ≥ 90% e fração de números sem sustentação não maior que a dos pré-laudos antigos.
 
 | 57 pré-laudos | Com o MIL | Modelo decide (antigo) |
 |---|---|---|
@@ -364,11 +364,11 @@ Script: `Testes/Pipeline01/validacao/prelaudo_mil.py`, fixado antes (commit `29a
 | Classe final certa | 38/57 (acurácia balanceada 0,626) | 17/57 |
 | Regiões citadas dentro da lesão anotada (lâminas não benignas com anotação) | 18 de 93 | 7 de 93 (regiões do descritor, `prelaudo_campos.py`) |
 
-**Passou.** Problema que a checagem não pega: em 15 lâminas o MIL sugere benigno, mas regiões de maior atenção são descritas como atípicas ou malignas; só 1 dos 15 textos aponta a contradição, e os outros a justificam (ex.: BRACS_1003691, "a presença de um patch de ductal carcinoma in situ [...] influenciou a sugestão de benignidade"). Contagem por expressões no texto ("contradição", "no entanto", "embora"...), sem leitura completa dos 15. Mapas de atenção de 4 lâminas: `scripts/mapas_de_calor.py --atencao`, em `docs/visao_geral/img/mapa_atencao_*.jpg`.
+**Passou.** Problema que a checagem não pega: em 15 lâminas o MIL sugere benigno, mas regiões de maior atenção são descritas como atípicas ou malignas; só 1 dos 15 textos aponta a contradição, e os outros a justificam (ex.: BRACS_1003691, "a presença de um patch de ductal carcinoma in situ [...] influenciou a sugestão de benignidade"). Contagem por expressões no texto ("contradição", "no entanto", "embora"...), sem leitura completa dos 15. Mapas de atenção de 4 lâminas: `ferramentas/mapas_de_calor.py --atencao`, em `docs/visao_geral/img/mapa_atencao_*.jpg`.
 
 ## Generalização pra pulmão: TCGA LUAD × LUSC (11–12/11)
 
-Pergunta: a mesma receita de classificação da lâmina (patches de tecido de 128 µm, UNI2-h congelado, MIL com atenção, mesma configuração de treino), retreinada com lâminas de outro órgão, funciona? O MIL é treinado do zero com as lâminas de pulmão; o modelo treinado na mama não é reaproveitado. Tarefa: adenocarcinoma (TCGA-LUAD) × carcinoma escamoso (TCGA-LUSC), lâminas de diagnóstico do TCGA (acesso aberto). Fixado antes de baixar (commit `4d1d4de`): 100 pacientes de cada projeto, uma lâmina por paciente, sorteio com semente 0; treino 60 + 60, teste 40 + 40, pacientes diferentes; lado do patch em pixels pela resolução da lâmina; modelo e treino de `mil_atencao.py`, com 2 classes. Critério: AUC ≥ 0,85 E acurácia balanceada ≥ 0,75 no teste. Scripts: `Testes/Pipeline01/scripts/tcga_baixar_e_embutir.py`, `Testes/Pipeline01/validacao/tcga_mil.py`.
+Pergunta: a mesma receita de classificação da lâmina (patches de tecido de 128 µm, UNI2-h congelado, MIL com atenção, mesma configuração de treino), retreinada com lâminas de outro órgão, funciona? O MIL é treinado do zero com as lâminas de pulmão; o modelo treinado na mama não é reaproveitado. Tarefa: adenocarcinoma (TCGA-LUAD) × carcinoma escamoso (TCGA-LUSC), lâminas de diagnóstico do TCGA (acesso aberto). Fixado antes de baixar (commit `4d1d4de`): 100 pacientes de cada projeto, uma lâmina por paciente, sorteio com semente 0; treino 60 + 60, teste 40 + 40, pacientes diferentes; lado do patch em pixels pela resolução da lâmina; modelo e treino de `mil_atencao.py`, com 2 classes. Critério: AUC ≥ 0,85 E acurácia balanceada ≥ 0,75 no teste. Scripts: `Testes/Pipeline01/dados/tcga/tcga_baixar_e_embutir.py`, `Testes/Pipeline01/mil/tcga/tcga_mil.py`.
 
 | Teste (78 lâminas) | Resultado |
 |---|---|
@@ -383,7 +383,7 @@ Leitura: LUAD × LUSC é uma tarefa mais fácil que a do BRACS (dois carcinomas 
 
 ## Pulmão: descritor por patch e pré-laudo (13–14/11)
 
-Pergunta: o resto da pipeline (descritor por patch, campos, pré-laudo redigido pelo modelo de linguagem) também funciona no pulmão? Fixado antes de rodar (commit `7725c6e`). Scripts: `Testes/Pipeline01/scripts/escala_lunghist.py`, `Testes/Pipeline01/validacao/pulmao_descritor.py`, `Testes/Pipeline01/validacao/tcga_descritor_prelaudo.py`. Resultados em `Testes/Pipeline01/resultados/{lunghist700,tcga_prelaudo}/`.
+Pergunta: o resto da pipeline (descritor por patch, campos, pré-laudo redigido pelo modelo de linguagem) também funciona no pulmão? Fixado antes de rodar (commit `7725c6e`). Scripts: `Testes/Pipeline01/dados/lunghist700/escala_lunghist.py`, `Testes/Pipeline01/descritor/pulmao/pulmao_descritor.py`, `Testes/Pipeline01/prelaudo/tcga/tcga_descritor_prelaudo.py`. Resultados em `Testes/Pipeline01/resultados/{lunghist700,tcga_prelaudo}/`.
 
 O que muda em relação à mama: o descritor é treinado no LungHist700 (classes normal, adenocarcinoma, escamoso; rótulo por imagem), não nas regiões anotadas do BRACS; os campos não têm a regra do componente invasivo nem as medidas de núcleo; as instruções do modelo de linguagem são a versão do pulmão, com uma regra a mais (apontar regiões cuja classe difere do tipo sugerido). O MIL é o da seção anterior, retreinado pra gravar a atenção (mesma classe nas 78 lâminas, diferença máxima de 0,0005 na probabilidade).
 
@@ -406,7 +406,7 @@ Leitura:
 - `.qpdata` lidas com o QuPath e exportadas pra GeoJSON: 387 de 387 lâminas; totais por classe iguais aos do artigo.
 - A maioria é retângulo, não contorno da lesão (nas lâminas usadas: DCIS 160 de 208, IC 127 de 128). O rótulo é da região marcada.
 
-Detalhes: `Testes/Pipeline01/validacao/problemas_e_metrica.md`.
+Detalhes: `Testes/Pipeline01/notas/problemas_e_metrica.md`.
 
 ## Conclusões até aqui
 

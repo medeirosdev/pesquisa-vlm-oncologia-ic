@@ -50,11 +50,11 @@ Adicionei `--normalizar` ao script: calcula média/desvio de cada frase sobre os
 
 ## 25/09 — o descritor não conseguia dizer "normal"; corrigido e testado em 8 lâminas
 
-Rodando a pipeline em 8 lâminas (ver [../resultados_multilaminas.md](../resultados_multilaminas.md)), apareceu uma falha de desenho: o banco do descritor só tinha frases suspeitas, então até a lâmina de tecido normal (`BRACS_1003718`) saía descrita como "desmoplastic stroma, stromal invasion". Não existia frase que permitisse dizer "normal".
+Rodando a pipeline em 8 lâminas (ver [../notas/resultados_multilaminas.md](../notas/resultados_multilaminas.md)), apareceu uma falha de desenho: o banco do descritor só tinha frases suspeitas, então até a lâmina de tecido normal (`BRACS_1003718`) saía descrita como "desmoplastic stroma, stromal invasion". Não existia frase que permitisse dizer "normal".
 
 **Correção:** o descritor passou a usar `BANCO_DESCRITOR` (em `comum/bancos.py`), com o espectro inteiro organizado nas três categorias oficiais do BRACS — benigno (N, PB + gordura e estroma fibroso, 12 frases), atípico (UDH, FEA, ADH, 15 frases; agrupamento antigo — no BRACS o UDH é benigno, corrigido em 07/11/2026) e maligno (o antigo banco suspeito + DCIS e IC, 19 frases). Cada patch recebe também uma **categoria sugerida**: a categoria cuja frase mais parecida tem a maior similaridade.
 
-**Teste** ([../validacao/categoria_descritor.py](../validacao/categoria_descritor.py)): a categoria sugerida bate com a categoria real do RoI? Todos os tiles rotulados das 8 lâminas, somados:
+**Teste** ([../descritor/bracs/categoria_descritor.py](../descritor/bracs/categoria_descritor.py)): a categoria sugerida bate com a categoria real do RoI? Todos os tiles rotulados das 8 lâminas, somados:
 
 | Categoria real | Bruto: acerto | Normalizado: acerto |
 |---|---|---|
@@ -88,7 +88,7 @@ Ganho na média é pequeno (51% → 52%), mas a pior categoria saiu de 33% pra 4
 
 ### Mesmo truque nas outras frases, uma de cada vez
 
-Registro completo, frase por frase: [../validacao/experimento_frases.md](../validacao/experimento_frases.md) (script `validacao/experimento_frases.py`, que reusa os embeddings do cache, então cada teste leva segundos).
+Registro completo, frase por frase: [../descritor/bracs/experimento_frases.md](../descritor/bracs/experimento_frases.md) (script `descritor/bracs/experimento_frases.py`, que reusa os embeddings do cache, então cada teste leva segundos).
 
 **Regra fixada antes de rodar:** uma troca só fica se a média das 3 categorias subir ≥ 0,5 ponto. Guloso: cada troca é testada em cima das já aceitas. 14 candidatas testadas, **2 aceitas**:
 
@@ -108,7 +108,7 @@ Confirmado rodando a pipeline inteira de novo (mesmos números). Tiles malignos 
 
 ### Teste fora da amostra: 8 lâminas novas
 
-As trocas acima foram escolhidas olhando as mesmas 8 lâminas em que foram medidas. Pra saber se o ganho vale, foram baixadas mais 8 lâminas (uma por classe + uma N extra), todas de **pacientes que não aparecem na primeira leva** (lista em `scripts/baixar_laminas.sh --segunda-leva`), e o banco foi medido nelas **sem mexer em nenhuma frase** ([../validacao/teste_fora_da_amostra.py](../validacao/teste_fora_da_amostra.py)).
+As trocas acima foram escolhidas olhando as mesmas 8 lâminas em que foram medidas. Pra saber se o ganho vale, foram baixadas mais 8 lâminas (uma por classe + uma N extra), todas de **pacientes que não aparecem na primeira leva** (lista em `dados/bracs/baixar_laminas.sh --segunda-leva`), e o banco foi medido nelas **sem mexer em nenhuma frase** ([../descritor/bracs/teste_fora_da_amostra.py](../descritor/bracs/teste_fora_da_amostra.py)).
 
 | Banco | 8 lâminas do ajuste | **8 lâminas novas** |
 |---|---|---|
@@ -129,7 +129,7 @@ Correção no caminho: na `BRACS_297` nenhum RoI era localizado (0/31) — o ní
 
 ### DCIS vs. IC olhando os 8 vizinhos do patch
 
-Ideia: a diferença entre DCIS e IC é de *localização* (células dentro do ducto vs. no estroma), então um patch sozinho pode não mostrar, mas o patch com os vizinhos em volta pode. Script: [../validacao/dcis_ic_vizinhanca.py](../validacao/dcis_ic_vizinhanca.py). Zero-shot só entre os bancos DCIS e IC; variantes fixadas antes de rodar. Tiles rotulados das 16 lâminas: DCIS 3.553, IC 3.096. Métrica: acurácia balanceada, acaso = 50%.
+Ideia: a diferença entre DCIS e IC é de *localização* (células dentro do ducto vs. no estroma), então um patch sozinho pode não mostrar, mas o patch com os vizinhos em volta pode. Script: [../dcis_ic/dcis_ic_vizinhanca.py](../dcis_ic/dcis_ic_vizinhanca.py). Zero-shot só entre os bancos DCIS e IC; variantes fixadas antes de rodar. Tiles rotulados das 16 lâminas: DCIS 3.553, IC 3.096. Métrica: acurácia balanceada, acaso = 50%.
 
 | Variante | Todas somadas (DCIS / IC / balanceada) | `BRACS_748` — DCIS e IC na mesma lâmina |
 |---|---|---|
@@ -145,7 +145,7 @@ Ideia: a diferença entre DCIS e IC é de *localização* (células dentro do du
 
 ### DCIS vs. IC usando os vizinhos como contexto
 
-A média acima mistura os vizinhos; a ideia original era outra: **olhar o que está em volta** do patch. Hipótese: no DCIS o tumor está dentro do ducto (em volta: mais tumor e parede de ducto); no IC está no meio do estroma (em volta: estroma). Script: [../validacao/dcis_ic_contexto.py](../validacao/dcis_ic_contexto.py), com tudo fixado antes de rodar:
+A média acima mistura os vizinhos; a ideia original era outra: **olhar o que está em volta** do patch. Hipótese: no DCIS o tumor está dentro do ducto (em volta: mais tumor e parede de ducto); no IC está no meio do estroma (em volta: estroma). Script: [../dcis_ic/dcis_ic_contexto.py](../dcis_ic/dcis_ic_contexto.py), com tudo fixado antes de rodar:
 
 1. Cada tile recebe um tipo de tecido por zero-shot (tumor / estroma / ducto / gordura; vizinho fora da grade de tecido = "sem tecido").
 2. Descritivo: composição dos 8 vizinhos dos tiles DCIS vs. IC.
@@ -177,7 +177,7 @@ A média acima mistura os vizinhos; a ideia original era outra: **olhar o que es
 
 ### Teste da hipótese "tumor cercado de tumor → IC" em lâminas novas
 
-A hipótese saiu da `BRACS_748` depois de olhar os dados, então foi testada em duas lâminas novas com DCIS e IC juntos (`BRACS_773`, `BRACS_295`, pacientes novos). A regra e o critério foram fixados e commitados **antes do download** ([../validacao/dcis_ic_regra_tumor.py](../validacao/dcis_ic_regra_tumor.py)): IC se ≥ 50% dos 8 vizinhos forem tumor; "funcionou" = supera o patch sozinho nas duas lâminas.
+A hipótese saiu da `BRACS_748` depois de olhar os dados, então foi testada em duas lâminas novas com DCIS e IC juntos (`BRACS_773`, `BRACS_295`, pacientes novos). A regra e o critério foram fixados e commitados **antes do download** ([../dcis_ic/dcis_ic_regra_tumor.py](../dcis_ic/dcis_ic_regra_tumor.py)): IC se ≥ 50% dos 8 vizinhos forem tumor; "funcionou" = supera o patch sozinho nas duas lâminas.
 
 | Lâmina | Patch sozinho (DCIS / IC / balanceada) | Regra do tumor (DCIS / IC / balanceada) |
 |---|---|---|
@@ -204,7 +204,7 @@ Correção no caminho: um recorte de RoI do dataset local está truncado (`BRACS
 
 O CellViT (CellViT-256, pesos oficiais x40, tipos de núcleo do PanNuke) segmenta e classifica cada núcleo: neoplásico, inflamatório, conjuntivo, morto, epitelial. Não tem classe "mioepitelial", então a camada é inferida pelo arranjo: no DCIS o tumor tem **uma fronteira lisa** com o estroma (membrana basal e camada mioepitelial no meio), e poucos núcleos neoplásicos encostam em núcleos conjuntivos; no IC o tumor se infiltra e os dois se misturam em pequena escala.
 
-Scripts: [../validacao/nucleos_cellvit.py](../validacao/nucleos_cellvit.py) (segmentação, janela de 1024 px centrada no tile) e [../validacao/dcis_ic_nucleos.py](../validacao/dcis_ic_nucleos.py) (teste). Roda num ambiente separado no HD (`venvs/cellvit`), porque o CellViT exige numpy < 2 e opencv fixo. ~1 s por tile na RTX 3050 (1,5 GB de GPU).
+Scripts: [../nucleos/nucleos_cellvit.py](../nucleos/nucleos_cellvit.py) (segmentação, janela de 1024 px centrada no tile) e [../dcis_ic/dcis_ic_nucleos.py](../dcis_ic/dcis_ic_nucleos.py) (teste). Roda num ambiente separado no HD (`venvs/cellvit`), porque o CellViT exige numpy < 2 e opencv fixo. ~1 s por tile na RTX 3050 (1,5 GB de GPU).
 
 **Fixado antes de rodar** (commit `24cde37`): 250 tiles por classe em cada lâmina com DCIS e IC juntos (`BRACS_748`, `BRACS_773`, `BRACS_295`); só entram tiles com ≥ 20 núcleos neoplásicos; medida = fração dos núcleos neoplásicos com um núcleo conjuntivo a ≤ 20 µm; critério = AUC > 0,5 (IC maior) nas três lâminas.
 
@@ -221,7 +221,7 @@ Scripts: [../validacao/nucleos_cellvit.py](../validacao/nucleos_cellvit.py) (seg
 
 ### Plano UNI2-h, teste 1: DCIS vs. IC com uma camada treinada em cima dos embeddings
 
-O UNI2-h (MahmoodLab, 681 M parâmetros) não tem encoder de texto, então não usa banco de frases: em cima dos embeddings entra uma regressão logística treinada. Script: [../validacao/dcis_ic_uni.py](../validacao/dcis_ic_uni.py); carregador em `comum/uni.py` (mesmo pré-processamento do QuiltNet: 512 px em 40x → 256 → 224).
+O UNI2-h (MahmoodLab, 681 M parâmetros) não tem encoder de texto, então não usa banco de frases: em cima dos embeddings entra uma regressão logística treinada. Script: [../dcis_ic/dcis_ic_uni.py](../dcis_ic/dcis_ic_uni.py); carregador em `comum/uni.py` (mesmo pré-processamento do QuiltNet: 512 px em 40x → 256 → 224).
 
 **Fixado antes de rodar** (commit `71f506e`): mesmos tiles do teste do CellViT; a mesma logística pros dois encoders (padronizada, pesos balanceados, L2 equivalente a C = 1 do scikit-learn, sem ajuste); treina em duas lâminas e testa na terceira; critério = UNI2-h > QuiltNet nas três.
 
@@ -243,7 +243,7 @@ O UNI2-h (MahmoodLab, 681 M parâmetros) não tem encoder de texto, então não 
 
 ### Plano UNI2-h, teste 2: benigno / atípico / maligno nas 16 lâminas
 
-Script: [../validacao/categoria_uni.py](../validacao/categoria_uni.py). **Fixado antes** (commit `2528b44`): todos os tiles rotulados das 16 lâminas; logística multinomial (mesma regularização do teste 1) em cima do UNI2-h e do QuiltNet; treina em 15 lâminas e prevê a 16ª; critério = nas 8 lâminas novas, UNI2-h > 53,2% (frases) e > QuiltNet + logística; controle com os rótulos de treino embaralhados.
+Script: [../descritor/bracs/categoria_uni.py](../descritor/bracs/categoria_uni.py). **Fixado antes** (commit `2528b44`): todos os tiles rotulados das 16 lâminas; logística multinomial (mesma regularização do teste 1) em cima do UNI2-h e do QuiltNet; treina em 15 lâminas e prevê a 16ª; critério = nas 8 lâminas novas, UNI2-h > 53,2% (frases) e > QuiltNet + logística; controle com os rótulos de treino embaralhados.
 
 8 lâminas novas (benigno 2.482, atípico 747, maligno 3.342 tiles):
 
@@ -264,7 +264,7 @@ Nas 16 lâminas somadas: UNI2-h 51,3% (57 / 15 / 82), QuiltNet + logística 38,9
 
 ### Plano UNI2-h, teste 3: UNI2-h + núcleos juntos (DCIS vs. IC)
 
-Script: [../validacao/dcis_ic_uni_nucleos.py](../validacao/dcis_ic_uni_nucleos.py). **Fixado antes** (commit `70cb244`): stacking — nas 2 lâminas de treino, o UNI2-h treinado numa pontua a outra; uma logística de 2 entradas (pontuação do UNI2-h + fração de neoplásicos encostados em conjuntivo) aprende a combinar; aplicado na lâmina de teste. Critério: combinação > UNI2-h sozinho nas três lâminas.
+Script: [../dcis_ic/dcis_ic_uni_nucleos.py](../dcis_ic/dcis_ic_uni_nucleos.py). **Fixado antes** (commit `70cb244`): stacking — nas 2 lâminas de treino, o UNI2-h treinado numa pontua a outra; uma logística de 2 entradas (pontuação do UNI2-h + fração de neoplásicos encostados em conjuntivo) aprende a combinar; aplicado na lâmina de teste. Critério: combinação > UNI2-h sozinho nas três lâminas.
 
 | Lâmina de teste | UNI2-h | Núcleos | Juntos | Correlação UNI2-h × núcleos |
 |---|---|---|---|---|
@@ -277,7 +277,7 @@ Script: [../validacao/dcis_ic_uni_nucleos.py](../validacao/dcis_ic_uni_nucleos.p
 
 ### Ensemble de frases refeito com as métricas atuais (26/09)
 
-O teste de 16/09 (sugestão do Prof. João: cada frase em 5 versões, média dos embeddings) foi numa lâmina só, com a métrica "achado dominante". Refeito com as métricas atuais: [../validacao/ensemble_frases.py](../validacao/ensemble_frases.py), fixado antes (commit `cac7c18`).
+O teste de 16/09 (sugestão do Prof. João: cada frase em 5 versões, média dos embeddings) foi numa lâmina só, com a métrica "achado dominante". Refeito com as métricas atuais: [../descritor/bracs/ensemble_frases.py](../descritor/bracs/ensemble_frases.py), fixado antes (commit `cac7c18`).
 
 **A. DCIS vs. IC** (AUC; mesmos tiles dos testes do CellViT/UNI2-h; critério: sobe nas três lâminas):
 
@@ -301,7 +301,7 @@ O teste de 16/09 (sugestão do Prof. João: cada frase em 5 versões, média dos
 
 ### Estágio 2 com o UNI2-h: roteador pela probabilidade de não ser benigno
 
-Script: [../validacao/roteador_uni.py](../validacao/roteador_uni.py), fixado antes (commit `1e7cd4b`). Pontuação nova = 1 − P(benigno) da logística do teste 2, treinada nas outras 15 lâminas; mesma ordenação e mesmo gate de diversidade do roteador atual. **Métrica corrigida:** um tile escolhido só acerta se cair num RoI de lesão (UDH, FEA, ADH, DCIS, IC); RoIs N e PB não contam. 11 lâminas com RoI de lesão. Critério: UNI2-h > atual em ≥ 8 das 11 lâminas e média maior (k = 32).
+Script: [../roteador/bracs/roteador_uni.py](../roteador/bracs/roteador_uni.py), fixado antes (commit `1e7cd4b`). Pontuação nova = 1 − P(benigno) da logística do teste 2, treinada nas outras 15 lâminas; mesma ordenação e mesmo gate de diversidade do roteador atual. **Métrica corrigida:** um tile escolhido só acerta se cair num RoI de lesão (UDH, FEA, ADH, DCIS, IC); RoIs N e PB não contam. 11 lâminas com RoI de lesão. Critério: UNI2-h > atual em ≥ 8 das 11 lâminas e média maior (k = 32).
 
 | Lâmina | RoIs de lesão | Atual (frases) | UNI2-h | Sorteio |
 |---|---|---|---|---|
@@ -324,7 +324,7 @@ Script: [../validacao/roteador_uni.py](../validacao/roteador_uni.py), fixado ant
 
 ### Plano UNI2-h, teste 4: generalização pra outra instituição (BACH)
 
-O classificador DCIS vs. IC foi treinado **só no BRACS** (Nápoles) e aplicado **sem retreino** nas imagens de microscopia do BACH (Ipatimup/INEB, Porto; ICIAR 2018; CC BY-NC-ND, Aresta et al. 2019): 100 *InSitu* vs. 100 *Invasive*. Scripts: [../validacao/bach_dcis_ic.py](../validacao/bach_dcis_ic.py) e [../validacao/bach_nucleos.py](../validacao/bach_nucleos.py), fixados antes de os dados chegarem (commit `8f513f9`). Tiles de 128 µm (305 px a 0,42 µm/px — resolução do artigo; os arquivos não trazem), mesmo pré-processamento da pipeline; pontuação da imagem = média dos tiles. Critério: AUC por imagem do UNI2-h ≥ 0,80.
+O classificador DCIS vs. IC foi treinado **só no BRACS** (Nápoles) e aplicado **sem retreino** nas imagens de microscopia do BACH (Ipatimup/INEB, Porto; ICIAR 2018; CC BY-NC-ND, Aresta et al. 2019): 100 *InSitu* vs. 100 *Invasive*. Scripts: [../dcis_ic/bach_dcis_ic.py](../dcis_ic/bach_dcis_ic.py) e [../dcis_ic/bach_nucleos.py](../dcis_ic/bach_nucleos.py), fixados antes de os dados chegarem (commit `8f513f9`). Tiles de 128 µm (305 px a 0,42 µm/px — resolução do artigo; os arquivos não trazem), mesmo pré-processamento da pipeline; pontuação da imagem = média dos tiles. Critério: AUC por imagem do UNI2-h ≥ 0,80.
 
 Correções de leitura feitas antes de rodar, sem mudar a regra: as imagens são 8 bits gravados em 16 (divididas por 257); e os modelos rodam um de cada vez na GPU.
 
@@ -341,7 +341,7 @@ Correções de leitura feitas antes de rodar, sem mudar a regra: as imagens são
 
 ### Validação do método 3 contra núcleos anotados (NuCLS) — os valores da medida não são confiáveis
 
-Pergunta do Prof. João: a medida dos núcleos dá valores precisos em dados não vistos? Testado no NuCLS (Amgad et al., GigaScience 2022; CC0): 1.744 campos de câncer de mama do TCGA, núcleos classificados por patologista (versão single-rater corrigida). Cópia em zip de terceiros, conferida contra 73 CSVs do Drive oficial (idênticos). Script: [../validacao/nucls_cellvit.py](../validacao/nucls_cellvit.py), fixado antes (commit `b9592a9`).
+Pergunta do Prof. João: a medida dos núcleos dá valores precisos em dados não vistos? Testado no NuCLS (Amgad et al., GigaScience 2022; CC0): 1.744 campos de câncer de mama do TCGA, núcleos classificados por patologista (versão single-rater corrigida). Cópia em zip de terceiros, conferida contra 73 CSVs do Drive oficial (idênticos). Script: [../nucleos/nucls_cellvit.py](../nucleos/nucls_cellvit.py), fixado antes (commit `b9592a9`).
 
 **Parte 1 — o CellViT encontra os núcleos, mas erra muito o tipo.** Encontra 82–93% dos núcleos anotados (pareamento a ≤ 5 µm). Entre os pareados:
 
@@ -368,7 +368,7 @@ Spearman 0,28, viés +0,24, erro absoluto médio 0,29. **Não passou.** O CellVi
 
 ### Método 3, segunda versão: classificação de núcleos treinada no NuCLS
 
-Mantida a detecção do CellViT; o tipo de cada núcleo passou a vir de uma logística (a do teste 2) treinada nos tokens do CellViT (média dos tokens de 384 números que cobrem a caixa do núcleo), com rótulo do núcleo anotado pareado. Avaliação nos 5 folds oficiais do NuCLS, que separam treino e teste por hospital; cada campo é avaliado no fold em que é teste. Script: [../validacao/nucls_classificador.py](../validacao/nucls_classificador.py), fixado antes (commit `15f6eec`). Critério: o mesmo da primeira versão.
+Mantida a detecção do CellViT; o tipo de cada núcleo passou a vir de uma logística (a do teste 2) treinada nos tokens do CellViT (média dos tokens de 384 números que cobrem a caixa do núcleo), com rótulo do núcleo anotado pareado. Avaliação nos 5 folds oficiais do NuCLS, que separam treino e teste por hospital; cada campo é avaliado no fold em que é teste. Script: [../nucleos/nucls_classificador.py](../nucleos/nucls_classificador.py), fixado antes (commit `15f6eec`). Critério: o mesmo da primeira versão.
 
 | | CellViT original | Classificador treinado no NuCLS |
 |---|---|---|
@@ -388,7 +388,7 @@ Mantida a detecção do CellViT; o tipo de cada núcleo passou a vir de uma log�
 
 ### Descritor hierárquico com o UNI2-h (13/10)
 
-Sugestão do Prof. João: primeiro a categoria, depois a evidência. Nível 1: benigno / atípico / maligno (logística no UNI2-h); nível 2, só se maligno: DCIS ou IC (segunda logística, treinada só em tiles DCIS e IC). O resultado vira texto por uma tabela fixa: `[x0,y0] (maligno 0.93) invasive carcinoma 0.88`. As camadas usadas numa lâmina são sempre treinadas nas outras. Código: [descritor_uni.py](descritor_uni.py) (saída `estagio3_descritores_k{k}_uni.json`, mesmo formato do descritor por frases). Teste: [../validacao/hierarquia_uni.py](../validacao/hierarquia_uni.py), fixado antes (commit `b27b222`): 18 lâminas, deixando uma de fora; 4 classes finais; referência = mesma hierarquia com frases; critério = média maior que a das frases.
+Sugestão do Prof. João: primeiro a categoria, depois a evidência. Nível 1: benigno / atípico / maligno (logística no UNI2-h); nível 2, só se maligno: DCIS ou IC (segunda logística, treinada só em tiles DCIS e IC). O resultado vira texto por uma tabela fixa: `[x0,y0] (maligno 0.93) invasive carcinoma 0.88`. As camadas usadas numa lâmina são sempre treinadas nas outras. Código: [descritor_uni.py](descritor_uni.py) (saída `estagio3_descritores_k{k}_uni.json`, mesmo formato do descritor por frases). Teste: [../descritor/bracs/hierarquia_uni.py](../descritor/bracs/hierarquia_uni.py), fixado antes (commit `b27b222`): 18 lâminas, deixando uma de fora; 4 classes finais; referência = mesma hierarquia com frases; critério = média maior que a das frases.
 
 | Lâminas | Método | Benigno | Atípico | DCIS | IC | Média |
 |---|---|---|---|---|---|---|
@@ -407,7 +407,7 @@ Sugestão do Prof. João: primeiro a categoria, depois a evidência. Nível 1: b
 
 ### Método 3, terceira rodada: medidas mais robustas (13/10)
 
-A medida atual conta como "encostado" o tumor com um único vizinho de estroma a ≤ 20 µm, e um vizinho mal classificado já muda o resultado. Testadas duas alternativas no NuCLS, com os tipos do classificador treinado no NuCLS (fora do fold): [../validacao/nucls_medidas_robustas.py](../validacao/nucls_medidas_robustas.py), fixado antes (commit `1b7134a`). Critério por medida: Spearman ≥ 0,7 e viés ≤ 0,10 (frações) ou ≤ 5 µm (distância). 844 campos.
+A medida atual conta como "encostado" o tumor com um único vizinho de estroma a ≤ 20 µm, e um vizinho mal classificado já muda o resultado. Testadas duas alternativas no NuCLS, com os tipos do classificador treinado no NuCLS (fora do fold): [../nucleos/nucls_medidas_robustas.py](../nucleos/nucls_medidas_robustas.py), fixado antes (commit `1b7134a`). Critério por medida: Spearman ≥ 0,7 e viés ≤ 0,10 (frações) ou ≤ 5 µm (distância). 844 campos.
 
 | Medida | Anotação (média) | Método (média) | Spearman | Viés | Passou? |
 |---|---|---|---|---|---|
@@ -421,7 +421,7 @@ A medida atual conta como "encostado" o tumor com um único vizinho de estroma a
 
 ### Estágio 2, segunda rodada: métrica de tumor sem RoIs e roteador por categoria (13/10)
 
-Os RoIs não marcam toda a lesão, então a precisão "cai num RoI" subestima o roteador. Métrica nova, sem RoIs: fração dos 32 patches escolhidos com tumor (≥ 20 núcleos classificados como neoplásicos — detecção do CellViT + classificação treinada no NuCLS, que deu 0,83 / 0,88 pra tumor em hospitais fora do treino). Roteador novo: classifica todos os patches com o UNI2-h (camada treinada nas outras lâminas) e divide os 32 patches entre as categorias encontradas (≥ 2% dos patches), escolhendo os de maior confiança em cada uma. Scripts: [../validacao/roteador_v2_selecao.py](../validacao/roteador_v2_selecao.py) e [../validacao/roteador_v2_tumor.py](../validacao/roteador_v2_tumor.py), fixados antes (commit `69630a4`). 7 lâminas com RoI maligno. Critério: roteador por categoria > frases em ≥ 5 de 7 e média maior.
+Os RoIs não marcam toda a lesão, então a precisão "cai num RoI" subestima o roteador. Métrica nova, sem RoIs: fração dos 32 patches escolhidos com tumor (≥ 20 núcleos classificados como neoplásicos — detecção do CellViT + classificação treinada no NuCLS, que deu 0,83 / 0,88 pra tumor em hospitais fora do treino). Roteador novo: classifica todos os patches com o UNI2-h (camada treinada nas outras lâminas) e divide os 32 patches entre as categorias encontradas (≥ 2% dos patches), escolhendo os de maior confiança em cada uma. Scripts: [../roteador/bracs/roteador_v2_selecao.py](../roteador/bracs/roteador_v2_selecao.py) e [../roteador/bracs/roteador_v2_tumor.py](../roteador/bracs/roteador_v2_tumor.py), fixados antes (commit `69630a4`). 7 lâminas com RoI maligno. Critério: roteador por categoria > frases em ≥ 5 de 7 e média maior.
 
 | Lâmina | Frases (atual) | UNI2-h "não benigno" | UNI2-h por categoria (novo) | Sorteio |
 |---|---|---|---|---|
@@ -440,7 +440,7 @@ Os RoIs não marcam toda a lesão, então a precisão "cai num RoI" subestima o 
 
 ## Em aberto
 
-- O erro que sobrou ainda é maligno → atípico, e se repete nas lâminas novas. Separar DCIS de ADH/UDH é questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `validacao/problemas_e_metrica.md`.
+- O erro que sobrou ainda é maligno → atípico, e se repete nas lâminas novas. Separar DCIS de ADH/UDH é questão de arquitetura (ducto inteiro preenchido vs. parcialmente), não de célula isolada — ver `notas/problemas_e_metrica.md`.
 - Achar quais frases estão "mortas" (nunca ganham) e se vale tirar ou trocar.
 - Investigar por que "necrosis", "stromal invasion" e "nuclear crowding" têm desvio-padrão tão baixo — são achados genuinamente raros, ou o encoder não tem boa resolução pra eles?
 - Ainda sem H&E/densidade nuclear — só entram se a curva pedir, como documentado.

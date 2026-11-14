@@ -9,7 +9,7 @@ Pergunta: o ABMIL no PANDA separa câncer de benigno (AUC 0,93 provisória) mas 
       Karolinska, e o GAT-MIL não resolve.
 
 Fixado ANTES de rodar (commit anterior aos resultados):
-  Dados: as biópsias de scripts/lista_panda.tsv (dados/panda/lista_panda.tsv depois da reorganização) com
+  Dados: as biópsias de dados/panda/lista_panda.tsv (dados/panda/lista_panda.tsv depois da reorganização) com
      embeddings prontos; mesmas amostras de patches do panda_mil.py. Todas as biópsias do PANDA cabem na amostra de
      2.000 patches, então o grafo de cada uma é completo.
   Modelos: A = ABMIL (mil_atencao.treinar, k = 6); B = GAT-MIL (gat_mil.treinar, k = 6). Mesma receita, 5 sementes,

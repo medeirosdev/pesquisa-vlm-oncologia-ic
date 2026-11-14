@@ -24,7 +24,7 @@ Pré-laudos completos: `resultados/<lamina>/estagio5/prelaudo_k32_uni_<modelo>.m
 
 ## Avaliação sistemática e regra do componente invasivo (17/10)
 
-Script: [../validacao/prelaudo_avaliacao.py](../validacao/prelaudo_avaliacao.py), fixado antes (commit `acd789c`). Gemma 3 4B. Rótulo real = rótulo da lâmina no BRACS, agrupado em benigno / atípico / DCIS / IC.
+Script: [../prelaudo/bracs/prelaudo_avaliacao.py](../prelaudo/bracs/prelaudo_avaliacao.py), fixado antes (commit `acd789c`). Gemma 3 4B. Rótulo real = rótulo da lâmina no BRACS, agrupado em benigno / atípico / DCIS / IC.
 
 - **A)** pipeline sem a regra (v1), nas 18 lâminas, descritiva.
 - **B)** regra do componente invasivo no estágio 4 (v2: se ≥ 2 patches com carcinoma invasivo e P ≥ 0,90, o prompt diz "componente invasivo presente" e lembra que ele define o diagnóstico; senão, "componente invasivo não detectado"). Avaliada só nas 15 lâminas que não foram usadas pra criar a regra. Critério: v2 acerta mais lâminas IC que v1 e não perde acurácia.
@@ -67,7 +67,7 @@ Script: [../validacao/prelaudo_avaliacao.py](../validacao/prelaudo_avaliacao.py)
 
 ## Teste externo: 57 lâminas do conjunto de teste oficial do BRACS (18/10)
 
-Pipeline congelada, sem nenhum ajuste ([../validacao/prelaudo_teste_externo.py](../validacao/prelaudo_teste_externo.py), fixado antes do download, commit `30059dd`): lâminas do conjunto de teste oficial, de pacientes nunca usados, uma por paciente e por classe — 57 lâminas de 31 pacientes. Critério: com a regra, mais acertos no total e pelo menos tantos IC quanto sem ela.
+Pipeline congelada, sem nenhum ajuste ([../prelaudo/bracs/prelaudo_teste_externo.py](../prelaudo/bracs/prelaudo_teste_externo.py), fixado antes do download, commit `30059dd`): lâminas do conjunto de teste oficial, de pacientes nunca usados, uma por paciente e por classe — 57 lâminas de 31 pacientes. Critério: com a regra, mais acertos no total e pelo menos tantos IC quanto sem ela.
 
 | | Sem regra (v1) | Com regra (v2) |
 |---|---|---|

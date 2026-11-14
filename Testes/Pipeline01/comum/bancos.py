@@ -111,7 +111,7 @@ def _sem_repetir(*listas):
 # benignos — o DCIS cresce dentro de ductos/lóbulos, então a estrutura geral parece um lóbulo normal.
 # Trocada por uma versão que descreve o que o DCIS não tem (luz aberta, duas camadas de células).
 # (Tirar "normal breast tissue" foi testado antes e piorou: 51% -> 45% — ver resultados.md do estágio 3.)
-# Duas outras trocas (validacao/experimento_frases.md) melhoraram nas 8 lâminas usadas pra escolhê-las
+# Duas outras trocas (descritor/bracs/experimento_frases.md) melhoraram nas 8 lâminas usadas pra escolhê-las
 # (52% -> 56,5%), mas não se confirmaram nas 8 lâminas novas (53,2% -> 52,7%) e foram retiradas:
 #   "focal atypical epithelial proliferation" -> "focal atypical proliferation involving part of a duct"
 #   "high nuclear pleomorphism" -> "large pleomorphic nuclei with prominent nucleoli"

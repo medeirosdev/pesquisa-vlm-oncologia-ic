@@ -8,21 +8,21 @@ Desde 07/11, todo teste usa o agrupamento oficial do BRACS (UDH em benigno). Res
 
 ## Testes em andamento
 
-- [x] **Classificador da lâmina inteira**: refeito com o rótulo oficial (`validacao/rotulo_oficial.py`): com negativos, 29/57, acurácia balanceada 0,505 (passou por pouco). Ver `resultados.md`.
+- [x] **Classificador da lâmina inteira**: refeito com o rótulo oficial (`lamina/bracs/rotulo_oficial.py`): com negativos, 29/57, acurácia balanceada 0,505 (passou por pouco). Ver `resultados.md`.
 - [x] **Corrigir o agrupamento do UDH** (era atípico; no BRACS é benigno): código corrigido, testes de lâmina refeitos ou repontuados.
-- [ ] **Pacote com cota fixa por classe** (`validacao/pacote_cotas.py`, pré-registro `b7505c7`): 8 benignos, 6 atípicos, 6 DCIS, 6 IC; braços A (suspeitos), B (cotas), C (cotas + proporção), com Gemma 3 4B decidindo, nas 61 de validação. Critério: acurácia balanceada C > A. Parou em 30 de 183 pré-laudos. **Precisa recomeçar do zero:** os prompts vêm do descritor com o agrupamento antigo. Regerar com `--etapa descrever` (descritor corrigido) e só então rodar `--etapa sintetizar` (~3 h; Ollama do HD).
+- [ ] **Pacote com cota fixa por classe** (`roteador/bracs/pacote_cotas.py`, pré-registro `b7505c7`): 8 benignos, 6 atípicos, 6 DCIS, 6 IC; braços A (suspeitos), B (cotas), C (cotas + proporção), com Gemma 3 4B decidindo, nas 61 de validação. Critério: acurácia balanceada C > A. Parou em 30 de 183 pré-laudos. **Precisa recomeçar do zero:** os prompts vêm do descritor com o agrupamento antigo. Regerar com `--etapa descrever` (descritor corrigido) e só então rodar `--etapa sintetizar` (~3 h; Ollama do HD).
 
 Comandos (na pasta `Testes/Pipeline01`):
 
 ```
 # Ollama do HD no ar (OLLAMA_MODELS=<HD>/Modelos/ollama OLLAMA_KEEP_ALIVE=0 <HD>/Modelos/ollama-bin/bin/ollama serve), depois:
-CUDA_VISIBLE_DEVICES="" systemd-run --user --scope -p MemoryMax=4G -p MemorySwapMax=0 .venv/bin/python validacao/pacote_cotas.py --etapa sintetizar
+CUDA_VISIBLE_DEVICES="" systemd-run --user --scope -p MemoryMax=4G -p MemorySwapMax=0 .venv/bin/python roteador/bracs/pacote_cotas.py --etapa sintetizar
 ```
 
 ## Embeddings das lâminas (UNI2-h, amostra de 2.000 patches)
 
 - [ ] **Validação: faltam 2 de 63** (`BRACS_1003660`, `BRACS_1003661`). As duas já estão no HD e abrem normalmente; falharam por falta de memória na GPU (ollama do HUC-Project rodando junto). Basta rodar de novo o comando da validação com a GPU livre (~2 min).
-- [ ] **Treino: 379 lâminas** (`Testes/Pipeline01/scripts/lista_treino.txt`).
+- [ ] **Treino: 379 lâminas** (`Testes/Pipeline01/dados/bracs/lista_treino.txt`).
   - Custo estimado pela validação: ~6,4 min por lâmina → ~40 h no total; GPU ~1,8 GB; RAM ~4–4,5 GB no pico; disco ~4,3 GB de embeddings (uma lâmina por vez, apagada depois); rede: algumas centenas de GB.
   - Retoma de onde parou; pode rodar em várias noites.
   - Antes de rodar: GPU livre (nada do HUC-Project nem outro ollama).
@@ -31,7 +31,7 @@ Comando (na pasta `Testes/Pipeline01`, HD montado, credenciais do FTP exportadas
 
 ```
 systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 \
-  .venv/bin/python scripts/baixar_e_embutir.py scripts/lista_validacao.txt   # ou lista_treino.txt
+  .venv/bin/python dados/bracs/baixar_e_embutir.py dados/bracs/lista_validacao.txt   # ou lista_treino.txt
 ```
 
 ## Decisão da lâmina (o gargalo)
@@ -44,7 +44,7 @@ systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 \
 - [x] **MIL com atenção, versão pequena (79 lâminas)**: passou nos dois critérios: 38/57, acurácia balanceada 0,626; benigno × atípico AUC 0,78 (descritor: 0,58). Confirmado em validação cruzada por paciente nas 79: 57/79, 0,680; benigno × atípico 0,92.
 - [ ] ★ **MIL com as 379 lâminas de treino** (depois do download): mesmo modelo, critério fixado antes. Comparar também com CLAM/TransMIL.
 - [x] **A atenção do MIL cai nas lesões?** Passou: os 5% de maior atenção ficam 5× mais nas lesões anotadas que o acaso (21 de 29 lâminas).
-- [x] **Mapas de atenção do MIL**: 4 exemplos na página (`scripts/mapas_de_calor.py --atencao`).
+- [x] **Mapas de atenção do MIL**: 4 exemplos na página (`ferramentas/mapas_de_calor.py --atencao`).
 - [x] **Pré-laudo com o MIL**: passou (57/57 classe igual; 0 números sem sustentação; 38/57 classe final). Mas em 15 lâminas "benigno" com região de atenção maligna/atípica, só 1 texto aponta a contradição.
 - [x] **Generalização pra pulmão (TCGA LUAD × LUSC)**: passou. Mesma receita (UNI2-h + MIL, mesma configuração), retreinada com lâminas de pulmão: AUC 0,981, acurácia balanceada 0,949 em 78 lâminas de teste (197 de 200 baixadas). Tarefa mais fácil que a da mama.
 - [x] **Pulmão: descritor e pré-laudo** (LungHist700 + TCGA): D1 passou (descritor no LungHist700, 0,926); D2 não passou (regiões de maior atenção com a classe certa em 58/78; LUAD 21/39); P passou (78/78 tipo igual, 0 números sem sustentação, 0 coordenadas inventadas), mas só 3 de 27 textos apontam região discordante.
@@ -63,12 +63,12 @@ systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 \
 
 ## Explicabilidade
 
-- [x] **Mapa de calor da lâmina**: `scripts/mapas_de_calor.py`; 4 exemplos na página. Falta refazer com o descritor corrigido e com negativos.
+- [x] **Mapa de calor da lâmina**: `ferramentas/mapas_de_calor.py`; 4 exemplos na página. Falta refazer com o descritor corrigido e com negativos.
 - [x] **Coeficientes do classificador da lâmina**: em `resultados/classificador_lamina/resumo.json`.
 
 ## Texto (estágio 5) e avaliação
 
-- [x] **Modelo de linguagem só redige**, a partir de campos fixos (`validacao/prelaudo_campos.py`): passou (classe igual à sugerida em 57/57; 0 números sem sustentação, contra 2,1% nos antigos). Os campos vieram do classificador de 06/11 (agrupamento antigo); a checagem do texto não depende disso.
+- [x] **Modelo de linguagem só redige**, a partir de campos fixos (`prelaudo/bracs/prelaudo_campos.py`): passou (classe igual à sugerida em 57/57; 0 números sem sustentação, contra 2,1% nos antigos). Os campos vieram do classificador de 06/11 (agrupamento antigo); a checagem do texto não depende disso.
 - [x] **Checagem automática do texto**: no mesmo script. Não detecta achados morfológicos inventados; isso fica para a leitura por patologista.
 - [ ] Refazer os campos com o classificador corrigido (rótulo oficial + negativos) antes de usar os textos como exemplo.
 - [ ] ★ **Avaliação por patologista**: 10–15 pré-laudos com rubrica (clareza, utilidade, erros, alucinações).

@@ -16,7 +16,8 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import comum.caminhos  # noqa: E402,F401
 
 from comum.lamina import dir_resultados, resolver_svs
 
@@ -25,7 +26,7 @@ N_ANCORAS = 3
 # Regra do componente invasivo (17/10): no teste exploratório do estágio 5, o modelo de linguagem
 # seguiu a maioria dos patches e chamou de DCIS uma lâmina de carcinoma invasivo em que o componente
 # invasivo era minoria. Com regra_invasivo=True, o cabeçalho diz se há componente invasivo e lembra
-# que ele define o diagnóstico principal. Fixado antes de testar (validacao/prelaudo_avaliacao.py).
+# que ele define o diagnóstico principal. Fixado antes de testar (prelaudo/bracs/prelaudo_avaliacao.py).
 MIN_PATCHES_INVASIVO = 2
 MIN_PROB_INVASIVO = 0.90
 TOKENS_POR_ANCORA = 400  # meio da faixa 256-576 documentada em docs/pipelines.md
