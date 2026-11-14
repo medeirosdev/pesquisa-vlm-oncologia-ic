@@ -49,7 +49,10 @@ systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 \
 - [x] **Generalização pra pulmão (TCGA LUAD × LUSC)**: passou. Mesma receita (UNI2-h + MIL, mesma configuração), retreinada com lâminas de pulmão: AUC 0,981, acurácia balanceada 0,949 em 78 lâminas de teste (197 de 200 baixadas). Tarefa mais fácil que a da mama.
 - [x] **Pulmão: descritor e pré-laudo** (LungHist700 + TCGA): D1 passou (descritor no LungHist700, 0,926); D2 não passou (regiões de maior atenção com a classe certa em 58/78; LUAD 21/39); P passou (78/78 tipo igual, 0 números sem sustentação, 0 coordenadas inventadas), mas só 3 de 27 textos apontam região discordante.
 - [ ] Pulmão: entender por que o descritor chama de "normal" ou "escamoso" as regiões de maior atenção do adenocarcinoma (olhar os patches; patologista); conferir a escala do LungHist700 (razão 20x/40x 1,65, esperado ~2).
-- [ ] Outros órgãos ou tarefas mais difíceis no TCGA (ex.: subtipos, graduação), se fizer sentido pro projeto.
+- [x] **Próstata (PANDA, grau ISUP 0–5)**: treino 600 do Radboud, teste 300 do Karolinska. M2 passou (benigno × câncer AUC 0,940); M1 não passou (kappa 0,237: prevê ISUP 3 em 209 de 300); D1 não passou (descritor 0,775); A não passou (atenção no câncer em 76%, acaso 43%); P passou (60/60), mas 1 de 35 textos aponta região discordante.
+- [ ] **GAT-MIL** (atenção entre patches vizinhos + ABMIL, `mil/gat_mil/`), pré-registro `6c698d7`: rodando no PANDA, entre centros (G1) e dentro do Radboud (G2). Se ajudar, repetir no BRACS e no TCGA.
+- [ ] PANDA: separar troca de centro × falta de informação espacial no colapso em ISUP 3 (o GAT-MIL responde em parte); se for o centro, testar normalização de cor ou treino com os dois centros.
+- [ ] Outros órgãos ou tarefas mais difíceis no TCGA (ex.: subtipos), se fizer sentido pro projeto.
 - [ ] ★ **Sinalizar contradições nos campos** (ex.: "atenção: regiões de maior peso descritas como malignas, apesar da classe benigna") e medir de novo. No pulmão, uma regra nas instruções pedindo pra apontar a discordância não bastou (3 de 27): o aviso precisa vir pronto nos campos.
 - [x] **Hierárquico no nível da lâmina**: rótulo oficial, com negativos, 31/57, 0,518 (0,560 em 3 classes), sem critério. Falta confirmar com critério fixado antes.
 

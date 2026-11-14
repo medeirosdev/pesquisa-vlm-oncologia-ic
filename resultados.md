@@ -15,6 +15,7 @@ Estado em 14/11/2026. Um resumo de cada teste, com números, critério e se pass
 | NuCLS | 1.744 campos de mama do TCGA, núcleos classificados por patologista | validação do CellViT |
 | TCGA-LUAD e TCGA-LUSC | lâminas de diagnóstico de pulmão (adenocarcinoma e carcinoma escamoso), NCI GDC, acesso aberto; 200 sorteadas | outro órgão: MIL e pré-laudo |
 | LungHist700 | 691 imagens de microscópio de pulmão (normal, adenocarcinoma, escamoso), 45 pacientes; Diosdado et al., Sci Data 2024, CC BY 4.0 | descritor por patch do pulmão |
+| PANDA | biópsias de próstata com grau ISUP 0–5 e máscara de rótulos, Radboud e Karolinska; Bulten et al., Nat Med 2022, CC BY-NC-SA 4.0 (Kaggle); 900 sorteadas | graduação: MIL, descritor, atenção na máscara, pré-laudo |
 
 > **Correção de 07/11/2026 — agrupamento das classes.** Até 06/11, o projeto colocava o UDH em atípico. No BRACS, benigno = N, PB, UDH; atípico = FEA, ADH; maligno = DCIS, IC (as contagens do artigo só fecham assim, e o FTP oficial guarda o UDH na pasta de benignos). Os resultados por patch e por lâmina anteriores a essa data usam o agrupamento antigo e estão marcados. As tabelas de pré-laudo foram repontuadas com o rótulo oficial; os testes da decisão da lâmina foram refeitos (seção "Rótulo oficial do BRACS").
 
@@ -400,6 +401,27 @@ Leitura:
 - Discordância: em 27 lâminas pelo menos uma das 3 regiões tem classe diferente do tipo sugerido; só 3 textos apontam a discordância (contagem por expressões: "discord", "no entanto", "embora", "diverg", "contradi", "porém", "entretanto"). A maioria lista as regiões com a classe, sem comentar (ex.: TCGA-NJ-A4YF, impressão "adenocarcinoma" com as 3 regiões listadas como escamoso). A regra nova nas instruções não resolveu o problema visto na mama.
 - Classe da região no texto (exploratório, sem critério fixado antes): das 234 regiões citadas, 216 aparecem na mesma linha com a classe dos campos, 2 com a classe trocada (ambas em TCGA-78-7153: campos "pulmão normal", texto "carcinoma escamoso") e 16 o script não decide. A checagem automática confere números e coordenadas, não a classe ligada a cada região.
 - Execução: a redação parou duas vezes por tempo esgotado (30 min por chamada) com a memória da máquina cheia, e a máquina reiniciou; retomada do ponto em que parou, sem mudança na regra. Tempo médio por texto: 46 s.
+
+## Próstata: PANDA, grau ISUP (14/11)
+
+Pergunta: a mesma receita (patches de 128 µm, UNI2-h congelado, MIL com atenção, descritor por patch, pré-laudo) funciona numa tarefa de graduação, e não só de tipo? Dados: PANDA (Bulten et al., Nature Medicine 2022; CC BY-NC-SA 4.0), biópsias de próstata com grau ISUP 0–5 e máscara de rótulos, de dois centros. Fixado antes de baixar (commit `97c2f53`): treino = 600 biópsias do Radboud (100 por ISUP), teste = 300 do Karolinska (50 por ISUP), sorteio com semente 0; centros diferentes porque o PANDA não informa o paciente (5.160 biópsias do Radboud vêm de 1.028 pacientes). Scripts: `Testes/Pipeline01/dados/panda/panda_baixar_e_embutir.py`, `Testes/Pipeline01/mil/panda/panda_mil.py`, `Testes/Pipeline01/prelaudo/panda/panda_descritor_prelaudo.py`. Resultados em `Testes/Pipeline01/resultados/{panda_mil,panda_prelaudo}/`.
+
+| Teste | Critério | Resultado |
+|---|---|---|
+| M1: grau ISUP pelo MIL, 300 biópsias do Karolinska | kappa quadrático ≥ 0,60 | **não passou: 0,237** (IC 95% 0,138–0,336) |
+| M2: benigno × câncer pelo MIL | AUC ≥ 0,85 | **passou: 0,940** (IC 95% 0,912–0,966) |
+| D1: descritor por patch (benigno, Gleason 3, 4, 5; treino nas máscaras do Radboud), patches do Karolinska | AUC benigno × câncer ≥ 0,85 | **não passou: 0,775** (48.363 patches de câncer, 53.553 benignos) |
+| A: 3 regiões de maior atenção do MIL na máscara, 250 biópsias com câncer | ≥ 2 das 3 no câncer em ≥ 80% das biópsias | **não passou: 190/250 (0,76)**; por acaso, 0,43 |
+| P: pré-laudo, 60 textos (10 por ISUP) | ISUP do texto = ISUP do MIL em ≥ 90%, 0 números sem sustentação, 0 coordenadas inventadas | **passou**: 60/60; 0 de 628 números; 0 de 315 coordenadas |
+
+Também reportado (sem critério): AUC ISUP 1 × ISUP ≥ 2 de 0,888; acurácia exata 0,270 e a ±1 grau 0,617. Acerto por ISUP real (de 50 cada): 0 → 4, 1 → 21, 2 → 7, 3 → 39, 4 → 3, 5 → 7. Matriz de confusão (linhas = real 0–5, colunas = previsto 0–5): `[4,3,2,38,0,3] [1,21,2,25,1,0] [1,7,7,35,0,0] [1,3,6,39,1,0] [0,2,2,41,3,2] [1,1,4,31,6,7]`. O descritor acerta câncer × benigno em 528 das 668 regiões de maior atenção com tecido rotulado. ISUP do texto igual ao real: 22/60. Em 35 das 60 biópsias pelo menos uma região tem classe que discorda do grau sugerido; 1 texto aponta a discordância.
+
+Leitura:
+- O MIL separa câncer de benigno em outro centro (M2), mas não gradua: prevê ISUP 3 em 209 das 300 biópsias, inclusive em 38 das 50 benignas e em 31 das 50 de ISUP 5. Hipóteses não separadas por este teste: troca de centro (coloração e escâner diferentes; treino só no Radboud) e falta de informação espacial (o MIL não sabe a posição dos patches, e o Gleason é arquitetura das glândulas). O teste seguinte (GAT-MIL) foi desenhado pra separar as duas.
+- A atenção cai no câncer bem acima do acaso (0,76 contra 0,43), mas abaixo do critério.
+- O pré-laudo continua fiel aos campos (P), e por isso repete o erro do MIL; como no pulmão e na mama, quase nunca aponta quando a região discorda do grau sugerido.
+- Máscaras: 16 biópsias de treino do Radboud não têm máscara no PANDA (confirmado pela resposta do Kaggle); ficaram de fora só do treino do descritor (584 biópsias). As 300 de teste têm máscara.
+- Execução: (1) a primeira tentativa de download falhou nas primeiras biópsias porque o Kaggle CLI 2.x grava o arquivo noutra pasta; corrigido só o caminho (commit `747763b`). (2) No fim do download, o Kaggle limitou as requisições (erro 429): as últimas 39 biópsias (todas Karolinska ISUP 5) falharam e 1 máscara foi tratada como inexistente. Uma rodada com 861 biópsias foi descartada sem registro dos números; o script passou a esperar e tentar de novo no 429 (commit `9fedbee`), as biópsias sem máscara foram reprocessadas (1 recuperou a máscara) e tudo rodou de novo com as 900. (3) A máquina reiniciou durante o treino do descritor; retomado desse passo. Nenhuma mudança na regra. Espaço usado no HD: 29 GB.
 
 ## Anotações oficiais do BRACS
 

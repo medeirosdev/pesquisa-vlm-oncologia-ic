@@ -209,6 +209,7 @@ footer { margin-top: 40px; color: var(--tinta-2); font-size: 0.88rem; border-top
           <tr><td>BACH</td><td>Imagens de microscopia de outra instituição (Porto): 100 <i>in situ</i>, 100 invasivo</td><td>teste de generalização</td></tr>
           <tr><td>TCGA (pulmão)</td><td>Lâminas de diagnóstico de adenocarcinoma (LUAD) e carcinoma escamoso (LUSC) de pulmão, acesso aberto</td><td>200 lâminas sorteadas (120 treino, 80 teste) para testar a generalização a outro órgão</td></tr>
           <tr><td>LungHist700</td><td>691 imagens de microscópio de pulmão (normal, adenocarcinoma, carcinoma escamoso) de 45 pacientes</td><td>treinar o descritor por patch do pulmão</td></tr>
+          <tr><td>PANDA</td><td>Biópsias de próstata com grau ISUP 0–5 e máscara de rótulos, de dois centros (Radboud e Karolinska)</td><td>900 biópsias sorteadas (600 treino no Radboud, 300 teste no Karolinska) para testar uma tarefa de graduação</td></tr>
           <tr><td>NuCLS</td><td>1.744 campos de mama do TCGA, ~59 mil núcleos classificados por patologista</td><td>validar a segmentação de núcleos</td></tr>
         </tbody>
       </table></div>
@@ -225,6 +226,7 @@ footer { margin-top: 40px; color: var(--tinta-2); font-size: 0.88rem; border-top
         <li><b>Agrupamento das classes</b> (oficial do BRACS): benigno = N, PB, UDH; atípico = FEA, ADH; maligno = DCIS, IC. Até 06/11 o projeto colocava o UDH em atípico; os resultados de lâmina foram repontuados ou refeitos, e os que não puderam ser estão marcados como "agrupamento antigo".</li>
         <li><b>AUC:</b> chance de um patch de IC ter pontuação maior que um de DCIS. 0,5 é o acaso, 1,0 é separação perfeita.</li>
         <li><b>Controle com rótulos embaralhados:</b> mostra quanto se acerta só por sorte.</li>
+        <li><b>Kappa quadrático</b> (graduação, PANDA): concordância entre o grau previsto e o real, com erro de dois graus pesando quatro vezes o de um. 0 é o acaso, 1 é concordância perfeita.</li>
       </ul>
     </div>
   </div>
@@ -545,6 +547,23 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
     </table></div>
     <p class="nota">Nas lâminas de adenocarcinoma, 36 das 117 regiões de maior atenção são descritas como pulmão normal e 21 como escamoso. Hipóteses não verificadas: o padrão lepídico, que cresce sobre as paredes alveolares, e a diferença entre foto de microscópio (LungHist700) e lâmina escaneada (TCGA). Em 27 lâminas alguma região discorda do tipo sugerido, e só 3 textos apontam a discordância: a regra nas instruções não bastou. A escala do LungHist700 (µm/px) não é informada e foi estimada pelo tamanho dos núcleos de linfócito; a conferência 20x/40x deu 1,65, quando deveria ficar perto de 2.</p>
     <span class="selo parcial">descritor não passou no TCGA; pré-laudo passou</span>
+  </div>
+
+  <div class="painel destaque">
+    <h3>Próstata: graduação no PANDA (ISUP 0–5)</h3>
+    <p>A mesma receita numa tarefa de graduação. Biópsias de próstata do PANDA, com grau ISUP de 0 (benigno) a 5 e máscara de rótulos (Gleason 3, 4, 5 no Radboud; câncer × benigno no Karolinska). Sorteio fixado antes de baixar: treino com 600 biópsias do Radboud (100 por grau) e teste com 300 do Karolinska (50 por grau), em centros diferentes porque o PANDA não informa o paciente. MIL, descritor por patch (treinado nas máscaras do Radboud), conferência das regiões de maior atenção na máscara e pré-laudo, com critérios fixados antes de rodar.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Teste (Karolinska)</th><th>Critério</th><th class="num">Resultado</th></tr></thead>
+      <tbody>
+        <tr><td>MIL: grau ISUP, 300 biópsias</td><td>kappa quadrático ≥ 0,60</td><td class="num"><span class="selo falha">0,237</span> (IC 95% 0,14–0,34)</td></tr>
+        <tr><td>MIL: benigno × câncer</td><td>AUC ≥ 0,85</td><td class="num"><span class="selo ok">0,940</span> (IC 95% 0,91–0,97)</td></tr>
+        <tr><td>Descritor por patch: benigno × câncer</td><td>AUC ≥ 0,85</td><td class="num"><span class="selo falha">0,775</span></td></tr>
+        <tr><td>3 regiões de maior atenção no câncer (máscara)</td><td>≥ 2 de 3 em ≥ 80% das biópsias</td><td class="num"><span class="selo falha">76%</span> (acaso 43%)</td></tr>
+        <tr><td>Pré-laudo (60 textos)</td><td>grau igual ao do MIL em ≥ 90%; nenhum número ou coordenada inventada</td><td class="num"><span class="selo ok">60/60</span>; 0 de 628 números; 0 de 315 coordenadas</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">O MIL separa câncer de benigno em outro centro, mas não gradua: prevê ISUP 3 em 209 das 300 biópsias, inclusive em 38 das 50 benignas e em 31 das 50 de ISUP 5. Pode ser a troca de centro (outra coloração e outro escâner) ou a falta de informação espacial (o MIL não sabe onde cada patch está, e o Gleason é a arquitetura das glândulas). Em 35 das 60 biópsias do pré-laudo alguma região discorda do grau sugerido, e só 1 texto aponta a discordância. No download, o Kaggle limitou as requisições e uma rodada incompleta (861 biópsias) foi descartada; o teste foi refeito com as 900, sem mudança na regra.</p>
+    <span class="selo parcial">detecta câncer; não gradua</span>
   </div>
 
   <h3>Mapas de atenção do MIL</h3>
@@ -890,9 +909,9 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
       <tr><td>1. Filtro de tecido</td><td><span class="selo ok">resolvido</span></td><td>—</td></tr>
       <tr><td>2. Roteador</td><td><span class="selo parcial">bom em lâminas malignas</span></td><td>métrica para lâminas benignas e atípicas</td></tr>
       <tr><td>3. Descritor</td><td><span class="selo parcial">bom no DCIS × IC; negativos cortam falsos malignos; atípico ainda fraco</span></td><td>recuperar o DCIS sem perder as benignas</td></tr>
-      <tr><td>3½. Decisão da lâmina</td><td><span class="selo ok">MIL com 79 lâminas: 38/57, acurácia balanceada 0,63; benigno × atípico AUC 0,78; no pulmão (TCGA), AUC 0,98</span></td><td>MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas</td></tr>
+      <tr><td>3½. Decisão da lâmina</td><td><span class="selo ok">MIL com 79 lâminas: 38/57, acurácia balanceada 0,63; benigno × atípico AUC 0,78; no pulmão (TCGA), AUC 0,98; na próstata (PANDA), detecta câncer (AUC 0,94) mas não gradua (kappa 0,24)</span></td><td>MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas; MIL com atenção em grafo (GAT-MIL) para a graduação</td></tr>
       <tr><td>4. Agregação</td><td><span class="selo parcial">regra ajuda no IC</span></td><td>trocar a contagem dos 32 patches pelos campos fixos</td></tr>
-      <tr><td>5. Síntese</td><td><span class="selo parcial">só redige, com a classe do MIL; números fiéis, mas justifica contradições em vez de apontá-las; no pulmão, 78/78 fiéis e discordância apontada em 3 de 27</span></td><td>sinalizar contradições nos campos; avaliação por patologista</td></tr>
+      <tr><td>5. Síntese</td><td><span class="selo parcial">só redige, com a classe do MIL; números fiéis, mas justifica contradições em vez de apontá-las; no pulmão, 78/78 fiéis e discordância apontada em 3 de 27; na próstata, 60/60 fiéis e 1 de 35</span></td><td>sinalizar contradições nos campos; avaliação por patologista</td></tr>
     </tbody>
   </table></div>
   <p class="nota">Ressalvas gerais: 2 lâminas por classe no desenvolvimento; as anotações do BRACS marcam regiões, não cada célula; o rótulo da lâmina é o da lesão mais grave.</p>
@@ -900,7 +919,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
 
 <footer>
   <p>Pipeline Ideia 01 · orientação Prof. João Batista Florindo · situação em 14/11/2026. Modelos: QuiltNet-B-32, UNI2-h, CellViT-256, Gemma 3 4B e MedGemma 4B, todos rodando localmente.</p>
-  <p>Imagens de lâminas: BRACS (Brancati et al., <i>BRACS: A Dataset for BReAst Carcinoma Subtyping in H&amp;E Histology Images</i>, Database, 2022), licença CC BY-NC 4.0. Núcleos anotados: NuCLS (Amgad et al., GigaScience, 2022), CC0. Lâminas de pulmão: TCGA-LUAD e TCGA-LUSC (NCI Genomic Data Commons, acesso aberto); só resultados numéricos. Imagens de pulmão para o descritor: LungHist700 (Diosdado et al., Scientific Data, 2024), CC BY 4.0; só resultados numéricos. Imagens do BACH não são reproduzidas (licença CC BY-NC-ND); só os resultados numéricos.</p>
+  <p>Imagens de lâminas: BRACS (Brancati et al., <i>BRACS: A Dataset for BReAst Carcinoma Subtyping in H&amp;E Histology Images</i>, Database, 2022), licença CC BY-NC 4.0. Núcleos anotados: NuCLS (Amgad et al., GigaScience, 2022), CC0. Lâminas de pulmão: TCGA-LUAD e TCGA-LUSC (NCI Genomic Data Commons, acesso aberto); só resultados numéricos. Imagens de pulmão para o descritor: LungHist700 (Diosdado et al., Scientific Data, 2024), CC BY 4.0; só resultados numéricos. Biópsias de próstata: PANDA (Bulten et al., Nature Medicine, 2022), CC BY-NC-SA 4.0; só resultados numéricos. Imagens do BACH não são reproduzidas (licença CC BY-NC-ND); só os resultados numéricos.</p>
 </footer>
 
 </div>
