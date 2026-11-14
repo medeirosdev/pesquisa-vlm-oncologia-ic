@@ -595,6 +595,21 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
     <span class="selo falha">mama: não ajudou · pulmão: empate</span>
   </div>
 
+  <div class="painel destaque">
+    <h3>Próstata: troca de centro</h3>
+    <p>Duas correções que não usam nenhum rótulo do centro novo, com critério fixado antes (com o GAT-MIL, ganho em kappa com o limite inferior do IC 95% acima de zero). <b>Padronização por centro:</b> cada dimensão do embedding é centrada e escalada com a média e o desvio dos patches do próprio centro. <b>Normalização de cor (Reinhard):</b> a cor de cada biópsia é levada à cor média do treino, e os embeddings são recalculados.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Treino no Radboud, teste no Karolinska (300)</th><th class="num">MIL atual</th><th class="num">GAT-MIL</th><th class="num">Diferença no GAT-MIL (IC 95%)</th></tr></thead>
+      <tbody>
+        <tr><td>Embeddings originais</td><td class="num">0,237</td><td class="num">0,439</td><td class="num">—</td></tr>
+        <tr class="vence"><td>Padronização por centro</td><td class="num">0,540</td><td class="num"><b>0,609</b></td><td class="num"><span class="selo ok">+0,170</span> (0,067–0,269)</td></tr>
+        <tr><td>Normalização de cor</td><td class="num">0,275</td><td class="num">0,225</td><td class="num"><span class="selo falha">−0,214</span> (−0,317 a −0,102)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Kappa quadrático do grau ISUP. Com a padronização por centro, o colapso em ISUP 3 some (previstos como ISUP 3: 142 → 38 de 300) e os ganhos do GAT-MIL e da padronização se somam; o custo é precisar de um lote de lâminas do centro novo, sem rótulo, antes de usar. A normalização de cor piorou: só 1 das 50 benignas certa. A diferença entre centros que atrapalha o modelo não é só a cor média. Ainda longe do dentro do centro (~0,80).</p>
+    <span class="selo ok">padronização por centro: passou</span> <span class="selo falha">normalização de cor: não passou</span>
+  </div>
+
   <h3>Mapas de atenção do MIL</h3>
   <p class="nota">As mesmas quatro lâminas dos mapas do descritor. Esquerda: classe de cada patch pelo descritor. Direita: atenção do MIL, em percentil dentro da lâmina (escuro = pesou mais na decisão), com o contorno das lesões anotadas pelos patologistas em azul-esverdeado.</p>
   <div class="figuras mapas">
@@ -938,7 +953,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
       <tr><td>1. Filtro de tecido</td><td><span class="selo ok">resolvido</span></td><td>—</td></tr>
       <tr><td>2. Roteador</td><td><span class="selo parcial">bom em lâminas malignas</span></td><td>métrica para lâminas benignas e atípicas</td></tr>
       <tr><td>3. Descritor</td><td><span class="selo parcial">bom no DCIS × IC; negativos cortam falsos malignos; atípico ainda fraco</span></td><td>recuperar o DCIS sem perder as benignas</td></tr>
-      <tr><td>3½. Decisão da lâmina</td><td><span class="selo ok">MIL com 79 lâminas: 38/57, acurácia balanceada 0,63; benigno × atípico AUC 0,78; no pulmão (TCGA), AUC 0,98; na próstata (PANDA), detecta câncer (AUC 0,94) mas gradua mal (kappa 0,24; com o GAT-MIL, 0,44; na mama o GAT-MIL não ajudou)</span></td><td>MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas; troca de centro na próstata</td></tr>
+      <tr><td>3½. Decisão da lâmina</td><td><span class="selo ok">MIL com 79 lâminas: 38/57, acurácia balanceada 0,63; benigno × atípico AUC 0,78; no pulmão (TCGA), AUC 0,98; na próstata (PANDA), detecta câncer (AUC 0,94) mas gradua mal (kappa 0,24; com o GAT-MIL, 0,44; com o GAT-MIL e a padronização por centro, 0,61; na mama o GAT-MIL não ajudou)</span></td><td>MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas; rede de grafos na próstata</td></tr>
       <tr><td>4. Agregação</td><td><span class="selo parcial">regra ajuda no IC</span></td><td>trocar a contagem dos 32 patches pelos campos fixos</td></tr>
       <tr><td>5. Síntese</td><td><span class="selo parcial">só redige, com a classe do MIL; números fiéis, mas justifica contradições em vez de apontá-las; no pulmão, 78/78 fiéis e discordância apontada em 3 de 27; na próstata, 60/60 fiéis e 1 de 35</span></td><td>sinalizar contradições nos campos; avaliação por patologista</td></tr>
     </tbody>

@@ -456,6 +456,28 @@ Leitura:
 - Na mama, a vizinhança não ajudou: as duas diferenças são negativas, com IC cruzando zero ou encostando nele. No pulmão, empate (a tarefa já está no teto).
 - Diferenças que podem explicar, não testadas: o grafo da mama e do pulmão é parcial (vizinhos a até 384 µm entre os patches sorteados, não o tecido contínuo do PANDA); o rótulo do BRACS é o da lesão mais grave, muitas vezes pequena, e a arquitetura em volta dela importa menos que a própria lesão; treino com só 79 lâminas. Pra testar a primeira, seria preciso recalcular os embeddings de todo o tecido.
 
+## Próstata: troca de centro, padronização por centro × normalização de cor (14/11)
+
+Pergunta: a queda do Radboud pro Karolinska (kappa ~0,80 → 0,24 com o ABMIL e 0,44 com o GAT-MIL) diminui com uma correção que não usa rótulo do centro novo? Fixado antes de rodar (commit `27f0508`). Treino nas 600 do Radboud, teste nas 300 do Karolinska, mesmos modelos e receita. Braços: R0, embeddings originais; R1, padronização por centro (cada dimensão do embedding menos a média e dividida pelo desvio, calculados nos patches do próprio centro; no Karolinska, nas 300 de teste, sem rótulo); R2, normalização de cor de Reinhard (espaço Lab, alvo = cor média das 600 de treino) e embeddings recalculados. Critérios, com o GAT-MIL: N1, kappa(R1) − kappa(R0) > 0 com limite inferior do IC 95% > 0; N2, idem pra R2. Scripts: `Testes/Pipeline01/mil/panda/panda_centro.py` e `Testes/Pipeline01/dados/panda/panda_embutir_reinhard.py`. Resultados em `Testes/Pipeline01/resultados/panda_centro/`.
+
+| Braço | Kappa ABMIL (IC 95%) | Kappa GAT-MIL (IC 95%) |
+|---|---|---|
+| R0: original | 0,237 (0,138–0,336) | 0,439 (0,341–0,534) |
+| R1: padronização por centro | 0,540 (0,446–0,631) | 0,609 (0,515–0,699) |
+| R2: normalização de cor (Reinhard) | 0,275 (0,174–0,368) | 0,225 (0,117–0,339) |
+
+| Diferença | ABMIL (IC 95%) | GAT-MIL (IC 95%) | Critério (GAT-MIL) |
+|---|---|---|---|
+| R1 − R0 | +0,303 (0,196 a 0,400) | +0,170 (0,067 a 0,269) | N1: **passou** |
+| R2 − R0 | +0,038 (−0,077 a 0,147) | −0,214 (−0,317 a −0,102) | N2: **não passou** |
+
+Também reportado (sem critério), GAT-MIL R0 → R1 → R2: acurácia exata 0,360 → 0,457 → 0,317; a ±1 grau 0,683 → 0,790 → 0,663; previstos como ISUP 3 142 → 38 → 128 de 300; benignas certas 16 → 26 → 1 de 50; ISUP 5 certas 12 → 29 → 25 de 50. AUC benigno × câncer 0,947 → 0,957 → 0,933. O kappa do GAT-MIL em R0 (0,439) difere do de `gat_mil_panda.py` (0,436) por não determinismo da GPU na soma por arestas.
+
+Leitura:
+- A padronização por centro resolve boa parte da queda: o colapso em ISUP 3 some (142 → 38 previstos), e o melhor resultado entre centros passa a ser 0,61 (GAT-MIL + R1). O ganho soma com o do GAT-MIL (os dois juntos são melhores que cada um). Custo: precisa de um lote de lâminas do centro novo (sem rótulo) antes de usar.
+- A normalização de cor não ajudou e, com o GAT-MIL, piorou: quase nenhuma benigna certa (1 de 50), e muitas viram ISUP 2–5. A diferença entre centros que atrapalha o modelo não é (só) a cor média; e a normalização de Reinhard pode tirar informação da coloração que o modelo usava.
+- Ainda longe do dentro do centro (~0,80). Próximos: rede de grafos (em andamento); combinar R1 com treino nos dois centros.
+
 ## Anotações oficiais do BRACS
 
 - `.qpdata` lidas com o QuPath e exportadas pra GeoJSON: 387 de 387 lâminas; totais por classe iguais aos do artigo.
@@ -474,4 +496,4 @@ Detalhes: `Testes/Pipeline01/notas/problemas_e_metrica.md`.
 7. Tirar a decisão do modelo de linguagem e treinar o descritor com lâminas benignas como negativos leva o acerto de 17 para 29 de 57 lâminas (acurácia balanceada 0,42 → 0,51, rótulo oficial), e os patches falsos malignos nas lâminas benignas caem de 21% para 7%. Ainda está abaixo do publicado com MIL (0,52–0,56 contra 0,69 em 3 classes, comparação indicativa). Separar benigno de atípico no nível da lâmina continua sendo o ponto mais difícil.
 8. Um MIL com atenção, treinado direto no rótulo de só 79 lâminas, supera tudo o que passa pelo descritor por patch: 38 de 57 lâminas (acurácia balanceada 0,63), e benigno × atípico sobe de AUC 0,58 para 0,78. É o caminho principal daqui pra frente; falta mais treino (379 lâminas) e confirmação nas 30 lâminas de teste não usadas.
 9. A receita de classificação da lâmina (UNI2-h + MIL, mesma configuração), retreinada com lâminas de pulmão, funciona em outro órgão: no TCGA, adenocarcinoma × carcinoma escamoso, AUC 0,98 e acurácia balanceada 0,95 em 78 lâminas de teste, com lâminas de 20x e 40x. A tarefa é mais fácil que a da mama. No pulmão, o pré-laudo manteve os números e coordenadas fiéis (78 textos), mas o descritor por patch, treinado em outro conjunto (LungHist700), descreveu mal as regiões de maior atenção nas lâminas de adenocarcinoma (21 de 39), e o texto quase nunca aponta quando a região discorda do tipo sugerido (3 de 27).
-10. Numa tarefa de graduação (próstata, PANDA, treino num centro e teste em outro), a mesma receita detecta câncer (AUC 0,94) mas não gradua (kappa 0,24, quase tudo vira ISUP 3). Dentro do mesmo centro gradua bem (kappa 0,78), então o problema principal é a troca de centro. Dar ao MIL a vizinhança dos patches (GAT-MIL) melhora a graduação nos dois cenários, muito entre centros (kappa 0,24 → 0,44) e pouco dentro do centro (0,78 → 0,81). Na mama (BRACS) a mesma ideia não ajudou (acurácia balanceada 0,63 → 0,60, sem diferença provada) e no pulmão empatou, com o grafo montado só sobre a amostra de patches. O pré-laudo continua fiel aos campos (60/60) e continua sem apontar regiões discordantes (1 de 35).
+10. Numa tarefa de graduação (próstata, PANDA, treino num centro e teste em outro), a mesma receita detecta câncer (AUC 0,94) mas não gradua (kappa 0,24, quase tudo vira ISUP 3). Dentro do mesmo centro gradua bem (kappa 0,78), então o problema principal é a troca de centro. Dar ao MIL a vizinhança dos patches (GAT-MIL) melhora a graduação nos dois cenários, muito entre centros (kappa 0,24 → 0,44) e pouco dentro do centro (0,78 → 0,81). Na mama (BRACS) a mesma ideia não ajudou (acurácia balanceada 0,63 → 0,60, sem diferença provada) e no pulmão empatou, com o grafo montado só sobre a amostra de patches. Padronizar os embeddings por centro (média e desvio dos patches do próprio centro, sem rótulo) leva o kappa entre centros a 0,54 (ABMIL) e 0,61 (GAT-MIL); normalizar a cor (Reinhard) não ajuda. O pré-laudo continua fiel aos campos (60/60) e continua sem apontar regiões discordantes (1 de 35).

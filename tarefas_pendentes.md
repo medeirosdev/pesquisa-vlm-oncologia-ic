@@ -53,7 +53,9 @@ systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 \
 - [x] **GAT-MIL no PANDA** (atenção entre patches vizinhos + ABMIL, `mil/gat_mil/`, pré-registro `6c698d7`): passou nos dois. Entre centros, kappa 0,237 → 0,436; dentro do Radboud, 0,784 → 0,806.
 - [x] **GAT-MIL no BRACS e no TCGA** (pré-registro `6b21cbd`): BRACS não passou (79 → 57: 0,626 → 0,597; validação cruzada: 0,680 → 0,636; diferenças sem significância); TCGA empatou (AUC 0,981 nos dois; critério de não piorar passou).
 - [ ] GAT-MIL na mama com o grafo do tecido inteiro (embeddings de todos os patches, não só da amostra de 2.000), se valer o custo.
-- [ ] PANDA: a troca de centro é o problema maior (kappa ~0,80 dentro do Radboud, 0,24–0,44 no Karolinska). Testar normalização de cor ou treino com os dois centros.
+- [x] **PANDA, troca de centro** (pré-registro `27f0508`): N1 passou (padronização dos embeddings por centro, GAT-MIL 0,439 → 0,609; ABMIL 0,237 → 0,540); N2 não passou (normalização de cor de Reinhard, GAT-MIL 0,439 → 0,225).
+- [ ] PANDA: ainda longe do dentro do centro (~0,80). Testar padronização por centro + treino com os dois centros (separando pacientes).
+- [ ] **Rede de grafos no PANDA** (pré-registro `da1d4b8`, H1/H2): em andamento.
 - [ ] Outros órgãos ou tarefas mais difíceis no TCGA (ex.: subtipos), se fizer sentido pro projeto.
 - [ ] ★ **Sinalizar contradições nos campos** (ex.: "atenção: regiões de maior peso descritas como malignas, apesar da classe benigna") e medir de novo. No pulmão, uma regra nas instruções pedindo pra apontar a discordância não bastou (3 de 27): o aviso precisa vir pronto nos campos.
 - [x] **Hierárquico no nível da lâmina**: rótulo oficial, com negativos, 31/57, 0,518 (0,560 em 3 classes), sem critério. Falta confirmar com critério fixado antes.
