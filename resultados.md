@@ -1,6 +1,6 @@
 # Resultados — Pipeline Ideia 01
 
-Estado em 07/11/2026. Um resumo de cada teste, com números, critério e se passou. Detalhes, tabelas completas e discussão ficam nos arquivos indicados em cada seção. Ordem cronológica dos testes: [linha_do_tempo.md](linha_do_tempo.md).
+Estado em 14/11/2026. Um resumo de cada teste, com números, critério e se passou. Detalhes, tabelas completas e discussão ficam nos arquivos indicados em cada seção. Ordem cronológica dos testes: [linha_do_tempo.md](linha_do_tempo.md).
 
 ## Dados e métricas
 
@@ -13,6 +13,8 @@ Estado em 07/11/2026. Um resumo de cada teste, com números, critério e se pass
 | BRACS — DCIS+IC | `BRACS_773`, `BRACS_295`, com DCIS e IC na mesma lâmina | testes de DCIS vs. IC |
 | BACH | 100 imagens *in situ* + 100 de invasivo, outra instituição (Porto) | generalização |
 | NuCLS | 1.744 campos de mama do TCGA, núcleos classificados por patologista | validação do CellViT |
+| TCGA-LUAD e TCGA-LUSC | lâminas de diagnóstico de pulmão (adenocarcinoma e carcinoma escamoso), NCI GDC, acesso aberto; 200 sorteadas | outro órgão: MIL e pré-laudo |
+| LungHist700 | 691 imagens de microscópio de pulmão (normal, adenocarcinoma, escamoso), 45 pacientes; Diosdado et al., Sci Data 2024, CC BY 4.0 | descritor por patch do pulmão |
 
 > **Correção de 07/11/2026 — agrupamento das classes.** Até 06/11, o projeto colocava o UDH em atípico. No BRACS, benigno = N, PB, UDH; atípico = FEA, ADH; maligno = DCIS, IC (as contagens do artigo só fecham assim, e o FTP oficial guarda o UDH na pasta de benignos). Os resultados por patch e por lâmina anteriores a essa data usam o agrupamento antigo e estão marcados. As tabelas de pré-laudo foram repontuadas com o rótulo oficial; os testes da decisão da lâmina foram refeitos (seção "Rótulo oficial do BRACS").
 
@@ -366,7 +368,7 @@ Script: `Testes/Pipeline01/validacao/prelaudo_mil.py`, fixado antes (commit `29a
 
 ## Generalização pra pulmão: TCGA LUAD × LUSC (11–12/11)
 
-Pergunta: o mesmo pipeline (patches de tecido de 128 µm, UNI2-h, MIL com atenção), sem nenhum ajuste, funciona em outro órgão? Tarefa: adenocarcinoma (TCGA-LUAD) × carcinoma escamoso (TCGA-LUSC), lâminas de diagnóstico do TCGA (acesso aberto). Fixado antes de baixar (commit `4d1d4de`): 100 pacientes de cada projeto, uma lâmina por paciente, sorteio com semente 0; treino 60 + 60, teste 40 + 40, pacientes diferentes; lado do patch em pixels pela resolução da lâmina; modelo e treino de `mil_atencao.py`, com 2 classes. Critério: AUC ≥ 0,85 E acurácia balanceada ≥ 0,75 no teste. Scripts: `Testes/Pipeline01/scripts/tcga_baixar_e_embutir.py`, `Testes/Pipeline01/validacao/tcga_mil.py`.
+Pergunta: a mesma receita de classificação da lâmina (patches de tecido de 128 µm, UNI2-h congelado, MIL com atenção, mesma configuração de treino), retreinada com lâminas de outro órgão, funciona? O MIL é treinado do zero com as lâminas de pulmão; o modelo treinado na mama não é reaproveitado. Tarefa: adenocarcinoma (TCGA-LUAD) × carcinoma escamoso (TCGA-LUSC), lâminas de diagnóstico do TCGA (acesso aberto). Fixado antes de baixar (commit `4d1d4de`): 100 pacientes de cada projeto, uma lâmina por paciente, sorteio com semente 0; treino 60 + 60, teste 40 + 40, pacientes diferentes; lado do patch em pixels pela resolução da lâmina; modelo e treino de `mil_atencao.py`, com 2 classes. Critério: AUC ≥ 0,85 E acurácia balanceada ≥ 0,75 no teste. Scripts: `Testes/Pipeline01/scripts/tcga_baixar_e_embutir.py`, `Testes/Pipeline01/validacao/tcga_mil.py`.
 
 | Teste (78 lâminas) | Resultado |
 |---|---|
@@ -377,7 +379,27 @@ Pergunta: o mesmo pipeline (patches de tecido de 128 µm, UNI2-h, MIL com atenç
 
 **Passou.** Ficaram de fora 3 das 200 lâminas: 2 sem resolução no arquivo (a regra exige o lado de 128 µm; `TCGA-05-5428`, treino, e `TCGA-05-5429`, teste) e 1 com download incompleto (`TCGA-O2-A52V`, LUSC, teste). Treino: 119 lâminas.
 
-Leitura: LUAD × LUSC é uma tarefa mais fácil que a do BRACS (dois carcinomas de morfologia bem diferente, sem a fronteira benigno × atípico); serve pra mostrar que o pipeline não depende de nada específico da mama, não que o problema da mama esteja resolvido. Uma primeira execução (12/11, 01h24) caiu antes de calcular qualquer número: a internet caiu às 00h31 no meio do download e o teste rodou sem lâminas LUSC no conjunto de teste; o download foi retomado e o teste rodou de novo, sem mudança na regra.
+Leitura: LUAD × LUSC é uma tarefa mais fácil que a do BRACS (dois carcinomas de morfologia bem diferente, sem a fronteira benigno × atípico); serve pra mostrar que a receita de classificação não depende de nada específico da mama, não que o problema da mama esteja resolvido. Este teste cobre só a decisão da lâmina; descritor e pré-laudo no pulmão estão na seção seguinte. Uma primeira execução (12/11, 01h24) caiu antes de calcular qualquer número: a internet caiu às 00h31 no meio do download e o teste rodou sem lâminas LUSC no conjunto de teste; o download foi retomado e o teste rodou de novo, sem mudança na regra.
+
+## Pulmão: descritor por patch e pré-laudo (13–14/11)
+
+Pergunta: o resto da pipeline (descritor por patch, campos, pré-laudo redigido pelo modelo de linguagem) também funciona no pulmão? Fixado antes de rodar (commit `7725c6e`). Scripts: `Testes/Pipeline01/scripts/escala_lunghist.py`, `Testes/Pipeline01/validacao/pulmao_descritor.py`, `Testes/Pipeline01/validacao/tcga_descritor_prelaudo.py`. Resultados em `Testes/Pipeline01/resultados/{lunghist700,tcga_prelaudo}/`.
+
+O que muda em relação à mama: o descritor é treinado no LungHist700 (classes normal, adenocarcinoma, escamoso; rótulo por imagem), não nas regiões anotadas do BRACS; os campos não têm a regra do componente invasivo nem as medidas de núcleo; as instruções do modelo de linguagem são a versão do pulmão, com uma regra a mais (apontar regiões cuja classe difere do tipo sugerido). O MIL é o da seção anterior, retreinado pra gravar a atenção (mesma classe nas 78 lâminas, diferença máxima de 0,0005 na probabilidade).
+
+**Escala do LungHist700.** O artigo não informa µm/px (só 20x e 40x). Estimada pelo diâmetro mediano dos núcleos inflamatórios (CellViT, probabilidade ≥ 0,8) contra o BRACS (MPP do cabeçalho): 4,278 µm no BRACS (1.203 núcleos); 40x, 0,232 µm/px (213 núcleos); 20x, 0,383 µm/px (574 núcleos). Conferência sem critério: a razão 20x/40x deveria ficar perto de 2 e ficou em **1,65**; não está explicado. Mantida a regra fixada (escala medida separada por aumento).
+
+| Teste | Critério | Resultado |
+|---|---|---|
+| D1: descritor nos 10 pacientes de teste do LungHist700 (931 patches) | acurácia balanceada ≥ 0,80 | **passou: 0,926** (normal 259/259, adeno 351/404, escamoso 244/268; por imagem, 0,993 em 114 imagens) |
+| D2: descritor nas 3 regiões de maior atenção do MIL, 78 lâminas de teste do TCGA | maioria das 3 com a classe real em ≥ 80% das lâminas | **não passou: 58/78 (0,744)**; LUAD 21/39, LUSC 37/39 |
+| P: pré-laudo, 78 textos | tipo do texto = tipo do MIL em ≥ 90%, 0 números sem sustentação, 0 coordenadas inventadas | **passou**: 78/78; 0 de 1.035 números; 0 de 436 coordenadas |
+
+Leitura:
+- O descritor acerta no próprio conjunto (D1) e falha no TCGA nas lâminas de adenocarcinoma: das 117 regiões de maior atenção nessas lâminas, 36 saem como pulmão normal e 21 como escamoso; em 7 lâminas as 3 saem normal, em 6 as 3 saem escamoso. Sozinho (proporção de patches por classe), separa LUAD × LUSC com AUC 0,875, contra 0,98 do MIL. Hipóteses não verificadas: padrão lepídico (o adenocarcinoma cresce sobre as paredes alveolares e lembra pulmão normal) e diferença de imagem (LungHist700 é foto de microscópio de um hospital; TCGA é lâmina escaneada de vários centros). Só um patologista olhando as regiões resolve.
+- Discordância: em 27 lâminas pelo menos uma das 3 regiões tem classe diferente do tipo sugerido; só 3 textos apontam a discordância (contagem por expressões: "discord", "no entanto", "embora", "diverg", "contradi", "porém", "entretanto"). A maioria lista as regiões com a classe, sem comentar (ex.: TCGA-NJ-A4YF, impressão "adenocarcinoma" com as 3 regiões listadas como escamoso). A regra nova nas instruções não resolveu o problema visto na mama.
+- Classe da região no texto (exploratório, sem critério fixado antes): das 234 regiões citadas, 216 aparecem na mesma linha com a classe dos campos, 2 com a classe trocada (ambas em TCGA-78-7153: campos "pulmão normal", texto "carcinoma escamoso") e 16 o script não decide. A checagem automática confere números e coordenadas, não a classe ligada a cada região.
+- Execução: a redação parou duas vezes por tempo esgotado (30 min por chamada) com a memória da máquina cheia, e a máquina reiniciou; retomada do ponto em que parou, sem mudança na regra. Tempo médio por texto: 46 s.
 
 ## Anotações oficiais do BRACS
 
@@ -396,4 +418,4 @@ Detalhes: `Testes/Pipeline01/validacao/problemas_e_metrica.md`.
 6. A pipeline roda de ponta a ponta até o pré-laudo, mas em lâminas novas (57 do teste oficial) chama 55 de 57 de malignas: acerta DCIS e IC (com a regra, 8/8 e 7/12) e erra quase todas as benignas e atípicas, ficando em 17 de 57 (rótulo oficial). A regra do componente invasivo ajuda no IC; o problema principal está nos estágios 2 e 3, que mandam evidência maligna de lâminas benignas e atípicas.
 7. Tirar a decisão do modelo de linguagem e treinar o descritor com lâminas benignas como negativos leva o acerto de 17 para 29 de 57 lâminas (acurácia balanceada 0,42 → 0,51, rótulo oficial), e os patches falsos malignos nas lâminas benignas caem de 21% para 7%. Ainda está abaixo do publicado com MIL (0,52–0,56 contra 0,69 em 3 classes, comparação indicativa). Separar benigno de atípico no nível da lâmina continua sendo o ponto mais difícil.
 8. Um MIL com atenção, treinado direto no rótulo de só 79 lâminas, supera tudo o que passa pelo descritor por patch: 38 de 57 lâminas (acurácia balanceada 0,63), e benigno × atípico sobe de AUC 0,58 para 0,78. É o caminho principal daqui pra frente; falta mais treino (379 lâminas) e confirmação nas 30 lâminas de teste não usadas.
-9. O mesmo pipeline, sem ajuste, generaliza pra pulmão: no TCGA, adenocarcinoma × carcinoma escamoso, AUC 0,98 e acurácia balanceada 0,95 em 78 lâminas de teste, com lâminas de 20x e 40x. A tarefa é mais fácil que a da mama; mostra que nada no pipeline é específico de mama.
+9. A receita de classificação da lâmina (UNI2-h + MIL, mesma configuração), retreinada com lâminas de pulmão, funciona em outro órgão: no TCGA, adenocarcinoma × carcinoma escamoso, AUC 0,98 e acurácia balanceada 0,95 em 78 lâminas de teste, com lâminas de 20x e 40x. A tarefa é mais fácil que a da mama. No pulmão, o pré-laudo manteve os números e coordenadas fiéis (78 textos), mas o descritor por patch, treinado em outro conjunto (LungHist700), descreveu mal as regiões de maior atenção nas lâminas de adenocarcinoma (21 de 39), e o texto quase nunca aponta quando a região discorda do tipo sugerido (3 de 27).

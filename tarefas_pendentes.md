@@ -1,6 +1,6 @@
 # Tarefas pendentes
 
-Estado em 13/11/2026. Resultados em [resultados.md](resultados.md); histórico em [linha_do_tempo.md](linha_do_tempo.md); ideias em [brainstorming_melhorias.md](brainstorming_melhorias.md).
+Estado em 14/11/2026. Resultados em [resultados.md](resultados.md); histórico em [linha_do_tempo.md](linha_do_tempo.md); ideias em [brainstorming_melhorias.md](brainstorming_melhorias.md).
 
 Ordem sugerida: 1) resolver a cobrança do GitHub; 2) baixar as 379 lâminas de treino e treinar o MIL com elas (o MIL com 79 lâminas já chegou a 38/57); 3) recuperar o DCIS; 4) refazer o pacote com cotas com o descritor corrigido; 5) confirmar nas 30 lâminas de teste não usadas.
 
@@ -46,9 +46,11 @@ systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 \
 - [x] **A atenção do MIL cai nas lesões?** Passou: os 5% de maior atenção ficam 5× mais nas lesões anotadas que o acaso (21 de 29 lâminas).
 - [x] **Mapas de atenção do MIL**: 4 exemplos na página (`scripts/mapas_de_calor.py --atencao`).
 - [x] **Pré-laudo com o MIL**: passou (57/57 classe igual; 0 números sem sustentação; 38/57 classe final). Mas em 15 lâminas "benigno" com região de atenção maligna/atípica, só 1 texto aponta a contradição.
-- [x] **Generalização pra pulmão (TCGA LUAD × LUSC)**: passou. Mesmo pipeline e MIL, sem ajuste: AUC 0,981, acurácia balanceada 0,949 em 78 lâminas de teste (197 de 200 baixadas). Tarefa mais fácil que a da mama.
+- [x] **Generalização pra pulmão (TCGA LUAD × LUSC)**: passou. Mesma receita (UNI2-h + MIL, mesma configuração), retreinada com lâminas de pulmão: AUC 0,981, acurácia balanceada 0,949 em 78 lâminas de teste (197 de 200 baixadas). Tarefa mais fácil que a da mama.
+- [x] **Pulmão: descritor e pré-laudo** (LungHist700 + TCGA): D1 passou (descritor no LungHist700, 0,926); D2 não passou (regiões de maior atenção com a classe certa em 58/78; LUAD 21/39); P passou (78/78 tipo igual, 0 números sem sustentação, 0 coordenadas inventadas), mas só 3 de 27 textos apontam região discordante.
+- [ ] Pulmão: entender por que o descritor chama de "normal" ou "escamoso" as regiões de maior atenção do adenocarcinoma (olhar os patches; patologista); conferir a escala do LungHist700 (razão 20x/40x 1,65, esperado ~2).
 - [ ] Outros órgãos ou tarefas mais difíceis no TCGA (ex.: subtipos, graduação), se fizer sentido pro projeto.
-- [ ] ★ **Sinalizar contradições nos campos** (ex.: "atenção: regiões de maior peso descritas como malignas, apesar da classe benigna") e medir de novo.
+- [ ] ★ **Sinalizar contradições nos campos** (ex.: "atenção: regiões de maior peso descritas como malignas, apesar da classe benigna") e medir de novo. No pulmão, uma regra nas instruções pedindo pra apontar a discordância não bastou (3 de 27): o aviso precisa vir pronto nos campos.
 - [x] **Hierárquico no nível da lâmina**: rótulo oficial, com negativos, 31/57, 0,518 (0,560 em 3 classes), sem critério. Falta confirmar com critério fixado antes.
 
 ## Descritor
