@@ -51,7 +51,8 @@ systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 \
 - [ ] Pulmão: entender por que o descritor chama de "normal" ou "escamoso" as regiões de maior atenção do adenocarcinoma (olhar os patches; patologista); conferir a escala do LungHist700 (razão 20x/40x 1,65, esperado ~2).
 - [x] **Próstata (PANDA, grau ISUP 0–5)**: treino 600 do Radboud, teste 300 do Karolinska. M2 passou (benigno × câncer AUC 0,940); M1 não passou (kappa 0,237: prevê ISUP 3 em 209 de 300); D1 não passou (descritor 0,775); A não passou (atenção no câncer em 76%, acaso 43%); P passou (60/60), mas 1 de 35 textos aponta região discordante.
 - [x] **GAT-MIL no PANDA** (atenção entre patches vizinhos + ABMIL, `mil/gat_mil/`, pré-registro `6c698d7`): passou nos dois. Entre centros, kappa 0,237 → 0,436; dentro do Radboud, 0,784 → 0,806.
-- [ ] ★ **GAT-MIL no BRACS e no TCGA**: mesma comparação pareada com o ABMIL, critério fixado antes. No BRACS, a amostra de 2.000 patches deixa o grafo incompleto nas lâminas grandes.
+- [x] **GAT-MIL no BRACS e no TCGA** (pré-registro `6b21cbd`): BRACS não passou (79 → 57: 0,626 → 0,597; validação cruzada: 0,680 → 0,636; diferenças sem significância); TCGA empatou (AUC 0,981 nos dois; critério de não piorar passou).
+- [ ] GAT-MIL na mama com o grafo do tecido inteiro (embeddings de todos os patches, não só da amostra de 2.000), se valer o custo.
 - [ ] PANDA: a troca de centro é o problema maior (kappa ~0,80 dentro do Radboud, 0,24–0,44 no Karolinska). Testar normalização de cor ou treino com os dois centros.
 - [ ] Outros órgãos ou tarefas mais difíceis no TCGA (ex.: subtipos), se fizer sentido pro projeto.
 - [ ] ★ **Sinalizar contradições nos campos** (ex.: "atenção: regiões de maior peso descritas como malignas, apesar da classe benigna") e medir de novo. No pulmão, uma regra nas instruções pedindo pra apontar a discordância não bastou (3 de 27): o aviso precisa vir pronto nos campos.

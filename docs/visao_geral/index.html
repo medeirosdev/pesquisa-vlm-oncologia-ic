@@ -580,6 +580,21 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
     <span class="selo ok">passou nos dois cenários</span>
   </div>
 
+  <div class="painel">
+    <h3>GAT-MIL na mama e no pulmão</h3>
+    <p>A mesma comparação, com critério fixado antes. No BRACS e no TCGA a amostra de 2.000 patches cobre só parte do tecido, e quase nenhum patch tem vizinho encostado; o grafo liga cada patch aos até 8 patches da amostra mais próximos, a até 384 µm.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Cenário</th><th class="num">MIL atual</th><th class="num">GAT-MIL</th><th class="num">Diferença (IC 95%)</th></tr></thead>
+      <tbody>
+        <tr><td>Mama (BRACS), 57 lâminas, acurácia balanceada</td><td class="num">0,626</td><td class="num">0,597</td><td class="num"><span class="selo falha">−0,029</span> (−0,077 a 0,0)</td></tr>
+        <tr><td>Mama, validação cruzada por paciente (79)</td><td class="num">0,680</td><td class="num">0,636</td><td class="num"><span class="selo falha">−0,045</span> (−0,123 a 0,030)</td></tr>
+        <tr><td>Pulmão (TCGA), 78 lâminas, AUC</td><td class="num">0,981</td><td class="num">0,981</td><td class="num"><span class="selo ok">0,000</span> (−0,010 a 0,011)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Na mama o critério era o GAT-MIL ganhar, e não ganhou; no pulmão, já no teto, o critério era não piorar. A vizinhança ajudou só na graduação da próstata, onde o grafo cobre o tecido inteiro. Possíveis razões, não testadas: grafo parcial; o rótulo do BRACS é o da lesão mais grave, muitas vezes pequena; só 79 lâminas de treino.</p>
+    <span class="selo falha">mama: não ajudou · pulmão: empate</span>
+  </div>
+
   <h3>Mapas de atenção do MIL</h3>
   <p class="nota">As mesmas quatro lâminas dos mapas do descritor. Esquerda: classe de cada patch pelo descritor. Direita: atenção do MIL, em percentil dentro da lâmina (escuro = pesou mais na decisão), com o contorno das lesões anotadas pelos patologistas em azul-esverdeado.</p>
   <div class="figuras mapas">
@@ -923,7 +938,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
       <tr><td>1. Filtro de tecido</td><td><span class="selo ok">resolvido</span></td><td>—</td></tr>
       <tr><td>2. Roteador</td><td><span class="selo parcial">bom em lâminas malignas</span></td><td>métrica para lâminas benignas e atípicas</td></tr>
       <tr><td>3. Descritor</td><td><span class="selo parcial">bom no DCIS × IC; negativos cortam falsos malignos; atípico ainda fraco</span></td><td>recuperar o DCIS sem perder as benignas</td></tr>
-      <tr><td>3½. Decisão da lâmina</td><td><span class="selo ok">MIL com 79 lâminas: 38/57, acurácia balanceada 0,63; benigno × atípico AUC 0,78; no pulmão (TCGA), AUC 0,98; na próstata (PANDA), detecta câncer (AUC 0,94) mas gradua mal (kappa 0,24; com o GAT-MIL, 0,44)</span></td><td>MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas; GAT-MIL no BRACS e no TCGA</td></tr>
+      <tr><td>3½. Decisão da lâmina</td><td><span class="selo ok">MIL com 79 lâminas: 38/57, acurácia balanceada 0,63; benigno × atípico AUC 0,78; no pulmão (TCGA), AUC 0,98; na próstata (PANDA), detecta câncer (AUC 0,94) mas gradua mal (kappa 0,24; com o GAT-MIL, 0,44; na mama o GAT-MIL não ajudou)</span></td><td>MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas; troca de centro na próstata</td></tr>
       <tr><td>4. Agregação</td><td><span class="selo parcial">regra ajuda no IC</span></td><td>trocar a contagem dos 32 patches pelos campos fixos</td></tr>
       <tr><td>5. Síntese</td><td><span class="selo parcial">só redige, com a classe do MIL; números fiéis, mas justifica contradições em vez de apontá-las; no pulmão, 78/78 fiéis e discordância apontada em 3 de 27; na próstata, 60/60 fiéis e 1 de 35</span></td><td>sinalizar contradições nos campos; avaliação por patologista</td></tr>
     </tbody>

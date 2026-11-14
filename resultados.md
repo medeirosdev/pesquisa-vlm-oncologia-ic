@@ -440,6 +440,22 @@ Leitura:
 - Ressalva do G2: o PANDA não informa o paciente, e a mesma pessoa pode cair no treino e no teste de uma parte; isso infla os dois modelos igualmente.
 - Próximo passo: repetir a comparação no BRACS e no TCGA (o código do GAT-MIL é genérico) e atacar a troca de centro (normalização de cor ou treino com os dois centros).
 
+## GAT-MIL no BRACS e no TCGA (14/11)
+
+Pergunta: o ganho do GAT-MIL no PANDA se repete na mama e no pulmão? Fixado antes de rodar (commit `6b21cbd`). Diferença do PANDA: no BRACS e no TCGA a amostra de 2.000 patches cobre só parte do tecido (23 de 136 lâminas do BRACS e 19 de 197 do TCGA cabem inteiras), então o grafo liga cada patch aos até 8 patches da amostra mais próximos com centro a até 3 lados (384 µm); média de 6,1 vizinhos por patch no BRACS e 5,5 no TCGA. Mesmos modelos e receita. Script: `Testes/Pipeline01/mil/gat_mil/gat_mil_bracs_tcga.py`. Resultados em `Testes/Pipeline01/resultados/gat_mil_bracs_tcga/`.
+
+| Cenário | ABMIL | GAT-MIL | Diferença (IC 95%) | Critério |
+|---|---|---|---|---|
+| B1: BRACS, 79 → 57, acurácia balanceada (4 classes) | 0,626 | 0,597 | −0,029 (−0,077 a 0,0) | GAT-MIL > ABMIL: **não passou** |
+| B2: BRACS, validação cruzada por paciente nas 79 | 0,680 | 0,636 | −0,045 (−0,123 a 0,030) | GAT-MIL > ABMIL: **não passou** |
+| T1: TCGA, 119 → 78, AUC LUAD × LUSC | 0,981 | 0,981 | 0,000 (−0,010 a 0,011) | não piora (limite > −0,02): **passou** |
+
+Também reportado (sem critério), ABMIL → GAT-MIL: B1, por classe benigno 15 → 15/20, atípico 10 → 8/17, DCIS 2 → 2/8, IC 11 → 11/12; AUC benigno × atípico 0,782 → 0,812; maligno × resto 0,881 → 0,907. B2, AUC benigno × atípico 0,915 → 0,856; maligno × resto 0,914 → 0,926. TCGA, acurácia balanceada 0,949 → 0,962. Os números do ABMIL reproduzem os de `mil_atencao.py` (0,626) e `mil_validacao_cruzada.py` (0,680).
+
+Leitura:
+- Na mama, a vizinhança não ajudou: as duas diferenças são negativas, com IC cruzando zero ou encostando nele. No pulmão, empate (a tarefa já está no teto).
+- Diferenças que podem explicar, não testadas: o grafo da mama e do pulmão é parcial (vizinhos a até 384 µm entre os patches sorteados, não o tecido contínuo do PANDA); o rótulo do BRACS é o da lesão mais grave, muitas vezes pequena, e a arquitetura em volta dela importa menos que a própria lesão; treino com só 79 lâminas. Pra testar a primeira, seria preciso recalcular os embeddings de todo o tecido.
+
 ## Anotações oficiais do BRACS
 
 - `.qpdata` lidas com o QuPath e exportadas pra GeoJSON: 387 de 387 lâminas; totais por classe iguais aos do artigo.
@@ -458,4 +474,4 @@ Detalhes: `Testes/Pipeline01/notas/problemas_e_metrica.md`.
 7. Tirar a decisão do modelo de linguagem e treinar o descritor com lâminas benignas como negativos leva o acerto de 17 para 29 de 57 lâminas (acurácia balanceada 0,42 → 0,51, rótulo oficial), e os patches falsos malignos nas lâminas benignas caem de 21% para 7%. Ainda está abaixo do publicado com MIL (0,52–0,56 contra 0,69 em 3 classes, comparação indicativa). Separar benigno de atípico no nível da lâmina continua sendo o ponto mais difícil.
 8. Um MIL com atenção, treinado direto no rótulo de só 79 lâminas, supera tudo o que passa pelo descritor por patch: 38 de 57 lâminas (acurácia balanceada 0,63), e benigno × atípico sobe de AUC 0,58 para 0,78. É o caminho principal daqui pra frente; falta mais treino (379 lâminas) e confirmação nas 30 lâminas de teste não usadas.
 9. A receita de classificação da lâmina (UNI2-h + MIL, mesma configuração), retreinada com lâminas de pulmão, funciona em outro órgão: no TCGA, adenocarcinoma × carcinoma escamoso, AUC 0,98 e acurácia balanceada 0,95 em 78 lâminas de teste, com lâminas de 20x e 40x. A tarefa é mais fácil que a da mama. No pulmão, o pré-laudo manteve os números e coordenadas fiéis (78 textos), mas o descritor por patch, treinado em outro conjunto (LungHist700), descreveu mal as regiões de maior atenção nas lâminas de adenocarcinoma (21 de 39), e o texto quase nunca aponta quando a região discorda do tipo sugerido (3 de 27).
-10. Numa tarefa de graduação (próstata, PANDA, treino num centro e teste em outro), a mesma receita detecta câncer (AUC 0,94) mas não gradua (kappa 0,24, quase tudo vira ISUP 3). Dentro do mesmo centro gradua bem (kappa 0,78), então o problema principal é a troca de centro. Dar ao MIL a vizinhança dos patches (GAT-MIL) melhora a graduação nos dois cenários, muito entre centros (kappa 0,24 → 0,44) e pouco dentro do centro (0,78 → 0,81). O pré-laudo continua fiel aos campos (60/60) e continua sem apontar regiões discordantes (1 de 35).
+10. Numa tarefa de graduação (próstata, PANDA, treino num centro e teste em outro), a mesma receita detecta câncer (AUC 0,94) mas não gradua (kappa 0,24, quase tudo vira ISUP 3). Dentro do mesmo centro gradua bem (kappa 0,78), então o problema principal é a troca de centro. Dar ao MIL a vizinhança dos patches (GAT-MIL) melhora a graduação nos dois cenários, muito entre centros (kappa 0,24 → 0,44) e pouco dentro do centro (0,78 → 0,81). Na mama (BRACS) a mesma ideia não ajudou (acurácia balanceada 0,63 → 0,60, sem diferença provada) e no pulmão empatou, com o grafo montado só sobre a amostra de patches. O pré-laudo continua fiel aos campos (60/60) e continua sem apontar regiões discordantes (1 de 35).
