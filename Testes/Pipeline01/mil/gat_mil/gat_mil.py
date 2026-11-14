@@ -42,6 +42,33 @@ def arestas_vizinhos(xy, lado):
     return torch.tensor([origem, destino], dtype=torch.long)
 
 
+def arestas_proximos(xy, lado, k=8, raio=3.0):
+    """Versão pra amostra parcial (BRACS, TCGA: em geral só ~15% do tecido entra nos 2.000 patches, e quase nenhum
+    patch tem vizinho encostado): liga cada patch aos até k patches da amostra mais próximos, com centro a no máximo
+    raio * lado, mais o próprio. Numa grade completa (PANDA), os 8 mais próximos são os 8 vizinhos encostados."""
+    from scipy.spatial import cKDTree
+    xy = np.asarray(xy, dtype=np.float64)
+    dist, idx = cKDTree(xy).query(xy, k=min(k + 1, len(xy)), distance_upper_bound=raio * lado + 1e-6)
+    dist, idx = np.atleast_2d(dist), np.atleast_2d(idx)
+    destino, origem = np.nonzero(np.isfinite(dist))
+    origem = idx[destino, origem]
+    return torch.tensor(np.stack([origem, destino]), dtype=torch.long)
+
+
+def bootstrap_pareado(valor, grupos, n=2000, semente=0):
+    """IC 95% de valor(idx) por bootstrap agrupado (grupos[i] = grupo da amostra i: paciente ou a própria amostra).
+    valor recebe a lista de índices reamostrados e devolve um dicionário de números; devolve {nome: [2,5%, 97,5%]}."""
+    por = {}
+    for i, g in enumerate(grupos):
+        por.setdefault(g, []).append(i)
+    chaves, rng, acum = sorted(por), random.Random(semente), {}
+    for _ in range(n):
+        idx = [i for g in (rng.choice(chaves) for _ in chaves) for i in por[g]]
+        for nome, v in valor(idx).items():
+            acum.setdefault(nome, []).append(v)
+    return {nome: [round(float(np.percentile(v, 2.5)), 3), round(float(np.percentile(v, 97.5)), 3)] for nome, v in acum.items()}
+
+
 class CamadaGATv2(nn.Module):
     def __init__(self, d, cabecas=4):
         super().__init__()
