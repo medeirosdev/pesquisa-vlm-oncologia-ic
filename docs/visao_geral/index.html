@@ -610,6 +610,20 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
     <span class="selo ok">padronização por centro: passou</span> <span class="selo falha">normalização de cor: não passou</span>
   </div>
 
+  <div class="painel destaque">
+    <h3>Rede de grafos na próstata</h3>
+    <p>Ideia proposta em 14/11/2026. Em vez de olhar todos os patches, o modelo olha primeiro a biópsia inteira e escolhe até 16 pontos de interesse (os de maior atenção de um MIL que não viu a biópsia, com centros a pelo menos 1 mm). Em cada ponto monta um grafo local denso, numa janela de 7 × 7 patches; depois liga os pontos numa rede em que a atenção entre eles diminui com a distância. Mesmo treino, sem ajuste, embeddings originais. Critério fixado antes: a rede ganha do MIL atual em kappa, com o limite inferior do IC 95% da diferença acima de zero.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Cenário</th><th class="num">MIL atual</th><th class="num">GAT-MIL</th><th class="num">Rede de grafos</th><th class="num">Rede − MIL (IC 95%)</th></tr></thead>
+      <tbody>
+        <tr class="vence"><td>Treino no Radboud, teste no Karolinska (300)</td><td class="num">0,237</td><td class="num">0,420</td><td class="num"><b>0,442</b></td><td class="num"><span class="selo ok">+0,205</span> (0,104–0,310)</td></tr>
+        <tr><td>Dentro do Radboud, validação cruzada (600)</td><td class="num">0,784</td><td class="num">0,795</td><td class="num"><b>0,809</b></td><td class="num"><span class="selo falha">+0,025</span> (−0,002 a 0,051)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Kappa quadrático do grau ISUP. A rede usa em média 9,8 pontos por biópsia (as biópsias são finas, e poucas comportam 16 pontos a 1 mm), e as janelas cobrem 67% dos patches. Com isso fica no nível do GAT-MIL, que olha todos os patches (diferença +0,021 entre centros e +0,014 dentro do Radboud, as duas sem significância): escolher os pontos pela atenção não perde o que importa pro grau. Próximos passos: a rede com a padronização por centro, e a rede na mama, onde as lâminas são grandes e a amostra de patches é parcial.</p>
+    <span class="selo ok">entre centros: passou</span> <span class="selo falha">dentro do Radboud: não passou, por pouco</span>
+  </div>
+
   <h3>Mapas de atenção do MIL</h3>
   <p class="nota">As mesmas quatro lâminas dos mapas do descritor. Esquerda: classe de cada patch pelo descritor. Direita: atenção do MIL, em percentil dentro da lâmina (escuro = pesou mais na decisão), com o contorno das lesões anotadas pelos patologistas em azul-esverdeado.</p>
   <div class="figuras mapas">
@@ -953,7 +967,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
       <tr><td>1. Filtro de tecido</td><td><span class="selo ok">resolvido</span></td><td>—</td></tr>
       <tr><td>2. Roteador</td><td><span class="selo parcial">bom em lâminas malignas</span></td><td>métrica para lâminas benignas e atípicas</td></tr>
       <tr><td>3. Descritor</td><td><span class="selo parcial">bom no DCIS × IC; negativos cortam falsos malignos; atípico ainda fraco</span></td><td>recuperar o DCIS sem perder as benignas</td></tr>
-      <tr><td>3½. Decisão da lâmina</td><td><span class="selo ok">MIL com 79 lâminas: 38/57, acurácia balanceada 0,63; benigno × atípico AUC 0,78; no pulmão (TCGA), AUC 0,98; na próstata (PANDA), detecta câncer (AUC 0,94) mas gradua mal (kappa 0,24; com o GAT-MIL, 0,44; com o GAT-MIL e a padronização por centro, 0,61; na mama o GAT-MIL não ajudou)</span></td><td>MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas; rede de grafos na próstata</td></tr>
+      <tr><td>3½. Decisão da lâmina</td><td><span class="selo ok">MIL com 79 lâminas: 38/57, acurácia balanceada 0,63; benigno × atípico AUC 0,78; no pulmão (TCGA), AUC 0,98; na próstata (PANDA), detecta câncer (AUC 0,94) mas gradua mal (kappa 0,24; com o GAT-MIL, 0,44; com o GAT-MIL e a padronização por centro, 0,61; com a rede de grafos, 0,44; na mama o GAT-MIL não ajudou)</span></td><td>MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas; rede de grafos com padronização por centro e na mama</td></tr>
       <tr><td>4. Agregação</td><td><span class="selo parcial">regra ajuda no IC</span></td><td>trocar a contagem dos 32 patches pelos campos fixos</td></tr>
       <tr><td>5. Síntese</td><td><span class="selo parcial">só redige, com a classe do MIL; números fiéis, mas justifica contradições em vez de apontá-las; no pulmão, 78/78 fiéis e discordância apontada em 3 de 27; na próstata, 60/60 fiéis e 1 de 35</span></td><td>sinalizar contradições nos campos; avaliação por patologista</td></tr>
     </tbody>
