@@ -6,10 +6,13 @@ Diferença: o TCGA mistura lâminas de 20x e 40x. O lado do patch no nível 0 sa
 (MPP da descrição Aperio), pra cobrir sempre 128 µm de tecido: 512 px a 0,25 µm/px, 256 px a 0,5 µm/px.
 
 Saída: resultados/tcga_pulmao/<file_id>/amostra2000.npy, amostra2000_xy.csv e meta.json. Retoma de onde parou.
+Com --saida, grava em outra pasta (ex.: no HD); com --todos, embute todos os patches de tecido, sem amostra
+(todos.npy em float16 e todos_xy.csv), pra montar o grafo do tecido inteiro.
 Baixa até ADIANTE lâminas em paralelo enquanto a GPU processa a atual (o download do GDC é lento por conexão).
 
 Uso (venv do projeto, HD montado):
     .venv/bin/python dados/tcga/tcga_baixar_e_embutir.py dados/tcga/lista_tcga_pulmao.tsv
+    .venv/bin/python dados/tcga/tcga_baixar_e_embutir.py dados/tcga/lista_tcga_glioma.tsv --saida <pasta> --todos
 """
 
 import csv
@@ -53,7 +56,7 @@ def grade(lamina, mask, ds_mask, lado):
     return saida
 
 
-def embutir(caminho, pasta):
+def embutir(caminho, pasta, todos=False):
     import torch
     from comum.modelo import dispositivo
     from comum.uni import LOTE, _preparar, carregar_uni2h
@@ -62,15 +65,17 @@ def embutir(caminho, pasta):
     lado = int(round(LADO_UM / res))
     rgb, ds = lamina.thumbnail(32)
     xy = grade(lamina, mascara_tecido(rgb), ds, lado)
-    amostra = sorted(random.Random(0).sample(xy, min(N_AMOSTRA, len(xy))))
+    amostra = sorted(xy) if todos else sorted(random.Random(0).sample(xy, min(N_AMOSTRA, len(xy))))
     modelo, embs = carregar_uni2h(), []
     for i in range(0, len(amostra), LOTE):
         lote = np.stack([_preparar(lamina.janela_nativa(x0, y0, lado)) for x0, y0 in amostra[i:i + LOTE]])
         x = torch.from_numpy(lote).to(dispositivo())
         with torch.no_grad():
             embs.append(modelo(x.half() if dispositivo() == "cuda" else x).float().cpu().numpy())
-    np.save(pasta / "amostra2000.npy", np.concatenate(embs))
-    with open(pasta / "amostra2000_xy.csv", "w", newline="", encoding="utf-8") as f:
+    nome = "todos" if todos else "amostra2000"
+    e = np.concatenate(embs)
+    np.save(pasta / f"{nome}.npy", e.astype(np.float16) if todos else e)
+    with open(pasta / f"{nome}_xy.csv", "w", newline="", encoding="utf-8") as f:
         csv.writer(f).writerows([["x0", "y0"]] + amostra)
     return {"mpp": res, "lado_px": lado, "n_tecido": len(xy), "n_amostra": len(amostra)}
 
@@ -85,24 +90,31 @@ def baixar(l, svs):
 
 
 def main():
+    import argparse
     from concurrent.futures import ThreadPoolExecutor
-    linhas = list(csv.DictReader(open(sys.argv[1], encoding="utf-8"), delimiter="\t"))
-    tmp = Path(raiz_hd()) / "TCGA_pulmao_tmp"
+    ap = argparse.ArgumentParser()
+    ap.add_argument("lista")
+    ap.add_argument("--saida", type=Path, default=SAIDA)
+    ap.add_argument("--todos", action="store_true")
+    a = ap.parse_args()
+    saida = a.saida
+    linhas = list(csv.DictReader(open(a.lista, encoding="utf-8"), delimiter="\t"))
+    tmp = Path(raiz_hd()) / ("TCGA_pulmao_tmp" if saida == SAIDA else f"TCGA_tmp_{saida.name}")
     tmp.mkdir(exist_ok=True)
-    pendentes = [(i, l) for i, l in enumerate(linhas, 1) if not (SAIDA / l["file_id"] / "meta.json").exists()]
+    pendentes = [(i, l) for i, l in enumerate(linhas, 1) if not (saida / l["file_id"] / "meta.json").exists()]
     falhas, downloads = [], {}
     with ThreadPoolExecutor(max_workers=ADIANTE) as ex:
         for j, (i, l) in enumerate(pendentes):
             for _, prox in pendentes[j:j + ADIANTE]:  # mantém até ADIANTE downloads em andamento
                 if prox["file_id"] not in downloads:
                     downloads[prox["file_id"]] = ex.submit(baixar, prox, tmp / prox["file_name"])
-            pasta = SAIDA / l["file_id"]
+            pasta = saida / l["file_id"]
             pasta.mkdir(parents=True, exist_ok=True)
             svs, t0 = tmp / l["file_name"], time.time()
             try:
                 downloads.pop(l["file_id"]).result()
                 print(f"  [{i}] baixada (espera {time.time() - t0:.0f} s); calculando embeddings", flush=True)
-                meta = {**{k: l[k] for k in ("file_name", "projeto", "paciente", "conjunto")}, **embutir(svs, pasta)}
+                meta = {**{k: v for k, v in l.items() if k not in ("file_id", "bytes")}, **embutir(svs, pasta, a.todos)}
                 (pasta / "meta.json").write_text(json.dumps(meta, indent=1), encoding="utf-8")
                 svs.unlink()
                 print(f"[{i}/{len(linhas)}] {l['projeto']} {l['paciente']}: {meta['n_amostra']} de {meta['n_tecido']} patches, "
