@@ -132,6 +132,8 @@ th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--lin
 th { font-family: var(--font-dados); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tinta-2); font-weight: 600; }
 td.num, th.num { text-align: right; }
 tr.vence td { background: var(--hema-suave); }
+.geral td { vertical-align: top; font-size: 0.9rem; }
+.geral td:first-child { font-family: var(--font-display); font-weight: 600; white-space: nowrap; }
 
 /* figuras */
 figure { margin: 0; display: grid; gap: 8px; min-width: 0; }
@@ -1002,6 +1004,49 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
     <li>O pré-laudo, quando só redige a partir de campos fixos, fica fiel: a classe bate em 57/57 (mama), 78/78 (pulmão) e 60/60 (próstata), sem números nem coordenadas inventados. Mas quase nunca aponta quando uma região contradiz a classe (1 de 15, 3 de 27, 1 de 35).</li>
   </ul>
   <p class="nota">Ressalvas gerais: 2 lâminas por classe no desenvolvimento; as anotações do BRACS marcam regiões, não cada célula; o rótulo da lâmina é o da lesão mais grave; no PANDA não há identificação do paciente, então dentro do Radboud a mesma pessoa pode ter biópsias no treino e no teste.</p>
+</section>
+
+<!-- TABELA GERAL -->
+<section class="final" id="tabela-geral">
+  <h2>Tabela geral: tipo de câncer, dataset, método e métricas</h2>
+  <p class="nota">Os resultados principais de cada etapa, por tipo de câncer: mama (BRACS; benigno, atípico, DCIS, carcinoma invasivo), pulmão (TCGA; adenocarcinoma × carcinoma escamoso) e próstata (PANDA; grau ISUP 0–5). "Treino → teste" indica o conjunto de treino e o de avaliação; o teste nunca entra no treino. Em negrito, o melhor método da decisão da lâmina em cada órgão. Detalhes e testes intermediários em <code>resultados.md</code>.</p>
+  <div class="tabela"><table class="geral">
+    <thead><tr><th>Tipo de câncer</th><th>Dataset (treino → teste)</th><th>Etapa</th><th>Método</th><th>Métrica</th><th class="num">Resultado</th><th>Situação</th></tr></thead>
+    <tbody>
+        <tr><td>Mama</td><td>BRACS_748 (98 regiões) e 16 lâminas</td><td>1. Filtro de tecido</td><td>Otsu na saturação + morfologia</td><td>Cobertura das regiões anotadas</td><td class="num">98/98 regiões (96%); 74–100% nas 16 lâminas</td><td><span class="selo ok">resolvido</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 7 lâminas malignas</td><td>2. Roteador</td><td>Frases (QuiltNet) e UNI2-h "não benigno"</td><td>Fração dos 32 patches com tumor (núcleos)</td><td class="num">0,86 e 0,88 (sorteio 0,52)</td><td><span class="selo parcial">bom em malignas</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 8 lâminas novas</td><td>3. Descritor</td><td>Zero-shot com frases (QuiltNet)</td><td>Acerto médio benigno / atípico / maligno</td><td class="num">53,2% (acaso 33%)</td><td><span class="selo ref">agrupamento antigo</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 3 lâminas fora do treino</td><td>3. Descritor</td><td>UNI2-h + regressão logística</td><td>AUC DCIS × IC</td><td class="num">0,96 / 0,96 / 0,99 (frases: 0,50–0,58)</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Mama</td><td>BRACS → BACH (Porto)</td><td>3. Descritor</td><td>UNI2-h + regressão logística</td><td>AUC DCIS × IC por imagem</td><td class="num">0,95 (QuiltNet: 0,57)</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 18 lâminas</td><td>3. Descritor</td><td>Hierárquico com UNI2-h</td><td>Acerto médio em 4 classes</td><td class="num">55,8% (frases 42,3%; acaso 25%)</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Mama</td><td>NuCLS (mama, TCGA)</td><td>3. Núcleos</td><td>CellViT + tipo treinado no NuCLS</td><td>Tumor: sensibilidade / valor preditivo; medida de contato com estroma</td><td class="num">0,83 / 0,88; Spearman 0,35</td><td><span class="selo falha">medida não passou</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 79 → 57 (teste oficial)</td><td>3½. Decisão da lâmina</td><td>Modelo de linguagem decide</td><td>Acertos; acurácia balanceada (4 classes)</td><td class="num">17/57; 0,423</td><td><span class="selo ref">referência</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 79 → 57</td><td>3½. Decisão da lâmina</td><td>Classificador + negativos benignos</td><td>Acertos; acurácia balanceada</td><td class="num">29/57; 0,505 (IC 0,40–0,63)</td><td><span class="selo parcial">passou por pouco</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 79 → 57</td><td>3½. Decisão da lâmina</td><td><b>MIL com atenção</b></td><td>Acertos; acurácia balanceada; benigno × atípico; 3 classes</td><td class="num"><b>38/57; 0,626</b> (IC 0,52–0,75); AUC 0,78; 0,68</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 79, validação cruzada por paciente</td><td>3½. Decisão da lâmina</td><td>MIL com atenção</td><td>Acertos; acurácia balanceada; benigno × atípico</td><td class="num">57/79; 0,680; AUC 0,915</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 79 → 57 e validação cruzada</td><td>3½. Decisão da lâmina</td><td>GAT-MIL</td><td>Acurácia balanceada</td><td class="num">0,597 e 0,636 (MIL: 0,626 e 0,680)</td><td><span class="selo falha">não passou</span></td></tr>
+        <tr><td>Mama</td><td>Publicado (Chen et al., 2024): 395 → 87</td><td>3½. Decisão da lâmina</td><td>UNI + ABMIL</td><td>Acurácia balanceada (3 classes)</td><td class="num">0,687 (comparação indicativa)</td><td><span class="selo ref">referência</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 29 lâminas com lesão anotada</td><td>3½. Explicação</td><td>Atenção do MIL</td><td>Razão dentro da lesão × acaso</td><td class="num">5,0 (21 de 29 lâminas acima do acaso)</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 57</td><td>5. Pré-laudo</td><td>Gemma 3 4B decide (com a regra do invasivo)</td><td>Acertos; números sem sustentação</td><td class="num">17/57; 2,1%</td><td><span class="selo ref">referência</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 57</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige (classe do MIL)</td><td>Classe igual; números sem sustentação; coordenadas inventadas; contradições apontadas</td><td class="num">57/57; 0 de 791; 0 de 267; 1 de 15</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 119 → 78</td><td>3½. Decisão da lâmina</td><td><b>MIL com atenção</b></td><td>AUC; acurácia balanceada</td><td class="num"><b>0,981; 0,949</b></td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 119 → 78</td><td>3½. Decisão da lâmina</td><td>GAT-MIL</td><td>AUC</td><td class="num">0,981 (diferença 0,000)</td><td><span class="selo ok">não piorou</span></td></tr>
+        <tr><td>Pulmão</td><td>LungHist700, 10 pacientes de teste</td><td>3. Descritor</td><td>UNI2-h + regressão logística</td><td>Acurácia balanceada (normal, adeno, escamoso)</td><td class="num">0,926</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Pulmão</td><td>LungHist700 → TCGA, 78</td><td>3. Descritor</td><td>Descritor nas 3 regiões de maior atenção</td><td>Lâminas com a classe certa</td><td class="num">58/78 (adenocarcinoma 21/39)</td><td><span class="selo falha">não passou</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 78</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige (tipo do MIL)</td><td>Tipo igual; números sem sustentação; coordenadas inventadas; discordâncias apontadas</td><td class="num">78/78; 0 de 1.035; 0 de 436; 3 de 27</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Próstata</td><td>PANDA, Radboud 600 → Karolinska 300</td><td>3½. Decisão da lâmina</td><td>MIL com atenção</td><td>Kappa quadrático; AUC benigno × câncer</td><td class="num">0,237; 0,940</td><td><span class="selo parcial">detecta, não gradua</span></td></tr>
+        <tr><td>Próstata</td><td>PANDA, Radboud, validação cruzada (600)</td><td>3½. Decisão da lâmina</td><td>MIL com atenção</td><td>Kappa quadrático</td><td class="num">0,784</td><td><span class="selo ref">referência</span></td></tr>
+        <tr><td>Próstata</td><td>Radboud → Karolinska / dentro do Radboud</td><td>3½. Decisão da lâmina</td><td>GAT-MIL</td><td>Kappa quadrático</td><td class="num">0,436 / 0,806</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Próstata</td><td>Radboud → Karolinska</td><td>3½. Decisão da lâmina</td><td>MIL + padronização por centro</td><td>Kappa quadrático</td><td class="num">0,540</td><td><span class="selo ref">sem critério</span></td></tr>
+        <tr><td>Próstata</td><td>Radboud → Karolinska</td><td>3½. Decisão da lâmina</td><td><b>GAT-MIL + padronização por centro</b></td><td>Kappa quadrático; previstos como ISUP 3</td><td class="num"><b>0,609</b> (IC 0,515–0,699); 38 de 300</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Próstata</td><td>Radboud → Karolinska</td><td>3½. Decisão da lâmina</td><td>GAT-MIL + normalização de cor (Reinhard)</td><td>Kappa quadrático</td><td class="num">0,225</td><td><span class="selo falha">não passou</span></td></tr>
+        <tr><td>Próstata</td><td>Radboud → Karolinska / dentro do Radboud</td><td>3½. Decisão da lâmina</td><td>Rede de grafos</td><td>Kappa quadrático</td><td class="num">0,442 / 0,809</td><td><span class="selo parcial">passou entre centros</span></td></tr>
+        <tr><td>Próstata</td><td>Radboud (máscaras) → Karolinska</td><td>3. Descritor</td><td>UNI2-h + regressão logística (benigno, Gleason 3, 4, 5)</td><td>AUC benigno × câncer por patch</td><td class="num">0,775</td><td><span class="selo falha">não passou</span></td></tr>
+        <tr><td>Próstata</td><td>Karolinska, 250 biópsias com câncer</td><td>3½. Explicação</td><td>Atenção do MIL na máscara</td><td>Biópsias com ≥ 2 das 3 regiões no câncer</td><td class="num">190/250 (acaso 0,43)</td><td><span class="selo falha">não passou</span></td></tr>
+        <tr><td>Próstata</td><td>Karolinska, 60</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige (grau do MIL)</td><td>Grau igual; números sem sustentação; coordenadas inventadas; discordâncias apontadas</td><td class="num">60/60; 0 de 628; 0 de 315; 1 de 35</td><td><span class="selo ok">passou</span></td></tr>
+    </tbody>
+  </table></div>
+  <p class="nota">Acaso: acurácia balanceada 0,25 em 4 classes e 0,33 em 3; AUC 0,5; kappa 0. Mama e próstata com intervalo de 95% por bootstrap (na mama, agrupado por paciente). Resultados de 06/11 ou antes no BRACS usam o agrupamento antigo, com o UDH em atípico.</p>
 </section>
 
 <footer>
