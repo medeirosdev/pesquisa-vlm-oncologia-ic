@@ -144,6 +144,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 | 14/11 | GAT-MIL no BRACS e no TCGA, fixado antes (grafo pelos 8 patches mais próximos da amostra, até 384 µm): BRACS não passou (79 → 57: acurácia balanceada 0,626 → 0,597; validação cruzada: 0,680 → 0,636; diferenças sem significância); TCGA empatou (AUC 0,981 nos dois; não piora, passou). A vizinhança ajudou só na graduação da próstata |
 | 14/11 | Próstata, troca de centro, fixado antes: padronizar os embeddings por centro (média e desvio dos patches de cada centro, sem rótulo) passou (GAT-MIL 0,439 → 0,609; ABMIL 0,237 → 0,540; o colapso em ISUP 3 some); normalizar a cor (Reinhard, embeddings recalculados) não passou (GAT-MIL 0,439 → 0,225). A diferença entre centros não é só a cor média. |
 | 14/11 | Rede de grafos na próstata, fixado antes (até 16 pontos de interesse pela atenção do MIL, janela de 7 × 7 patches com grafo local em cada ponto, rede dos pontos com distância): entre centros passou (0,237 → 0,442; GAT-MIL 0,420, empate); dentro do Radboud não passou por pouco (0,784 → 0,809, IC −0,002 a 0,051). Olhando só as janelas em volta de ~10 pontos, fica no nível do GAT-MIL com todos os patches. |
+| 15/11 | Rim (TCGA-RCC: células claras, papilífero, cromófobo), fixado antes, com treino e teste em hospitais diferentes (no TCGA cada hospital mandou um subtipo só): MIL com acurácia balanceada 0,953 e AUC 0,987 nos hospitais novos (no sorteio aleatório, 0,983); GAT-MIL 0,945, não pior. Passou nos dois critérios. |
 
 ## Onde paramos
 

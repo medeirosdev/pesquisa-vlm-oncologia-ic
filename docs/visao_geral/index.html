@@ -210,6 +210,7 @@ footer { margin-top: 40px; color: var(--tinta-2); font-size: 0.88rem; border-top
           <tr><td>BRACS</td><td>547 lâminas de mama, 4.537 regiões anotadas em 7 classes (N, PB, UDH, FEA, ADH, DCIS, IC)</td><td>18 lâminas de desenvolvimento, 61 da validação oficial e 57 do teste oficial; 3.655 regiões de treino para treinar o descritor</td></tr>
           <tr><td>BACH</td><td>Imagens de microscopia de outra instituição (Porto): 100 <i>in situ</i>, 100 invasivo</td><td>teste de generalização</td></tr>
           <tr><td>TCGA (pulmão)</td><td>Lâminas de diagnóstico de adenocarcinoma (LUAD) e carcinoma escamoso (LUSC) de pulmão, acesso aberto</td><td>200 lâminas sorteadas (120 treino, 80 teste) para testar a generalização a outro órgão</td></tr>
+          <tr><td>TCGA (rim)</td><td>Lâminas de diagnóstico de carcinoma renal de células claras (KIRC), papilífero (KIRP) e cromófobo (KICH), acesso aberto</td><td>300 lâminas sorteadas (100 por subtipo), com treino e teste em hospitais diferentes</td></tr>
           <tr><td>LungHist700</td><td>691 imagens de microscópio de pulmão (normal, adenocarcinoma, carcinoma escamoso) de 45 pacientes</td><td>treinar o descritor por patch do pulmão</td></tr>
           <tr><td>PANDA</td><td>Biópsias de próstata com grau ISUP 0–5 e máscara de rótulos, de dois centros (Radboud e Karolinska)</td><td>900 biópsias sorteadas (600 treino no Radboud, 300 teste no Karolinska) para testar uma tarefa de graduação</td></tr>
           <tr><td>NuCLS</td><td>1.744 campos de mama do TCGA, ~59 mil núcleos classificados por patologista</td><td>validar a segmentação de núcleos</td></tr>
@@ -611,6 +612,20 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
     <span class="selo falha">mama: não ajudou · pulmão: empate</span>
   </div>
 
+  <div class="painel">
+    <h3>Rim: três subtipos, em hospitais que o modelo nunca viu</h3>
+    <p>Terceiro órgão: carcinoma renal de células claras, papilífero e cromófobo (TCGA), mesma receita do pulmão. No TCGA, cada hospital mandou casos de um subtipo só; um modelo pode acertar aprendendo o "jeito" do hospital (coloração, escâner, preparo) em vez da morfologia. Por isso o teste principal usa só hospitais que não aparecem no treino. Critério fixado antes: MIL com acurácia balanceada ≥ 0,80 e AUC ≥ 0,90; GAT-MIL não pior.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Divisão</th><th class="num">MIL: acurácia balanceada</th><th class="num">MIL: AUC</th><th class="num">GAT-MIL: acurácia balanceada</th></tr></thead>
+      <tbody>
+        <tr class="vence"><td>Hospitais novos no teste (137 lâminas)</td><td class="num"><b>0,953</b> (0,915–0,983)</td><td class="num"><b>0,987</b></td><td class="num">0,945</td></tr>
+        <tr><td>Sorteio aleatório (119 lâminas)</td><td class="num">0,983</td><td class="num">1,000</td><td class="num">0,975</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Nos hospitais novos: células claras 49/54, papilífero 39/41, cromófobo 42/42. A queda do sorteio aleatório para os hospitais novos (0,98 → 0,95) mostra que parte do acerto no sorteio vinha de reconhecer o hospital, mas pouca. A padronização por hospital não se aplica aqui: com um subtipo por hospital, subtrair a média do hospital apagaria o próprio subtipo. Referência indicativa: o CLAM reporta AUC ~0,99 nos mesmos três subtipos, com divisão aleatória.</p>
+    <span class="selo ok">passou nos dois critérios</span>
+  </div>
+
   <div class="painel destaque">
     <h3>Próstata: troca de centro</h3>
     <p>Duas correções que não usam nenhum rótulo do centro novo, com critério fixado antes (com o GAT-MIL, ganho em kappa com o limite inferior do IC 95% acima de zero). <b>Padronização por centro:</b> cada dimensão do embedding é centrada e escalada com a média e o desvio dos patches do próprio centro. <b>Normalização de cor (Reinhard):</b> a cor de cada biópsia é levada à cor média do treino, e os embeddings são recalculados.</p>
@@ -985,7 +1000,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
       <tr><td>1. Filtro de tecido</td><td><span class="selo ok">resolvido</span></td><td>—</td></tr>
       <tr><td>2. Roteador</td><td><span class="selo parcial">bom em lâminas malignas</span></td><td>métrica para lâminas benignas e atípicas</td></tr>
       <tr><td>3. Descritor</td><td><span class="selo parcial">bom no DCIS × IC; negativos cortam falsos malignos; atípico ainda fraco</span></td><td>recuperar o DCIS sem perder as benignas</td></tr>
-      <tr><td>3½. Decisão da lâmina</td><td><span class="selo ok">MIL com 79 lâminas: 38/57, acurácia balanceada 0,63; benigno × atípico AUC 0,78; no pulmão (TCGA), AUC 0,98; na próstata (PANDA), detecta câncer (AUC 0,94) mas gradua mal (kappa 0,24; com o GAT-MIL, 0,44; com o GAT-MIL e a padronização por centro, 0,61; com a rede de grafos, 0,44; na mama o GAT-MIL não ajudou)</span></td><td>MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas; na próstata, adotar GAT-MIL + padronização por centro como padrão; rede de grafos com padronização por centro e na mama</td></tr>
+      <tr><td>3½. Decisão da lâmina</td><td><span class="selo ok">MIL com 79 lâminas: 38/57, acurácia balanceada 0,63; benigno × atípico AUC 0,78; no pulmão (TCGA), AUC 0,98; no rim (TCGA, hospitais novos), acurácia balanceada 0,95; na próstata (PANDA), detecta câncer (AUC 0,94) mas gradua mal (kappa 0,24; com o GAT-MIL, 0,44; com o GAT-MIL e a padronização por centro, 0,61; com a rede de grafos, 0,44; na mama o GAT-MIL não ajudou)</span></td><td>MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas; na próstata, adotar GAT-MIL + padronização por centro como padrão; rede de grafos com padronização por centro e na mama</td></tr>
       <tr><td>4. Agregação</td><td><span class="selo parcial">regra ajuda no IC</span></td><td>trocar a contagem dos 32 patches pelos campos fixos</td></tr>
       <tr><td>5. Síntese</td><td><span class="selo parcial">só redige, com a classe do MIL; números fiéis, mas justifica contradições em vez de apontá-las; no pulmão, 78/78 fiéis e discordância apontada em 3 de 27; na próstata, 60/60 fiéis e 1 de 35</span></td><td>sinalizar contradições nos campos; avaliação por patologista</td></tr>
     </tbody>
@@ -1009,7 +1024,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
 <!-- TABELA GERAL -->
 <section class="final" id="tabela-geral">
   <h2>Tabela geral: tipo de câncer, dataset, método e métricas</h2>
-  <p class="nota">Os resultados principais de cada etapa, por tipo de câncer: mama (BRACS; benigno, atípico, DCIS, carcinoma invasivo), pulmão (TCGA; adenocarcinoma × carcinoma escamoso) e próstata (PANDA; grau ISUP 0–5). "Treino → teste" indica o conjunto de treino e o de avaliação; o teste nunca entra no treino. Em negrito, o melhor método da decisão da lâmina em cada órgão. Detalhes e testes intermediários em <code>resultados.md</code>.</p>
+  <p class="nota">Os resultados principais de cada etapa, por tipo de câncer: mama (BRACS; benigno, atípico, DCIS, carcinoma invasivo), pulmão (TCGA; adenocarcinoma × carcinoma escamoso), rim (TCGA; células claras, papilífero, cromófobo) e próstata (PANDA; grau ISUP 0–5). "Treino → teste" indica o conjunto de treino e o de avaliação; o teste nunca entra no treino. Em negrito, o melhor método da decisão da lâmina em cada órgão. Detalhes e testes intermediários em <code>resultados.md</code>.</p>
   <div class="tabela"><table class="geral">
     <thead><tr><th>Tipo de câncer</th><th>Dataset (treino → teste)</th><th>Etapa</th><th>Método</th><th>Métrica</th><th class="num">Resultado</th><th>Situação</th></tr></thead>
     <tbody>
@@ -1034,6 +1049,9 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
         <tr><td>Pulmão</td><td>LungHist700, 10 pacientes de teste</td><td>3. Descritor</td><td>UNI2-h + regressão logística</td><td>Acurácia balanceada (normal, adeno, escamoso)</td><td class="num">0,926</td><td><span class="selo ok">passou</span></td></tr>
         <tr><td>Pulmão</td><td>LungHist700 → TCGA, 78</td><td>3. Descritor</td><td>Descritor nas 3 regiões de maior atenção</td><td>Lâminas com a classe certa</td><td class="num">58/78 (adenocarcinoma 21/39)</td><td><span class="selo falha">não passou</span></td></tr>
         <tr><td>Pulmão</td><td>TCGA, 78</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige (tipo do MIL)</td><td>Tipo igual; números sem sustentação; coordenadas inventadas; discordâncias apontadas</td><td class="num">78/78; 0 de 1.035; 0 de 436; 3 de 27</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Rim</td><td>TCGA-RCC, 162 → 137 (hospitais novos)</td><td>3½. Decisão da lâmina</td><td><b>MIL com atenção</b></td><td>Acurácia balanceada (3 subtipos); AUC macro</td><td class="num"><b>0,953; 0,987</b></td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Rim</td><td>TCGA-RCC, 180 → 119 (sorteio aleatório)</td><td>3½. Decisão da lâmina</td><td>MIL com atenção</td><td>Acurácia balanceada; AUC macro</td><td class="num">0,983; 1,000</td><td><span class="selo ref">comparação</span></td></tr>
+        <tr><td>Rim</td><td>TCGA-RCC, hospitais novos</td><td>3½. Decisão da lâmina</td><td>GAT-MIL</td><td>Acurácia balanceada</td><td class="num">0,945 (diferença −0,008)</td><td><span class="selo ok">não piorou</span></td></tr>
         <tr><td>Próstata</td><td>PANDA, Radboud 600 → Karolinska 300</td><td>3½. Decisão da lâmina</td><td>MIL com atenção</td><td>Kappa quadrático; AUC benigno × câncer</td><td class="num">0,237; 0,940</td><td><span class="selo parcial">detecta, não gradua</span></td></tr>
         <tr><td>Próstata</td><td>PANDA, Radboud, validação cruzada (600)</td><td>3½. Decisão da lâmina</td><td>MIL com atenção</td><td>Kappa quadrático</td><td class="num">0,784</td><td><span class="selo ref">referência</span></td></tr>
         <tr><td>Próstata</td><td>Radboud → Karolinska / dentro do Radboud</td><td>3½. Decisão da lâmina</td><td>GAT-MIL</td><td>Kappa quadrático</td><td class="num">0,436 / 0,806</td><td><span class="selo ok">passou</span></td></tr>
@@ -1051,7 +1069,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
 
 <footer>
   <p>Pipeline Ideia 01 · orientação Prof. João Batista Florindo · situação em 14/11/2026. Modelos: QuiltNet-B-32, UNI2-h, CellViT-256, Gemma 3 4B e MedGemma 4B, todos rodando localmente.</p>
-  <p>Imagens de lâminas: BRACS (Brancati et al., <i>BRACS: A Dataset for BReAst Carcinoma Subtyping in H&amp;E Histology Images</i>, Database, 2022), licença CC BY-NC 4.0. Núcleos anotados: NuCLS (Amgad et al., GigaScience, 2022), CC0. Lâminas de pulmão: TCGA-LUAD e TCGA-LUSC (NCI Genomic Data Commons, acesso aberto); só resultados numéricos. Imagens de pulmão para o descritor: LungHist700 (Diosdado et al., Scientific Data, 2024), CC BY 4.0; só resultados numéricos. Biópsias de próstata: PANDA (Bulten et al., Nature Medicine, 2022), CC BY-NC-SA 4.0; as figuras dos grafos desenham sobre uma biópsia do PANDA e seguem a mesma licença. Imagens do BACH não são reproduzidas (licença CC BY-NC-ND); só os resultados numéricos.</p>
+  <p>Imagens de lâminas: BRACS (Brancati et al., <i>BRACS: A Dataset for BReAst Carcinoma Subtyping in H&amp;E Histology Images</i>, Database, 2022), licença CC BY-NC 4.0. Núcleos anotados: NuCLS (Amgad et al., GigaScience, 2022), CC0. Lâminas de pulmão e rim: TCGA-LUAD, TCGA-LUSC, TCGA-KIRC, TCGA-KIRP e TCGA-KICH (NCI Genomic Data Commons, acesso aberto); só resultados numéricos. Imagens de pulmão para o descritor: LungHist700 (Diosdado et al., Scientific Data, 2024), CC BY 4.0; só resultados numéricos. Biópsias de próstata: PANDA (Bulten et al., Nature Medicine, 2022), CC BY-NC-SA 4.0; as figuras dos grafos desenham sobre uma biópsia do PANDA e seguem a mesma licença. Imagens do BACH não são reproduzidas (licença CC BY-NC-ND); só os resultados numéricos.</p>
 </footer>
 
 </div>
