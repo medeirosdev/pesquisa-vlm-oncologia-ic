@@ -577,6 +577,7 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
       </tbody>
     </table></div>
     <p class="nota">Kappa quadrático do grau ISUP. Entre centros, as biópsias previstas como ISUP 3 caem de 209 para 129 de 300, e o benigno × câncer sobe de AUC 0,940 para 0,963. A vizinhança ajuda nos dois cenários, mas o problema maior é a troca de centro: dentro do Radboud os dois modelos graduam bem, no Karolinska não. Dentro do Radboud, a mesma pessoa pode ter biópsias no treino e no teste (o PANDA não informa o paciente), o que favorece os dois modelos igualmente. Próximo passo: a mesma comparação no BRACS e no TCGA.</p>
+    <figure><img src="img/grafo_gat_mil.jpg" alt="Biópsia de próstata deitada na horizontal com uma malha azul ligando os patches de tecido; ao lado, um zoom com um patch laranja ligado a oito vizinhos azuis" loading="lazy"><figcaption>Uma biópsia de teste do Karolinska (ISUP 4): os 510 patches de tecido e as ligações com os 8 vizinhos encostados. No zoom, o patch laranja e os 8 vizinhos com que ele mistura o embedding.</figcaption></figure>
     <span class="selo ok">passou nos dois cenários</span>
   </div>
 
@@ -592,6 +593,7 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
       </tbody>
     </table></div>
     <p class="nota">Na mama o critério era o GAT-MIL ganhar, e não ganhou; no pulmão, já no teto, o critério era não piorar. A vizinhança ajudou só na graduação da próstata, onde o grafo cobre o tecido inteiro. Possíveis razões, não testadas: grafo parcial; o rótulo do BRACS é o da lesão mais grave, muitas vezes pequena; só 79 lâminas de treino.</p>
+    <figure><img src="img/grafo_bracs_parcial.jpg" alt="Lâmina de mama com a malha azul cobrindo só parte do tecido; ao lado, um zoom de 3 mm com patches azuis espalhados e ligações entre eles, deixando tecido descoberto" loading="lazy"><figcaption>BRACS_1284 (carcinoma invasivo): só os 2.000 patches sorteados têm embedding, e o grafo liga cada um aos até 8 mais próximos a até 384 µm. No zoom, o tecido entre os patches fica fora do grafo, ao contrário do PANDA.</figcaption></figure>
     <span class="selo falha">mama: não ajudou · pulmão: empate</span>
   </div>
 
@@ -621,6 +623,8 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
       </tbody>
     </table></div>
     <p class="nota">Kappa quadrático do grau ISUP. A rede usa em média 9,8 pontos por biópsia (as biópsias são finas, e poucas comportam 16 pontos a 1 mm), e as janelas cobrem 67% dos patches. Com isso fica no nível do GAT-MIL, que olha todos os patches (diferença +0,021 entre centros e +0,014 dentro do Radboud, as duas sem significância): escolher os pontos pela atenção não perde o que importa pro grau. Próximos passos: a rede com a padronização por centro, e a rede na mama, onde as lâminas são grandes e a amostra de patches é parcial.</p>
+    <figure><img src="img/rede_grafos.jpg" alt="A mesma biópsia de próstata em três painéis: atenção do MIL em tons de azul com o câncer contornado em laranja; 14 pontos numerados com janelas azuis e linhas ligando todos os pontos; zoom de uma janela de 7 por 7 patches com o grafo local" loading="lazy"><figcaption>A mesma biópsia do Karolinska. a) Atenção do MIL em cada patch, com o câncer anotado contornado em laranja. b) Os 14 pontos de interesse, a janela 7 × 7 de cada um e a rede completa entre os pontos (duas distâncias marcadas). c) O grafo local do ponto 1.</figcaption></figure>
+    <figure><img src="img/grafos_resultados.png" alt="Gráfico de barras do kappa: entre centros, MIL 0,237, GAT-MIL 0,420, rede de grafos 0,442 e GAT-MIL com padronização por centro 0,609; dentro do Radboud, 0,784, 0,795 e 0,809" loading="lazy"><figcaption>Kappa dos três modelos nos dois cenários, com IC 95%. A barra da padronização por centro vem do teste de troca de centro.</figcaption></figure>
     <span class="selo ok">entre centros: passou</span> <span class="selo falha">dentro do Radboud: não passou, por pouco</span>
   </div>
 
