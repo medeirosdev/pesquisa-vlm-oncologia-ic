@@ -226,7 +226,19 @@ footer { margin-top: 40px; color: var(--tinta-2); font-size: 0.88rem; border-top
         <li><b>Agrupamento das classes</b> (oficial do BRACS): benigno = N, PB, UDH; atípico = FEA, ADH; maligno = DCIS, IC. Até 06/11 o projeto colocava o UDH em atípico; os resultados de lâmina foram repontuados ou refeitos, e os que não puderam ser estão marcados como "agrupamento antigo".</li>
         <li><b>AUC:</b> chance de um patch de IC ter pontuação maior que um de DCIS. 0,5 é o acaso, 1,0 é separação perfeita.</li>
         <li><b>Controle com rótulos embaralhados:</b> mostra quanto se acerta só por sorte.</li>
-        <li><b>Kappa quadrático</b> (graduação, PANDA): concordância entre o grau previsto e o real, com erro de dois graus pesando quatro vezes o de um. 0 é o acaso, 1 é concordância perfeita.</li>
+        <li><b>Kappa quadrático</b> (graduação, PANDA): concordância entre o grau previsto e o real, descontado o que se acertaria por acaso. O erro pesa pelo quadrado da distância: errar 1 grau pesa 1, 2 graus pesa 4, chamar um ISUP 5 de benigno pesa 25. 0 é o acaso, 1 é concordância perfeita; leitura usual: abaixo de 0,4 fraco, 0,4–0,6 moderado, 0,6–0,8 bom, acima de 0,8 muito bom. É a métrica oficial do desafio PANDA. Pune o "chute no meio": prever ISUP 3 em quase tudo dá acurácia exata razoável e kappa baixo.</li>
+      </ul>
+    </div>
+    <div class="painel">
+      <h3>Termos da decisão da lâmina</h3>
+      <ul class="limpa">
+        <li><b>Embedding:</b> os 1.536 números com que o UNI2-h descreve cada patch. Os modelos de decisão da lâmina só veem esses números, não a imagem.</li>
+        <li><b>MIL com atenção</b> (ABMIL): trata a lâmina como um saco de patches; dá um peso de atenção a cada um e decide pela média ponderada. Não sabe quem é vizinho de quem.</li>
+        <li><b>GAT-MIL</b> (MIL com atenção em grafo): antes da decisão, cada patch mistura o próprio embedding com o dos 8 vizinhos encostados, com um peso aprendido por vizinho. Leva a arquitetura do tecido em conta.</li>
+        <li><b>Rede de grafos</b> (ideia proposta em 14/11/2026): escolhe pontos de interesse pela atenção de um MIL, monta um grafo local denso numa janela de 7 × 7 patches em volta de cada ponto e liga os pontos numa rede em que a atenção entre eles diminui com a distância.</li>
+        <li><b>Padronização por centro:</b> cada um dos 1.536 números do embedding vira (valor − média do centro) ÷ desvio do centro, com média e desvio calculados separadamente nos patches de cada hospital, sem usar o diagnóstico. Remove o deslocamento que coloração, preparo e escâner causam nos números. Exemplo: se uma das notas tem média 2,0 no Radboud e 2,8 no Karolinska, as duas passam a ter média 0. Exige um lote de lâminas do hospital novo antes de usar.</li>
+        <li><b>Normalização de cor</b> (Reinhard): ajusta a cor da imagem para a cor média do treino antes de calcular o embedding. Mexe na imagem; a padronização mexe nos números.</li>
+        <li><b>Troca de centro:</b> treinar num hospital e testar em outro. Na próstata, treino no Radboud e teste no Karolinska.</li>
       </ul>
     </div>
   </div>
@@ -971,17 +983,30 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
       <tr><td>1. Filtro de tecido</td><td><span class="selo ok">resolvido</span></td><td>—</td></tr>
       <tr><td>2. Roteador</td><td><span class="selo parcial">bom em lâminas malignas</span></td><td>métrica para lâminas benignas e atípicas</td></tr>
       <tr><td>3. Descritor</td><td><span class="selo parcial">bom no DCIS × IC; negativos cortam falsos malignos; atípico ainda fraco</span></td><td>recuperar o DCIS sem perder as benignas</td></tr>
-      <tr><td>3½. Decisão da lâmina</td><td><span class="selo ok">MIL com 79 lâminas: 38/57, acurácia balanceada 0,63; benigno × atípico AUC 0,78; no pulmão (TCGA), AUC 0,98; na próstata (PANDA), detecta câncer (AUC 0,94) mas gradua mal (kappa 0,24; com o GAT-MIL, 0,44; com o GAT-MIL e a padronização por centro, 0,61; com a rede de grafos, 0,44; na mama o GAT-MIL não ajudou)</span></td><td>MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas; rede de grafos com padronização por centro e na mama</td></tr>
+      <tr><td>3½. Decisão da lâmina</td><td><span class="selo ok">MIL com 79 lâminas: 38/57, acurácia balanceada 0,63; benigno × atípico AUC 0,78; no pulmão (TCGA), AUC 0,98; na próstata (PANDA), detecta câncer (AUC 0,94) mas gradua mal (kappa 0,24; com o GAT-MIL, 0,44; com o GAT-MIL e a padronização por centro, 0,61; com a rede de grafos, 0,44; na mama o GAT-MIL não ajudou)</span></td><td>MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas; na próstata, adotar GAT-MIL + padronização por centro como padrão; rede de grafos com padronização por centro e na mama</td></tr>
       <tr><td>4. Agregação</td><td><span class="selo parcial">regra ajuda no IC</span></td><td>trocar a contagem dos 32 patches pelos campos fixos</td></tr>
       <tr><td>5. Síntese</td><td><span class="selo parcial">só redige, com a classe do MIL; números fiéis, mas justifica contradições em vez de apontá-las; no pulmão, 78/78 fiéis e discordância apontada em 3 de 27; na próstata, 60/60 fiéis e 1 de 35</span></td><td>sinalizar contradições nos campos; avaliação por patologista</td></tr>
     </tbody>
   </table></div>
-  <p class="nota">Ressalvas gerais: 2 lâminas por classe no desenvolvimento; as anotações do BRACS marcam regiões, não cada célula; o rótulo da lâmina é o da lesão mais grave.</p>
+  <h3>O que os testes mostraram até aqui</h3>
+  <ul class="limpa">
+    <li>O filtro de tecido funciona, e os roteadores acham tumor em 86–88% dos patches escolhidos nas lâminas malignas (sorteio: 52%).</li>
+    <li>Comparar a imagem com frases (zero-shot) é o gargalo do descritor: fica no acaso no DCIS × IC, mesmo quando o embedding contém a informação. Uma camada treinada em cima do UNI2-h separa DCIS de IC e generaliza pra outra instituição (BACH).</li>
+    <li>Deixar o modelo de linguagem decidir a classe a partir de 32 patches chama quase tudo de maligno (17 de 57). Tirar a decisão dele e treinar o descritor com lâminas benignas como negativos leva a 29 de 57.</li>
+    <li>Um MIL com atenção, treinado direto no rótulo de 79 lâminas, supera tudo o que passa pelo descritor por patch: 38 de 57 lâminas, acurácia balanceada 0,63, benigno × atípico AUC 0,78. A atenção dele cai nas lesões anotadas 5× mais que o acaso.</li>
+    <li>A mesma receita (UNI2-h + MIL) funciona em outro órgão: no pulmão (TCGA), adenocarcinoma × escamoso com AUC 0,98.</li>
+    <li>Na próstata (PANDA), detecta câncer em outro centro (AUC 0,94), mas não gradua (kappa 0,24): quase tudo vira ISUP 3. Dentro do mesmo centro gradua bem (~0,80), então o problema é a troca de centro.</li>
+    <li>Dar ao MIL a vizinhança dos patches (GAT-MIL) melhora a graduação da próstata (0,24 → 0,44 entre centros; 0,78 → 0,81 dentro). Na mama não ajudou e no pulmão empatou, com o grafo montado só sobre a amostra de 2.000 patches.</li>
+    <li>Padronizar os embeddings por centro foi o que mais ajudou na troca de centro (MIL 0,54; GAT-MIL 0,61). Normalizar a cor não ajudou (GAT-MIL 0,23): a diferença entre hospitais não é só a cor média.</li>
+    <li>A rede de grafos chega ao nível do GAT-MIL olhando só as janelas em volta de ~10 pontos por biópsia (67% dos patches): escolher os pontos pela atenção não perde o que importa pro grau.</li>
+    <li>O pré-laudo, quando só redige a partir de campos fixos, fica fiel: a classe bate em 57/57 (mama), 78/78 (pulmão) e 60/60 (próstata), sem números nem coordenadas inventados. Mas quase nunca aponta quando uma região contradiz a classe (1 de 15, 3 de 27, 1 de 35).</li>
+  </ul>
+  <p class="nota">Ressalvas gerais: 2 lâminas por classe no desenvolvimento; as anotações do BRACS marcam regiões, não cada célula; o rótulo da lâmina é o da lesão mais grave; no PANDA não há identificação do paciente, então dentro do Radboud a mesma pessoa pode ter biópsias no treino e no teste.</p>
 </section>
 
 <footer>
   <p>Pipeline Ideia 01 · orientação Prof. João Batista Florindo · situação em 14/11/2026. Modelos: QuiltNet-B-32, UNI2-h, CellViT-256, Gemma 3 4B e MedGemma 4B, todos rodando localmente.</p>
-  <p>Imagens de lâminas: BRACS (Brancati et al., <i>BRACS: A Dataset for BReAst Carcinoma Subtyping in H&amp;E Histology Images</i>, Database, 2022), licença CC BY-NC 4.0. Núcleos anotados: NuCLS (Amgad et al., GigaScience, 2022), CC0. Lâminas de pulmão: TCGA-LUAD e TCGA-LUSC (NCI Genomic Data Commons, acesso aberto); só resultados numéricos. Imagens de pulmão para o descritor: LungHist700 (Diosdado et al., Scientific Data, 2024), CC BY 4.0; só resultados numéricos. Biópsias de próstata: PANDA (Bulten et al., Nature Medicine, 2022), CC BY-NC-SA 4.0; só resultados numéricos. Imagens do BACH não são reproduzidas (licença CC BY-NC-ND); só os resultados numéricos.</p>
+  <p>Imagens de lâminas: BRACS (Brancati et al., <i>BRACS: A Dataset for BReAst Carcinoma Subtyping in H&amp;E Histology Images</i>, Database, 2022), licença CC BY-NC 4.0. Núcleos anotados: NuCLS (Amgad et al., GigaScience, 2022), CC0. Lâminas de pulmão: TCGA-LUAD e TCGA-LUSC (NCI Genomic Data Commons, acesso aberto); só resultados numéricos. Imagens de pulmão para o descritor: LungHist700 (Diosdado et al., Scientific Data, 2024), CC BY 4.0; só resultados numéricos. Biópsias de próstata: PANDA (Bulten et al., Nature Medicine, 2022), CC BY-NC-SA 4.0; as figuras dos grafos desenham sobre uma biópsia do PANDA e seguem a mesma licença. Imagens do BACH não são reproduzidas (licença CC BY-NC-ND); só os resultados numéricos.</p>
 </footer>
 
 </div>
