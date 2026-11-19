@@ -1,0 +1,6 @@
+# imagens do dataset do Prof. Florindo (não públicas): nunca versionar
+exemplos/
+*.png
+*.bmp
+*.BMP
+resultados/
