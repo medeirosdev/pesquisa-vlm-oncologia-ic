@@ -13,7 +13,9 @@ Imagens que vão para o UNI2-h (224 x 224, normalização do ImageNet):
   contexto_05:   a mesma janela, sem pintar nada (núcleo + tecido em volta).
   nucleo_10 e contexto_10: o mesmo com janela de 224 px, sem reduzir (escala original).
   A janela fica centrada no núcleo e é deslocada para caber no campo (nunca sai da imagem); o núcleo fica na mesma
-  posição nas duas versões.
+  posição nas duas versões. Correção feita depois de um erro na primeira execução e antes de qualquer resultado:
+  quando o núcleo é maior que a janela (só 1 dos 5.593, com 227 px, na janela de 224), a janela cresce até caber o
+  núcleo e é reduzida para 224; as medidas clássicas desse núcleo usam essa janela maior.
 Medidas clássicas de cada núcleo (escala original): forma (área, perímetro, excentricidade, solidez, circularidade,
   eixos, razão dos eixos, extensão), cor (média e desvio de R, G, B, hematoxilina e eosina dentro da máscara) e textura
   (GLCM em 32 níveis dentro da máscara, distâncias 1 e 3, média de 4 ângulos: contraste, dissimilaridade,
@@ -93,6 +95,7 @@ def localizar(nucleo, campo):
 def janela(campo, x, y, mk, lado):
     """Recorte de lado x lado centrado no núcleo, deslocado pra caber no campo; e a máscara do núcleo no recorte."""
     H, W = campo.shape[:2]
+    lado = max(lado, *mk.shape)  # 1 núcleo dos 5.593 (227 px) não cabe na janela de 224: a janela cresce e vai a 224
     cy, cx = y + mk.shape[0] // 2, x + mk.shape[1] // 2
     j0 = min(max(cy - lado // 2, 0), H - lado)
     i0 = min(max(cx - lado // 2, 0), W - lado)
