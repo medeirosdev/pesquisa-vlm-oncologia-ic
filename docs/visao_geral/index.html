@@ -211,6 +211,7 @@ footer { margin-top: 40px; color: var(--tinta-2); font-size: 0.88rem; border-top
           <tr><td>BACH</td><td>Imagens de microscopia de outra instituição (Porto): 100 <i>in situ</i>, 100 invasivo</td><td>teste de generalização</td></tr>
           <tr><td>TCGA (pulmão)</td><td>Lâminas de diagnóstico de adenocarcinoma (LUAD) e carcinoma escamoso (LUSC) de pulmão, acesso aberto</td><td>200 lâminas sorteadas (120 treino, 80 teste) para testar a generalização a outro órgão</td></tr>
           <tr><td>TCGA (rim)</td><td>Lâminas de diagnóstico de carcinoma renal de células claras (KIRC), papilífero (KIRP) e cromófobo (KICH), acesso aberto</td><td>300 lâminas sorteadas (100 por subtipo), com treino e teste em hospitais diferentes</td></tr>
+          <tr><td>Pulmão (orientador)</td><td>Dataset do orientador, não público: 52 pacientes (25 adenocarcinoma, 27 epidermoide), 1.647 campos de biópsia H&amp;E e 5.593 núcleos isolados recortados desses campos</td><td>testar se o subtipo está no núcleo ou no tecido em volta (validação cruzada por paciente)</td></tr>
           <tr><td>LungHist700</td><td>691 imagens de microscópio de pulmão (normal, adenocarcinoma, carcinoma escamoso) de 45 pacientes</td><td>treinar o descritor por patch do pulmão</td></tr>
           <tr><td>PANDA</td><td>Biópsias de próstata com grau ISUP 0–5 e máscara de rótulos, de dois centros (Radboud e Karolinska)</td><td>900 biópsias sorteadas (600 treino no Radboud, 300 teste no Karolinska) para testar uma tarefa de graduação</td></tr>
           <tr><td>NuCLS</td><td>1.744 campos de mama do TCGA, ~59 mil núcleos classificados por patologista</td><td>validar a segmentação de núcleos</td></tr>
@@ -627,6 +628,22 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
   </div>
 
   <div class="painel destaque">
+    <h3>Pulmão: o subtipo está no núcleo ou no tecido em volta?</h3>
+    <p>Dataset do orientador (não público): 52 pacientes, adenocarcinoma × carcinoma epidermoide, com campos de biópsia e uma pasta de "citologia". Antes do teste, uma verificação mostrou que essa pasta tem núcleos recortados dos próprios campos de biópsia (cada recorte aparece pixel a pixel no seu campo). Então dá pra comparar o mesmo núcleo sozinho, sobre fundo branco, e com o tecido em volta. Avaliação por paciente (validação cruzada em 5 partes, repetida 5 vezes). Critérios fixados antes: biópsia com acurácia balanceada ≥ 0,80; núcleo isolado acima do acaso; contexto melhor que o núcleo isolado; UNI2-h melhor que medidas clássicas no núcleo.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>O que o modelo vê</th><th class="num">AUC</th><th class="num">Acurácia balanceada</th></tr></thead>
+      <tbody>
+        <tr><td>Núcleo isolado, medidas clássicas (forma, cor, textura)</td><td class="num">0,599</td><td class="num">0,518</td></tr>
+        <tr><td>Núcleo isolado, UNI2-h + MIL</td><td class="num">0,479</td><td class="num">0,532</td></tr>
+        <tr class="vence"><td>Mesmo núcleo com o tecido em volta, UNI2-h + MIL</td><td class="num"><b>0,948</b> (0,879–0,996)</td><td class="num">0,866</td></tr>
+        <tr><td>Campo de biópsia inteiro, UNI2-h + MIL</td><td class="num">0,942</td><td class="num"><b>0,886</b></td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">O núcleo sozinho fica no acaso, com o UNI2-h e com medidas clássicas. Com o tecido em volta, o mesmo núcleo chega ao nível do campo inteiro (diferença de AUC +0,47, IC 0,29 a 0,65). Neste conjunto, o subtipo está no arranjo do tecido, não no núcleo; super-resolução do núcleo não traria essa informação. Ressalvas: 52 pacientes, um só hospital, máscaras dos núcleos de uma segmentação antiga.</p>
+    <span class="selo parcial">passou em 2 de 4 critérios</span>
+  </div>
+
+  <div class="painel destaque">
     <h3>Próstata: troca de centro</h3>
     <p>Duas correções que não usam nenhum rótulo do centro novo, com critério fixado antes (com o GAT-MIL, ganho em kappa com o limite inferior do IC 95% acima de zero). <b>Padronização por centro:</b> cada dimensão do embedding é centrada e escalada com a média e o desvio dos patches do próprio centro. <b>Normalização de cor (Reinhard):</b> a cor de cada biópsia é levada à cor média do treino, e os embeddings são recalculados.</p>
     <div class="tabela"><table>
@@ -1016,6 +1033,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
     <li>Dar ao MIL a vizinhança dos patches (GAT-MIL) melhora a graduação da próstata (0,24 → 0,44 entre centros; 0,78 → 0,81 dentro). Na mama não ajudou e no pulmão empatou, com o grafo montado só sobre a amostra de 2.000 patches.</li>
     <li>Padronizar os embeddings por centro foi o que mais ajudou na troca de centro (MIL 0,54; GAT-MIL 0,61). Normalizar a cor não ajudou (GAT-MIL 0,23): a diferença entre hospitais não é só a cor média.</li>
     <li>A rede de grafos chega ao nível do GAT-MIL olhando só as janelas em volta de ~10 pontos por biópsia (67% dos patches): escolher os pontos pela atenção não perde o que importa pro grau.</li>
+    <li>No pulmão do dataset do orientador, o núcleo isolado não carrega o subtipo (AUC 0,48 com UNI2-h, 0,60 com medidas clássicas); o mesmo núcleo com o tecido em volta chega a 0,95, no nível do campo de biópsia inteiro.</li>
     <li>O pré-laudo, quando só redige a partir de campos fixos, fica fiel: a classe bate em 57/57 (mama), 78/78 (pulmão) e 60/60 (próstata), sem números nem coordenadas inventados. Mas quase nunca aponta quando uma região contradiz a classe (1 de 15, 3 de 27, 1 de 35).</li>
   </ul>
   <p class="nota">Ressalvas gerais: 2 lâminas por classe no desenvolvimento; as anotações do BRACS marcam regiões, não cada célula; o rótulo da lâmina é o da lesão mais grave; no PANDA não há identificação do paciente, então dentro do Radboud a mesma pessoa pode ter biópsias no treino e no teste.</p>
@@ -1024,7 +1042,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
 <!-- TABELA GERAL -->
 <section class="final" id="tabela-geral">
   <h2>Tabela geral: tipo de câncer, dataset, método e métricas</h2>
-  <p class="nota">Os resultados principais de cada etapa, por tipo de câncer: mama (BRACS; benigno, atípico, DCIS, carcinoma invasivo), pulmão (TCGA; adenocarcinoma × carcinoma escamoso), rim (TCGA; células claras, papilífero, cromófobo) e próstata (PANDA; grau ISUP 0–5). "Treino → teste" indica o conjunto de treino e o de avaliação; o teste nunca entra no treino. Em negrito, o melhor método da decisão da lâmina em cada órgão. Detalhes e testes intermediários em <code>resultados.md</code>.</p>
+  <p class="nota">Os resultados principais de cada etapa, por tipo de câncer: mama (BRACS; benigno, atípico, DCIS, carcinoma invasivo), pulmão (TCGA; adenocarcinoma × carcinoma escamoso), rim (TCGA; células claras, papilífero, cromófobo), pulmão no dataset do orientador (adenocarcinoma × epidermoide; núcleo isolado × tecido em volta) e próstata (PANDA; grau ISUP 0–5). "Treino → teste" indica o conjunto de treino e o de avaliação; o teste nunca entra no treino. Em negrito, o melhor método da decisão da lâmina em cada órgão. Detalhes e testes intermediários em <code>resultados.md</code>.</p>
   <div class="tabela"><table class="geral">
     <thead><tr><th>Tipo de câncer</th><th>Dataset (treino → teste)</th><th>Etapa</th><th>Método</th><th>Métrica</th><th class="num">Resultado</th><th>Situação</th></tr></thead>
     <tbody>
@@ -1052,6 +1070,9 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
         <tr><td>Rim</td><td>TCGA-RCC, 162 → 137 (hospitais novos)</td><td>3½. Decisão da lâmina</td><td><b>MIL com atenção</b></td><td>Acurácia balanceada (3 subtipos); AUC macro</td><td class="num"><b>0,953; 0,987</b></td><td><span class="selo ok">passou</span></td></tr>
         <tr><td>Rim</td><td>TCGA-RCC, 180 → 119 (sorteio aleatório)</td><td>3½. Decisão da lâmina</td><td>MIL com atenção</td><td>Acurácia balanceada; AUC macro</td><td class="num">0,983; 1,000</td><td><span class="selo ref">comparação</span></td></tr>
         <tr><td>Rim</td><td>TCGA-RCC, hospitais novos</td><td>3½. Decisão da lâmina</td><td>GAT-MIL</td><td>Acurácia balanceada</td><td class="num">0,945 (diferença −0,008)</td><td><span class="selo ok">não piorou</span></td></tr>
+        <tr><td>Pulmão</td><td>Orientador, 52 pacientes (validação cruzada por paciente)</td><td>3½. Decisão do paciente</td><td><b>MIL com atenção, campos de biópsia</b></td><td>Acurácia balanceada; AUC (adeno × epidermoide)</td><td class="num"><b>0,886; 0,942</b></td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Pulmão</td><td>Orientador, 52 pacientes</td><td>3½. Decisão do paciente</td><td>MIL com atenção, núcleo isolado</td><td>AUC</td><td class="num">0,479 (clássico: 0,599)</td><td><span class="selo falha">no acaso</span></td></tr>
+        <tr><td>Pulmão</td><td>Orientador, 52 pacientes</td><td>3½. Decisão do paciente</td><td>MIL com atenção, núcleo + tecido em volta</td><td>AUC</td><td class="num">0,948 (+0,47 sobre o núcleo isolado)</td><td><span class="selo ok">passou</span></td></tr>
         <tr><td>Próstata</td><td>PANDA, Radboud 600 → Karolinska 300</td><td>3½. Decisão da lâmina</td><td>MIL com atenção</td><td>Kappa quadrático; AUC benigno × câncer</td><td class="num">0,237; 0,940</td><td><span class="selo parcial">detecta, não gradua</span></td></tr>
         <tr><td>Próstata</td><td>PANDA, Radboud, validação cruzada (600)</td><td>3½. Decisão da lâmina</td><td>MIL com atenção</td><td>Kappa quadrático</td><td class="num">0,784</td><td><span class="selo ref">referência</span></td></tr>
         <tr><td>Próstata</td><td>Radboud → Karolinska / dentro do Radboud</td><td>3½. Decisão da lâmina</td><td>GAT-MIL</td><td>Kappa quadrático</td><td class="num">0,436 / 0,806</td><td><span class="selo ok">passou</span></td></tr>

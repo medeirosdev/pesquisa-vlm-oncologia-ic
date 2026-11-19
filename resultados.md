@@ -513,6 +513,32 @@ Pergunta: a receita (UNI2-h + MIL) funciona num terceiro órgão, e funciona em 
 
 Leitura: como no pulmão, subtipar carcinomas de morfologia bem distinta é fácil pra receita, inclusive em hospitais novos. A vizinhança (GAT-MIL, com o grafo parcial da amostra) não acrescenta. Os testes difíceis continuam sendo a mama (benigno × atípico) e a graduação.
 
+## Pulmão: só o núcleo × núcleo com contexto, dataset do orientador (19/11)
+
+Pergunta: dá pra separar adenocarcinoma de carcinoma epidermoide só pelo núcleo, sem o tecido em volta (como na citologia)? E quanto o contexto acrescenta? Dataset do orientador (não público): 52 pacientes (25 adenocarcinoma, 27 epidermoide), 1.647 campos de biópsia H&E de 620 × 480 px (20 a 40 por paciente) e 5.593 imagens de núcleo isolado sobre fundo branco (100 a 131 por paciente). Achado antes do teste: as imagens da pasta de "citologia" são núcleos recortados dos próprios campos de biópsia (nome do arquivo = campo + número do núcleo; cada recorte aparece pixel a pixel no seu campo, erro máximo 0,005 por pixel nos 5.593). Então não é uma coleta citológica independente, e sim o núcleo da biópsia sem o tecido em volta. Isso permite comparar o mesmo núcleo com e sem contexto.
+
+Avaliação por paciente: 5 repetições de validação cruzada em 5 partes estratificadas; probabilidade final de cada paciente = média das 5 repetições; IC 95% por bootstrap por paciente (2.000). Braços: T1, medidas clássicas dos núcleos (forma, cor, textura GLCM; média e desvio por paciente) + regressão logística; T2, MIL sobre os campos de biópsia (UNI2-h); T3, MIL sobre os núcleos, com tudo fora do núcleo pintado de branco (janela de 448 px reduzida à metade); T4, MIL sobre as mesmas janelas sem pintar (núcleo + tecido em volta; os pixels do núcleo são idênticos aos de T3). Fixado antes de rodar (commits `a225cd8` e `7bf1908`, este só pra caber 1 núcleo maior que a janela). Critérios: P1, T2 com acurácia balanceada ≥ 0,80; P2, T3 com AUC acima do acaso (limite inferior do IC > 0,5); P3, T4 − T3 > 0 na AUC com IC > 0; P4, T3 − T1 > 0 na AUC com IC > 0. Scripts: `Testes/PulmaoFlorindo/preparar.py`, `Testes/PulmaoFlorindo/testar.py`.
+
+| Braço | AUC (IC 95%) | Acurácia balanceada (IC 95%) | Adeno | Epidermoide |
+|---|---|---|---|---|
+| T1 clássico nos núcleos | 0,599 (0,442–0,750) | 0,518 (0,382–0,653) | 12/25 | 15/27 |
+| T2 biópsia, MIL | 0,942 (0,867–0,996) | **0,886** (0,789–0,962) | 23/25 | 23/27 |
+| T3 só núcleo, MIL | 0,479 (0,305–0,643) | 0,532 (0,402–0,656) | 9/25 | 19/27 |
+| T4 núcleo + contexto, MIL | **0,948** (0,879–0,996) | 0,866 (0,766–0,952) | 22/25 | 23/27 |
+| T3 na escala original | 0,447 (0,285–0,615) | 0,492 (0,369–0,616) | 7/25 | 19/27 |
+| T4 na escala original | 0,862 (0,738–0,959) | 0,809 (0,697–0,905) | 21/25 | 21/27 |
+| Média dos embeddings + logística, biópsia | 0,939 | 0,886 | 23/25 | 23/27 |
+| Média dos embeddings + logística, só núcleo | 0,529 | 0,555 | 12/25 | 17/27 |
+| Média dos embeddings + logística, contexto | 0,930 | 0,847 | 22/25 | 22/27 |
+| Fusão T2 + T3 | 0,911 | 0,866 | 22/25 | 23/27 |
+
+- **P1: passou** (0,886). **P2: não passou** (AUC 0,479, no acaso). **P3: passou** (T4 − T3: +0,470, IC 0,294 a 0,650). **P4: não passou** (T3 − T1: −0,120, IC −0,353 a 0,117; os dois no acaso).
+- O mesmo núcleo, com o tecido em volta (janela de ~450 px no campo original), vai do acaso a AUC 0,95, no nível do campo inteiro (T2 − T4: −0,006, IC −0,022 a 0,007). Na escala original (janela de 224 px, menos contexto), o contexto também ajuda (+0,415, IC 0,211 a 0,607), mas menos (0,86).
+- Nem o UNI2-h nem as medidas clássicas acham o subtipo no núcleo isolado. Juntar os núcleos à biópsia (fusão) não acrescenta: são os mesmos pixels.
+- Ressalvas: 52 pacientes (IC largos); as máscaras dos núcleos vêm de uma segmentação antiga e o contorno pode ter cortado parte da cromatina da borda; um só conjunto, sem outro hospital.
+
+Leitura: neste conjunto, o subtipo está no arranjo do tecido em volta do núcleo, não no núcleo. Para a "citologia" deste dataset (núcleo isolado), nenhum dos métodos funciona; o caminho, se houver, passa por recuperar contexto (janela em volta do núcleo), e não por super-resolução do núcleo.
+
 ## Anotações oficiais do BRACS
 
 - `.qpdata` lidas com o QuPath e exportadas pra GeoJSON: 387 de 387 lâminas; totais por classe iguais aos do artigo.
@@ -532,3 +558,4 @@ Detalhes: `Testes/Pipeline01/notas/problemas_e_metrica.md`.
 8. Um MIL com atenção, treinado direto no rótulo de só 79 lâminas, supera tudo o que passa pelo descritor por patch: 38 de 57 lâminas (acurácia balanceada 0,63), e benigno × atípico sobe de AUC 0,58 para 0,78. É o caminho principal daqui pra frente; falta mais treino (379 lâminas) e confirmação nas 30 lâminas de teste não usadas.
 9. A receita de classificação da lâmina (UNI2-h + MIL, mesma configuração), retreinada com lâminas de pulmão, funciona em outro órgão: no TCGA, adenocarcinoma × carcinoma escamoso, AUC 0,98 e acurácia balanceada 0,95 em 78 lâminas de teste, com lâminas de 20x e 40x. A tarefa é mais fácil que a da mama. No pulmão, o pré-laudo manteve os números e coordenadas fiéis (78 textos), mas o descritor por patch, treinado em outro conjunto (LungHist700), descreveu mal as regiões de maior atenção nas lâminas de adenocarcinoma (21 de 39), e o texto quase nunca aponta quando a região discorda do tipo sugerido (3 de 27).
 10. Numa tarefa de graduação (próstata, PANDA, treino num centro e teste em outro), a mesma receita detecta câncer (AUC 0,94) mas não gradua (kappa 0,24, quase tudo vira ISUP 3). Dentro do mesmo centro gradua bem (kappa 0,78), então o problema principal é a troca de centro. Dar ao MIL a vizinhança dos patches (GAT-MIL) melhora a graduação nos dois cenários, muito entre centros (kappa 0,24 → 0,44) e pouco dentro do centro (0,78 → 0,81). Na mama (BRACS) a mesma ideia não ajudou (acurácia balanceada 0,63 → 0,60, sem diferença provada) e no pulmão empatou, com o grafo montado só sobre a amostra de patches. Padronizar os embeddings por centro (média e desvio dos patches do próprio centro, sem rótulo) leva o kappa entre centros a 0,54 (ABMIL) e 0,61 (GAT-MIL); normalizar a cor (Reinhard) não ajuda. A rede de grafos (pontos de interesse pela atenção, grafo local em cada ponto, rede dos pontos com distância) chega ao nível do GAT-MIL olhando só as janelas em volta dos pontos (entre centros, 0,44). No rim (TCGA-RCC, 3 subtipos), a receita funciona em hospitais que nunca viu (acurácia balanceada 0,95, AUC 0,99; no sorteio aleatório, 0,98). O pré-laudo continua fiel aos campos (60/60) e continua sem apontar regiões discordantes (1 de 35).
+11. No dataset de pulmão do orientador (52 pacientes, adenocarcinoma × epidermoide), a receita acerta pelo campo de biópsia (acurácia balanceada 0,89, AUC 0,94), mas o núcleo isolado, que é o que a pasta de "citologia" contém (núcleos recortados da própria biópsia), fica no acaso, tanto com o UNI2-h (AUC 0,48) quanto com medidas clássicas de forma, cor e textura (0,60). O mesmo núcleo, com o tecido em volta, volta a AUC 0,95: a informação do subtipo está no contexto, não no núcleo.
