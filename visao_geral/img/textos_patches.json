@@ -1,0 +1,6 @@
+{
+ "e3_patch_dcis.jpg": "[96256,41984] (maligno 1.00) ductal carcinoma in situ 0.99",
+ "e3_patch_ic.jpg": "[94720,22016] (maligno 1.00) invasive carcinoma 0.98",
+ "e3_patch_benigno.jpg": "[30720,35328] (benigno 1.00) benign tissue",
+ "e3_patch_falso_positivo.jpg": "[25600,20480] (maligno 1.00) invasive carcinoma 1.00"
+}
