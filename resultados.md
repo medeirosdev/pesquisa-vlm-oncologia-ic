@@ -648,6 +648,33 @@ Pergunta: a atenção do MIL aponta os patches que sustentam a decisão? No TCGA
 
 Leitura: a atenção é fiel ao modelo quando a classe prevista é a que o modelo detecta (escamoso, câncer) e não deve ser lida como "onde está a evidência" quando a classe prevista é a outra (adenocarcinoma, benigno). No pré-laudo, as "regiões que mais pesaram" de uma lâmina de adenocarcinoma são, em geral, as mais suspeitas de escamoso.
 
+## Atenção do GAT-MIL padronizado (próstata) e classe do pré-laudo extraída por código (20/11)
+
+Dois testes com critérios fixados antes de rodar (commit `d9dcb0f`). Scripts: `Testes/Pipeline01/mil/remocao_atencao_gat.py` e `Testes/Pipeline01/prelaudo/extracao_codigo.py`.
+
+**Remoção e suficiência com o GAT-MIL.** O teste anterior usou o ABMIL; os pré-laudos da próstata usam o GAT-MIL padronizado. Mesma receita retreinada (os pesos da rodada dos pré-laudos não foram guardados; o treino na GPU não é determinístico): classe prevista igual à daquela rodada em 259/300, atenção com Spearman médio 0,952. Depois de tirar patches, o grafo é refeito só com os que ficam. Critérios Y1 e Y2: os mesmos de X1 e X2.
+
+| Próstata, 300 biópsias | ABMIL (antes) | GAT-MIL padronizado |
+|---|---|---|
+| Remoção, 10% de maior atenção − sorteio (IC 95%) | +0,203 (0,173 a 0,234) | **+0,310** (0,268 a 0,356) |
+| Queda tirando 10%: atenção / sorteio | 0,208 / 0,005 | 0,316 / 0,005 |
+| Classe muda tirando 10%: atenção / sorteio | 39,3% / 3,3% | 55,0% / 4,6% |
+| Suficiência, 20 de maior atenção − sorteio (IC 95%) | +0,188 (0,165 a 0,211) | **+0,124** (0,086 a 0,160) |
+| P(classe) só com 20: atenção / sorteio | 0,688 / 0,501 | 0,649 / 0,525 |
+| Critério | X1, X2 passaram | **Y1, Y2 passaram** |
+
+- Separado pela classe prevista (reportado, sem critério): nas 35 previstas como ISUP 0, remoção −0,207 e suficiência −0,305; nas 265 com câncer, +0,379 e +0,180. O mesmo padrão do ABMIL e do pulmão: a atenção sustenta a decisão quando a classe prevista é a que o modelo detecta (câncer), não quando é a ausência dela.
+
+**Classe extraída por código.** A classe sai da primeira linha da seção de impressão (nome de classe que aparece primeiro; na próstata, o primeiro "ISUP" com dígito); o modelo só é usado se a regra não achar nada. Aplicada aos pré-laudos finais, sem gerar texto novo. Critério C: classe = sugerida em ≥ 90%, em cada órgão e idioma.
+
+| | Pulmão PT | Pulmão EN | Próstata PT | Próstata EN |
+|---|---|---|---|---|
+| Resolvidos pela regra | 78/78 | 78/78 | 60/60 | 60/60 |
+| Classe = sugerida (antes, só o modelo) | 78/78 (78/78) | 78/78 (78/78) | 60/60 (60/60) | **60/60 (56/60)** |
+| C | passou | passou | passou | passou |
+
+- Nos 4 textos em que a regra e o modelo discordam (próstata, inglês), a regra está certa nos 4: o texto é fiel à classe em todos os 276 pré-laudos finais.
+
 ## Anotações oficiais do BRACS
 
 - `.qpdata` lidas com o QuPath e exportadas pra GeoJSON: 387 de 387 lâminas; totais por classe iguais aos do artigo.
@@ -670,4 +697,4 @@ Detalhes: `Testes/Pipeline01/notas/problemas_e_metrica.md`.
 11. No dataset de pulmão do orientador (52 pacientes, adenocarcinoma × epidermoide), a receita acerta pelo campo de biópsia (acurácia balanceada 0,89, AUC 0,94), mas o núcleo isolado, que é o que a pasta de "citologia" contém (núcleos recortados da própria biópsia), fica no acaso, tanto com o UNI2-h (AUC 0,48) quanto com medidas clássicas de forma, cor e textura (0,60). O mesmo núcleo, com o tecido em volta, volta a AUC 0,95: a informação do subtipo está no contexto, não no núcleo.
 12. O pré-laudo passa a apontar todas as regiões que contradizem a classe sugerida quando o aviso vem pronto nos campos, calculado por código: pulmão 27 de 27 documentos (antes 5) e próstata 35 de 35 (antes 11), sem falso alarme nos documentos sem discordância e com números, coordenadas e classe fiéis. O modelo ainda acrescenta avisos em regiões que não discordam (próstata, 9 de 60 documentos) e troca a classe da região em 3; a seção de avisos deve ser inserida por código, não redigida. Com a seção colada por código, os avisos espúrios e as trocas de classe somem (0 nos dois órgãos, em português e em inglês); em inglês, uma coordenada copiada errada fora da seção de avisos (1 de 284, pulmão) fez o critério do pulmão não passar.
 13. A atenção do MIL é fiel ao modelo pelo teste de remoção nos dois órgãos (tirar os 10% de maior atenção derruba a probabilidade da classe prevista; tirar 10% sorteados não), mas no pulmão os 20 patches de maior atenção sustentam a classe pior do que 20 sorteados. A diferença está nas lâminas previstas como adenocarcinoma (e nas biópsias previstas como benignas): o MIL decide como um detector da classe "positiva", e nessas lâminas as regiões de maior atenção são as mais parecidas com a outra classe, não a evidência da classe prevista (hipótese, análise feita depois dos resultados).
-14. O aviso de discordância marca os erros do MIL: nas lâminas com aviso o MIL erra mais, no pulmão (4 de 27 contra 0 de 51, todos os erros com aviso, inclusive 3 com confiança alta) e na próstata (câncer × benigno, 16% contra 6%, risco relativo 2,6). Com a lista de regiões também colada por código, o pré-laudo do pulmão fica sem nenhuma coordenada inventada nos dois idiomas. Na próstata, o GAT-MIL padronizado deixa de colapsar em ISUP 3 e a atenção dele cai no câncer em 91% das biópsias (ABMIL 76%); os pré-laudos feitos com ele passam no critério nos dois idiomas, sem aviso espúrio, classe trocada ou coordenada inventada.
+14. O aviso de discordância marca os erros do MIL: nas lâminas com aviso o MIL erra mais, no pulmão (4 de 27 contra 0 de 51, todos os erros com aviso, inclusive 3 com confiança alta) e na próstata (câncer × benigno, 16% contra 6%, risco relativo 2,6). Com a lista de regiões também colada por código, o pré-laudo do pulmão fica sem nenhuma coordenada inventada nos dois idiomas. Na próstata, o GAT-MIL padronizado deixa de colapsar em ISUP 3 e a atenção dele cai no câncer em 91% das biópsias (ABMIL 76%); os pré-laudos feitos com ele passam no critério nos dois idiomas, sem aviso espúrio, classe trocada ou coordenada inventada. Com a classe lida do texto por código, a impressão bate com a decisão em todos os 276 pré-laudos finais. A atenção do GAT-MIL também passa nos testes de remoção e de suficiência (+0,310 e +0,124), com a mesma exceção das biópsias previstas como benignas.
