@@ -939,6 +939,24 @@ a sugestão de benignidade.</pre>
     <p class="nota">Os números estão todos certos, mas o raciocínio não: um patch de DCIS não sustenta benignidade. Isso reforça a leitura dos textos por patologista e pede uma regra nos campos que sinalize a contradição.</p>
   </div>
 
+  <div class="painel destaque">
+    <h3>Aviso de discordância pronto nos campos (pulmão e próstata)</h3>
+    <p>Quando uma região de maior atenção contradiz a classe sugerida, o texto quase nunca dizia isso, mesmo com a regra nas instruções (pulmão 3 de 27, próstata 1 de 35). Aqui a discordância é calculada por código e entra nos campos como uma linha pronta ("AVISO: a região [x,y] foi descrita como … o que discorda do tipo sugerido …"); o modelo só precisa reproduzi-la numa seção própria. Mesmos documentos, campos e modelo dos testes anteriores. Critérios fixados antes: aponta em ≥ 90% dos documentos com região discordante; falso alarme ≤ 10% nos documentos sem discordância; classe, números e coordenadas continuam fiéis.</p>
+    <div class="tabela"><table>
+      <thead><tr><th></th><th class="num">Pulmão antes</th><th class="num">Pulmão com aviso</th><th class="num">Próstata antes</th><th class="num">Próstata com aviso</th></tr></thead>
+      <tbody>
+        <tr class="vence"><td>Documentos com região discordante que apontam</td><td class="num">5/27</td><td class="num"><b>27/27</b></td><td class="num">11/35</td><td class="num"><b>35/35</b></td></tr>
+        <tr><td>Regiões discordantes apontadas</td><td class="num">12/64</td><td class="num">64/64</td><td class="num">23/75</td><td class="num">75/75</td></tr>
+        <tr><td>Falso alarme sem discordância</td><td class="num">3/51</td><td class="num">0/51</td><td class="num">8/25</td><td class="num">0/25</td></tr>
+        <tr><td>Classe igual; números e coordenadas inventados</td><td class="num">78/78; 0</td><td class="num">78/78; 0</td><td class="num">60/60; 0</td><td class="num">60/60; 0</td></tr>
+        <tr><td>Aviso em região que não discorda (contado depois)</td><td class="num">—</td><td class="num">1 doc.</td><td class="num">—</td><td class="num">9 docs.</td></tr>
+        <tr><td>Classe da região trocada (contado depois)</td><td class="num">1 doc.</td><td class="num">0</td><td class="num">0</td><td class="num">3 docs.</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Com o aviso pronto, o texto aponta todas as regiões discordantes nos dois órgãos e não avisa sem motivo nos documentos sem discordância. Lendo os textos depois, apareceu o que o critério de falso alarme não mede: dentro de documentos que têm aviso, o modelo às vezes copia o formato para regiões que não discordam (na próstata, 9 de 60, a maioria Gleason 3 ou 4 em biópsias com ISUP ≥ 1) e, em 3 deles, troca a classe da região. O modelo reproduz bem, mas não deve decidir o que é discordante: o próximo passo é inserir a seção de avisos por código e conferir o par coordenada–classe na checagem.</p>
+    <span class="selo ok">passou nos 3 critérios, nos dois órgãos</span>
+  </div>
+
   <div class="painel">
     <h3>Como o modelo de linguagem se comporta</h3>
     <ul class="limpa">
@@ -1019,7 +1037,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
       <tr><td>3. Descritor</td><td><span class="selo parcial">bom no DCIS × IC; negativos cortam falsos malignos; atípico ainda fraco</span></td><td>recuperar o DCIS sem perder as benignas</td></tr>
       <tr><td>3½. Decisão da lâmina</td><td><span class="selo ok">MIL com 79 lâminas: 38/57, acurácia balanceada 0,63; benigno × atípico AUC 0,78; no pulmão (TCGA), AUC 0,98; no rim (TCGA, hospitais novos), acurácia balanceada 0,95; na próstata (PANDA), detecta câncer (AUC 0,94) mas gradua mal (kappa 0,24; com o GAT-MIL, 0,44; com o GAT-MIL e a padronização por centro, 0,61; com a rede de grafos, 0,44; na mama o GAT-MIL não ajudou)</span></td><td>MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas; na próstata, adotar GAT-MIL + padronização por centro como padrão; rede de grafos com padronização por centro e na mama</td></tr>
       <tr><td>4. Agregação</td><td><span class="selo parcial">regra ajuda no IC</span></td><td>trocar a contagem dos 32 patches pelos campos fixos</td></tr>
-      <tr><td>5. Síntese</td><td><span class="selo parcial">só redige, com a classe do MIL; números fiéis, mas justifica contradições em vez de apontá-las; no pulmão, 78/78 fiéis e discordância apontada em 3 de 27; na próstata, 60/60 fiéis e 1 de 35</span></td><td>sinalizar contradições nos campos; avaliação por patologista</td></tr>
+      <tr><td>5. Síntese</td><td><span class="selo parcial">só redige, com a classe do MIL; números fiéis; com o aviso pronto nos campos, aponta as discordâncias em 27/27 (pulmão) e 35/35 (próstata), antes 5 e 11; ainda acrescenta avisos falsos na próstata (9 de 60)</span></td><td>inserir os avisos por código e conferir o par coordenada–classe; avaliação por patologista</td></tr>
     </tbody>
   </table></div>
   <h3>O que os testes mostraram até aqui</h3>
@@ -1034,7 +1052,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
     <li>Padronizar os embeddings por centro foi o que mais ajudou na troca de centro (MIL 0,54; GAT-MIL 0,61). Normalizar a cor não ajudou (GAT-MIL 0,23): a diferença entre hospitais não é só a cor média.</li>
     <li>A rede de grafos chega ao nível do GAT-MIL olhando só as janelas em volta de ~10 pontos por biópsia (67% dos patches): escolher os pontos pela atenção não perde o que importa pro grau.</li>
     <li>No pulmão do dataset do orientador, o núcleo isolado não carrega o subtipo (AUC 0,48 com UNI2-h, 0,60 com medidas clássicas); o mesmo núcleo com o tecido em volta chega a 0,95, no nível do campo de biópsia inteiro.</li>
-    <li>O pré-laudo, quando só redige a partir de campos fixos, fica fiel: a classe bate em 57/57 (mama), 78/78 (pulmão) e 60/60 (próstata), sem números nem coordenadas inventados. Mas quase nunca aponta quando uma região contradiz a classe (1 de 15, 3 de 27, 1 de 35).</li>
+    <li>O pré-laudo, quando só redige a partir de campos fixos, fica fiel: a classe bate em 57/57 (mama), 78/78 (pulmão) e 60/60 (próstata), sem números nem coordenadas inventados. Com a regra só nas instruções, quase nunca apontava quando uma região contradiz a classe (1 de 15, 3 de 27, 1 de 35); com o aviso calculado por código e pronto nos campos, aponta em 27 de 27 (pulmão) e 35 de 35 (próstata), sem falso alarme nos documentos sem discordância. Na próstata, o modelo ainda acrescenta avisos em regiões que não discordam (9 de 60).</li>
   </ul>
   <p class="nota">Ressalvas gerais: 2 lâminas por classe no desenvolvimento; as anotações do BRACS marcam regiões, não cada célula; o rótulo da lâmina é o da lesão mais grave; no PANDA não há identificação do paciente, então dentro do Radboud a mesma pessoa pode ter biópsias no treino e no teste.</p>
 </section>
@@ -1067,6 +1085,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
         <tr><td>Pulmão</td><td>LungHist700, 10 pacientes de teste</td><td>3. Descritor</td><td>UNI2-h + regressão logística</td><td>Acurácia balanceada (normal, adeno, escamoso)</td><td class="num">0,926</td><td><span class="selo ok">passou</span></td></tr>
         <tr><td>Pulmão</td><td>LungHist700 → TCGA, 78</td><td>3. Descritor</td><td>Descritor nas 3 regiões de maior atenção</td><td>Lâminas com a classe certa</td><td class="num">58/78 (adenocarcinoma 21/39)</td><td><span class="selo falha">não passou</span></td></tr>
         <tr><td>Pulmão</td><td>TCGA, 78</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige (tipo do MIL)</td><td>Tipo igual; números sem sustentação; coordenadas inventadas; discordâncias apontadas</td><td class="num">78/78; 0 de 1.035; 0 de 436; 3 de 27</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 78</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige, com aviso de discordância pronto nos campos</td><td>Discordâncias apontadas; falso alarme; classe igual; números e coordenadas inventados</td><td class="num">27 de 27; 0 de 51; 78/78; 0 e 0</td><td><span class="selo ok">passou</span></td></tr>
         <tr><td>Rim</td><td>TCGA-RCC, 162 → 137 (hospitais novos)</td><td>3½. Decisão da lâmina</td><td><b>MIL com atenção</b></td><td>Acurácia balanceada (3 subtipos); AUC macro</td><td class="num"><b>0,953; 0,987</b></td><td><span class="selo ok">passou</span></td></tr>
         <tr><td>Rim</td><td>TCGA-RCC, 180 → 119 (sorteio aleatório)</td><td>3½. Decisão da lâmina</td><td>MIL com atenção</td><td>Acurácia balanceada; AUC macro</td><td class="num">0,983; 1,000</td><td><span class="selo ref">comparação</span></td></tr>
         <tr><td>Rim</td><td>TCGA-RCC, hospitais novos</td><td>3½. Decisão da lâmina</td><td>GAT-MIL</td><td>Acurácia balanceada</td><td class="num">0,945 (diferença −0,008)</td><td><span class="selo ok">não piorou</span></td></tr>
@@ -1083,6 +1102,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
         <tr><td>Próstata</td><td>Radboud (máscaras) → Karolinska</td><td>3. Descritor</td><td>UNI2-h + regressão logística (benigno, Gleason 3, 4, 5)</td><td>AUC benigno × câncer por patch</td><td class="num">0,775</td><td><span class="selo falha">não passou</span></td></tr>
         <tr><td>Próstata</td><td>Karolinska, 250 biópsias com câncer</td><td>3½. Explicação</td><td>Atenção do MIL na máscara</td><td>Biópsias com ≥ 2 das 3 regiões no câncer</td><td class="num">190/250 (acaso 0,43)</td><td><span class="selo falha">não passou</span></td></tr>
         <tr><td>Próstata</td><td>Karolinska, 60</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige (grau do MIL)</td><td>Grau igual; números sem sustentação; coordenadas inventadas; discordâncias apontadas</td><td class="num">60/60; 0 de 628; 0 de 315; 1 de 35</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Próstata</td><td>Karolinska, 60</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige, com aviso de discordância pronto nos campos</td><td>Discordâncias apontadas; falso alarme; classe igual; números e coordenadas inventados</td><td class="num">35 de 35; 0 de 25; 60/60; 0 e 0 (avisos a mais em 9 de 60)</td><td><span class="selo ok">passou</span></td></tr>
     </tbody>
   </table></div>
   <p class="nota">Acaso: acurácia balanceada 0,25 em 4 classes e 0,33 em 3; AUC 0,5; kappa 0. Mama e próstata com intervalo de 95% por bootstrap (na mama, agrupado por paciente). Resultados de 06/11 ou antes no BRACS usam o agrupamento antigo, com o UDH em atípico.</p>

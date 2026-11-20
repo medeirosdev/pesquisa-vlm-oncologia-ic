@@ -62,7 +62,8 @@ systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 \
 - [x] **Pulmão, dataset do orientador (adeno × epidermoide, 52 pacientes): só o núcleo × núcleo com contexto** (pré-registro `a225cd8`): P1 passou (biópsia, acurácia balanceada 0,886); P2 não passou (só o núcleo, AUC 0,479); P3 passou (núcleo + contexto, AUC 0,948; +0,47); P4 não passou (clássico 0,599, também no acaso). A pasta de "citologia" são núcleos recortados da própria biópsia: confirmar com o orientador se existe uma coleta citológica de verdade.
 - [ ] Pulmão (orientador): quanto contexto basta? Janelas de tamanhos diferentes em volta do núcleo (224, 336, 448 px) e onde o MIL põe a atenção.
 - [ ] **Ovário (UBC-OCEAN)**: o download pede aceitar as regras da competição no Kaggle (kaggle.com/competitions/UBC-OCEAN/rules). Conferir no train.csv se há informação de centro.
-- [ ] ★ **Sinalizar contradições nos campos** (ex.: "atenção: regiões de maior peso descritas como malignas, apesar da classe benigna") e medir de novo. No pulmão, uma regra nas instruções pedindo pra apontar a discordância não bastou (3 de 27): o aviso precisa vir pronto nos campos.
+- [x] ★ **Sinalizar contradições nos campos**: aviso pronto nos campos, pulmão 27/27 e próstata 35/35 documentos apontam a discordância, 0 falso alarme, W1–W3 passaram (19–20/11).
+- [ ] **Avisos inseridos por código, não redigidos**: na próstata o modelo acrescentou avisos em regiões que não discordam (9 de 60 documentos) e trocou a classe da região em 3. Colar a seção de avisos direto no texto e acrescentar à checagem o par coordenada–classe.
 - [x] **Hierárquico no nível da lâmina**: rótulo oficial, com negativos, 31/57, 0,518 (0,560 em 3 classes), sem critério. Falta confirmar com critério fixado antes.
 
 ## Descritor

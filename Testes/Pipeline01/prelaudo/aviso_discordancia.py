@@ -33,11 +33,18 @@ Fixado ANTES de rodar (commit anterior aos resultados):
   Limite conhecido: a medida é por expressões, não por leitura; não verifica se o texto, além de reproduzir o aviso,
      também tenta justificá-lo em outra seção.
 
+Acrescentado DEPOIS dos resultados (etapa extra, sem critério): lendo os textos, apareceram avisos em regiões que não
+  discordam, dentro de documentos que também têm região discordante; W2 só conta documentos sem nenhuma região
+  discordante, então não os via. A etapa extra conta, nos textos novos e nos antigos: (a) regiões concordantes
+  apontadas pela mesma medida e linhas com "AVISO" sobre região concordante; (b) linhas com uma coordenada e uma classe
+  em que a classe escrita não é a do descritor naquela coordenada (W3 confere números e coordenadas, não esse par).
+
 Uso (venv do projeto; a etapa redigir precisa do Ollama no ar):
     .venv/bin/python prelaudo/aviso_discordancia.py --etapa campos
     .venv/bin/python prelaudo/aviso_discordancia.py --etapa redigir
     .venv/bin/python prelaudo/aviso_discordancia.py --etapa checar
-Saída: resultados/aviso_discordancia/{pulmao,prostata}/ e resultados/aviso_discordancia/resumo.json
+    .venv/bin/python prelaudo/aviso_discordancia.py --etapa extra
+Saída: resultados/aviso_discordancia/{pulmao,prostata}/ e resultados/aviso_discordancia/resumo.json (e extra.json)
 """
 
 import argparse
@@ -208,7 +215,51 @@ def etapa_checar():
               f"W3 {'SIM' if r['criterio_W3'] else 'NÃO'}")
 
 
+CLASSES = {"pulmao": ("adenocarcinoma", "carcinoma escamoso", "pulmão normal"),
+           "prostata": ("benigno", "gleason 3", "gleason 4", "gleason 5")}
+
+
+def medir_extra(orgao, pasta_textos):
+    reg_conc = reg_conc_ap = docs_conc_ap = linhas_aviso = linhas_cls = cls_errada = 0
+    docs_aviso, docs_errada = set(), set()
+    for k, sug, campos in documentos(orgao):
+        texto = (pasta_textos / f"{k}.md").read_text(encoding="utf-8")
+        disc = {c for c, _, _ in discordantes(orgao, sug, campos)}
+        cls = {f"[{x},{y}]": c.lower() for x, y, c, _ in REGIAO.findall(campos)}
+        conc = [c for c in cls if c not in disc]
+        ap = apontadas(texto, conc)
+        reg_conc += len(conc)
+        reg_conc_ap += len(ap)
+        docs_conc_ap += bool(ap)
+        for linha in texto.splitlines():
+            l2 = re.sub(r"\[\s*(\d+)\s*,\s*(\d+)\s*\]", r"[\1,\2]", linha).lower()
+            cs = [c for c in cls if c in l2]
+            if len(cs) != 1:
+                continue
+            if "aviso" in l2 and cs[0] in conc:
+                linhas_aviso += 1
+                docs_aviso.add(k)
+            ditas = [c for c in CLASSES[orgao] if c in l2]
+            if ditas:
+                linhas_cls += 1
+                if cls[cs[0]] not in ditas:
+                    cls_errada += 1
+                    docs_errada.add(k)
+    return {"regioes_concordantes_apontadas": f"{reg_conc_ap}/{reg_conc}",
+            "documentos_com_regiao_concordante_apontada": docs_conc_ap,
+            "linhas_aviso_em_regiao_concordante": linhas_aviso, "documentos_com_essas_linhas": len(docs_aviso),
+            "linhas_com_coordenada_e_classe": linhas_cls, "classe_trocada": cls_errada,
+            "documentos_com_classe_trocada": len(docs_errada)}
+
+
+def etapa_extra():
+    extra = {o: {"n": len(documentos(o)), "novo_com_aviso": medir_extra(o, SAIDA / o),
+                 "antigo_sem_aviso": medir_extra(o, ORIGEM[o])} for o in ORIGEM}
+    (SAIDA / "extra.json").write_text(json.dumps(extra, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(json.dumps(extra, indent=2, ensure_ascii=False))
+
+
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--etapa", choices=["campos", "redigir", "checar"], required=True)
-    {"campos": etapa_campos, "redigir": etapa_redigir, "checar": etapa_checar}[p.parse_args().etapa]()
+    p.add_argument("--etapa", choices=["campos", "redigir", "checar", "extra"], required=True)
+    {"campos": etapa_campos, "redigir": etapa_redigir, "checar": etapa_checar, "extra": etapa_extra}[p.parse_args().etapa]()
