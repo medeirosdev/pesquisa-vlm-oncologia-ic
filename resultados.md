@@ -581,6 +581,40 @@ Pergunta: com a seção de avisos substituída por código pelas linhas calculad
 
 Leitura: a seção de avisos deve sair do código, e com isso a classe e os avisos ficam fiéis nos dois idiomas. O que ainda depende do modelo é copiar as coordenadas fora dessa seção; a lista de regiões para revisão também pode ser montada por código.
 
+## Pré-laudo final: lista de regiões colada por código, GAT-MIL padronizado na próstata e aviso × erro do MIL (20/11)
+
+Três perguntas, com critérios fixados antes de rodar (commit `8d4e6fc`). Scripts: `Testes/Pipeline01/prelaudo/prelaudo_final.py` e `Testes/Pipeline01/prelaudo/aviso_erro.py`.
+
+**1. Lista de regiões colada por código (pulmão).** Depois da colagem dos avisos, o conteúdo da seção "Regiões para revisão prioritária" também é trocado pelas 3 regiões dos campos. Aplicado aos mesmos textos brutos do pulmão, sem chamar o modelo de novo. Critério F1 (cada idioma): 0 trocas de classe, 0 avisos em região concordante, todas as regiões discordantes na seção, 0 números sem sustentação e 0 coordenadas inventadas.
+
+| Pulmão (78) | Português | Inglês |
+|---|---|---|
+| Classe trocada; aviso em região concordante | 0; 0 | 0; 0 |
+| Regiões discordantes na seção | 64/64 | 64/64 |
+| Números sem sustentação | 0/1.125 | 0/808 |
+| Coordenadas inventadas | 0/439 | 0/331 (antes da colagem: 2/292) |
+| F1 | **passou** | **passou** |
+
+**2. Próstata com o modelo melhor (GAT-MIL com embeddings padronizados por centro).** Retreinado com a mesma receita do braço R1 de `panda_centro.py`, agora guardando probabilidades e atenção por biópsia. O kappa nas 300 biópsias do Karolinska ficou em 0,570 (antes 0,609; o treino do GAT na GPU não é determinístico). A previsão não colapsa mais em ISUP 3 (previstos por ISUP 0–5: 33, 44, 84, 37, 53, 49). Nas mesmas 60 biópsias do pré-laudo: ISUP sugerido 8, 6, 18, 11, 8 e 9 (antes, com o ABMIL, 40 de 60 em ISUP 3); sugerido = real em 30/60; 30 com região discordante. Sem critério: em 227 de 250 biópsias com câncer e máscara, pelo menos 2 das 3 regiões de maior atenção do GAT-MIL estão no câncer (0,91; ABMIL 190/250 = 0,76; acaso 0,43). Os pré-laudos (critério F2) ainda não rodaram: o HD com o modelo de linguagem foi desmontado durante a fila.
+
+**3. O aviso marca os erros do MIL?** O aviso é calculado por código, então foi medido em todas as lâminas de teste: pulmão, 78 com o ABMIL; próstata, 300 com o GAT-MIL padronizado (erro = câncer × benigno trocado). Critério E: taxa de erro maior nas lâminas com aviso, Fisher unilateral p < 0,05.
+
+| | Pulmão (78; 4 erros) | Próstata (300; 35 erros câncer × benigno) |
+|---|---|---|
+| Taxa de erro com aviso / sem aviso | **4/27 (0,148) / 0/51 (0)** | **27/169 (0,160) / 8/131 (0,061)** |
+| Erros com aviso (sensibilidade) | 4/4 | 27/35 (0,77) |
+| Risco relativo (IC 95%) | — (nenhum erro sem aviso) | 2,62 (1,31 a 7,49) |
+| Fisher unilateral | p = 0,012 | p = 0,006 |
+| E | **passou** | **passou** |
+| Confiança não alta como sinal: erros pegos | 1/4 | 28/35 |
+| Aviso dentro das lâminas com confiança alta: erro com / sem aviso | 3/24 / 0/51 | 6/90 / 1/81 |
+| Aviso ou confiança não alta: erros pegos | 4/4 | 34/35 |
+
+- No pulmão, a confiança do MIL pega só 1 dos 4 erros (3 deles têm probabilidade alta); o aviso pega os 4. Com 4 erros, o resultado é frágil.
+- Na próstata, o aviso é frequente (169 de 300, especificidade 0,46) e a confiança sozinha já pega quase tanto (28/35); juntos pegam 34 de 35. Sem critério: o aviso também separa erro de ISUP exato (0,65 × 0,43) e erro de 2 ou mais graus (0,29 × 0,09).
+
+Leitura: o aviso não é só um enfeite do texto; nas lâminas com aviso o MIL erra mais, nos dois órgãos. No pulmão ele pega erros que a confiança não pega; na próstata ele soma com a confiança.
+
 ## Atenção do MIL: teste de remoção e de suficiência, pulmão e próstata (20/11)
 
 Pergunta: a atenção do MIL aponta os patches que sustentam a decisão? No TCGA não há anotação de região, então no pulmão a atenção só tinha sido mostrada nos mapas; na próstata ela foi conferida nas máscaras (190 de 250 biópsias, acaso 0,43). Este teste não precisa de anotação: se a atenção é fiel ao modelo, tirar os patches de maior atenção deve derrubar a probabilidade da classe prevista mais do que tirar patches sorteados (remoção), e ficar só com eles deve sustentar a classe melhor do que ficar com patches sorteados (suficiência). Mesmos modelos das rodadas que geraram a atenção dos pré-laudos (ABMIL, 5 sementes, retreinados; classe prevista igual em 78/78 e 300/300); ordem dos patches pela atenção salva. Fixado antes de rodar (commit `cca50ab`). Critérios, em cada órgão: X1, (queda tirando os 10% de maior atenção − queda tirando 10% sorteados) > 0 com IC 95% acima de 0; X2, (probabilidade só com os 20 de maior atenção − só com 20 sorteados) > 0 com IC acima de 0. Script: `Testes/Pipeline01/mil/remocao_atencao.py`.
@@ -622,3 +656,4 @@ Detalhes: `Testes/Pipeline01/notas/problemas_e_metrica.md`.
 11. No dataset de pulmão do orientador (52 pacientes, adenocarcinoma × epidermoide), a receita acerta pelo campo de biópsia (acurácia balanceada 0,89, AUC 0,94), mas o núcleo isolado, que é o que a pasta de "citologia" contém (núcleos recortados da própria biópsia), fica no acaso, tanto com o UNI2-h (AUC 0,48) quanto com medidas clássicas de forma, cor e textura (0,60). O mesmo núcleo, com o tecido em volta, volta a AUC 0,95: a informação do subtipo está no contexto, não no núcleo.
 12. O pré-laudo passa a apontar todas as regiões que contradizem a classe sugerida quando o aviso vem pronto nos campos, calculado por código: pulmão 27 de 27 documentos (antes 5) e próstata 35 de 35 (antes 11), sem falso alarme nos documentos sem discordância e com números, coordenadas e classe fiéis. O modelo ainda acrescenta avisos em regiões que não discordam (próstata, 9 de 60 documentos) e troca a classe da região em 3; a seção de avisos deve ser inserida por código, não redigida. Com a seção colada por código, os avisos espúrios e as trocas de classe somem (0 nos dois órgãos, em português e em inglês); em inglês, uma coordenada copiada errada fora da seção de avisos (1 de 284, pulmão) fez o critério do pulmão não passar.
 13. A atenção do MIL é fiel ao modelo pelo teste de remoção nos dois órgãos (tirar os 10% de maior atenção derruba a probabilidade da classe prevista; tirar 10% sorteados não), mas no pulmão os 20 patches de maior atenção sustentam a classe pior do que 20 sorteados. A diferença está nas lâminas previstas como adenocarcinoma (e nas biópsias previstas como benignas): o MIL decide como um detector da classe "positiva", e nessas lâminas as regiões de maior atenção são as mais parecidas com a outra classe, não a evidência da classe prevista (hipótese, análise feita depois dos resultados).
+14. O aviso de discordância marca os erros do MIL: nas lâminas com aviso o MIL erra mais, no pulmão (4 de 27 contra 0 de 51, todos os erros com aviso, inclusive 3 com confiança alta) e na próstata (câncer × benigno, 16% contra 6%, risco relativo 2,6). Com a lista de regiões também colada por código, o pré-laudo do pulmão fica sem nenhuma coordenada inventada nos dois idiomas. Na próstata, o GAT-MIL padronizado deixa de colapsar em ISUP 3 e a atenção dele cai no câncer em 91% das biópsias (ABMIL 76%).

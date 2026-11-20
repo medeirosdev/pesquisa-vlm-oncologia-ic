@@ -64,9 +64,9 @@ systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 \
 - [ ] **Ovário (UBC-OCEAN)**: o download pede aceitar as regras da competição no Kaggle (kaggle.com/competitions/UBC-OCEAN/rules). Conferir no train.csv se há informação de centro.
 - [x] ★ **Sinalizar contradições nos campos**: aviso pronto nos campos, pulmão 27/27 e próstata 35/35 documentos apontam a discordância, 0 falso alarme, W1–W3 passaram (19–20/11).
 - [x] **Avisos inseridos por código, não redigidos**: 0 avisos espúrios e 0 trocas de classe nos dois órgãos, em português (K1 passou) e em inglês (K2 passou na próstata; no pulmão, 1 coordenada copiada errada fora da seção) (20/11).
-- [ ] **Lista de regiões para revisão montada por código**: a única falha em inglês foi a coordenada copiada pelo modelo nessa lista.
-- [ ] ★ **O aviso marca os erros do MIL?** Nas lâminas com aviso, o MIL erra mais? Fixar o critério antes.
-- [ ] ★ **Pré-laudo da próstata com o modelo melhor**: os pré-laudos usam o ABMIL sem padronização (40 de 60 sugerem ISUP 3); refazer com GAT-MIL + padronização por centro (kappa 0,61).
+- [x] **Lista de regiões para revisão montada por código**: pulmão, F1 passou em português e em inglês, 0 coordenadas inventadas (20/11).
+- [x] ★ **O aviso marca os erros do MIL?** Sim, nos dois órgãos (E passou): pulmão 4/27 com aviso × 0/51 sem; próstata, câncer × benigno 16% × 6% (20/11).
+- [ ] ★ **Pré-laudo da próstata com o modelo melhor**: GAT-MIL padronizado retreinado e campos prontos (`prelaudo_final.py`, etapas gat e campos_prostata; critério F2 fixado). Falta rodar `--etapa redigir_prostata` e `--etapa checar_prostata` com o HD montado.
 - [ ] **Atenção nas lâminas "por ausência"**: no pulmão, a atenção das lâminas previstas como adenocarcinoma não sustenta a classe (suficiência −0,276). Testar atenção por classe (uma cabeça por classe) ou mostrar, nessas lâminas, os patches que mais puxam para a classe prevista.
 - [x] **Hierárquico no nível da lâmina**: rótulo oficial, com negativos, 31/57, 0,518 (0,560 em 3 classes), sem critério. Falta confirmar com critério fixado antes.
 
