@@ -683,6 +683,22 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
     <figure><img src="img/mapa_atencao_BRACS_1003691.jpg" alt="Mapa de atenção de uma lâmina atípica com uma lesão anotada pequena" loading="lazy"><figcaption><span class="selo falha">errado</span> BRACS_1003691, atípica (MIL: benigno, 0,76). A lesão anotada é pequena: dos 8 patches da amostra dentro dela, 2 estão entre os 4% de maior atenção e os outros 6 têm atenção baixa.</figcaption></figure>
   </div>
 
+  <div class="painel destaque">
+    <h3>A atenção sustenta a decisão? Teste de remoção e de suficiência (pulmão e próstata)</h3>
+    <p>No pulmão (TCGA) não há anotação de região, então a atenção só era mostrada. Este teste não precisa de anotação: se a atenção é fiel ao modelo, tirar os patches de maior atenção deve derrubar a probabilidade da classe prevista mais do que tirar patches sorteados, e ficar só com eles deve sustentar a classe melhor do que ficar com sorteados. Mesmos modelos dos pré-laudos (classe prevista igual em 78/78 e 300/300). Critérios fixados antes: diferença &gt; 0 com IC 95% acima de 0, tirando 10% (remoção) e ficando com 20 patches (suficiência).</p>
+    <div class="tabela"><table>
+      <thead><tr><th></th><th class="num">Pulmão (78)</th><th class="num">Próstata (300)</th></tr></thead>
+      <tbody>
+        <tr class="vence"><td>Remoção: queda tirando 10% de maior atenção − tirando 10% sorteados</td><td class="num"><b>+0,120</b> (0,052 a 0,195)</td><td class="num"><b>+0,203</b> (0,173 a 0,234)</td></tr>
+        <tr><td>Classe muda tirando 10%: atenção / sorteio</td><td class="num">14,1% / 0%</td><td class="num">39,3% / 3,3%</td></tr>
+        <tr><td>Suficiência: P(classe) só com os 20 de maior atenção − só com 20 sorteados</td><td class="num"><b>−0,091</b> (−0,171 a −0,011)</td><td class="num"><b>+0,188</b> (0,165 a 0,211)</td></tr>
+        <tr><td>Separando pela classe prevista (depois, sem critério): suficiência</td><td class="num">escamoso +0,093; adenocarcinoma −0,276</td><td class="num">com câncer +0,196; ISUP 0 (8) −0,089</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Tirar os patches de maior atenção derruba a decisão; tirar a mesma quantidade sorteada quase não muda nada. A suficiência falha no pulmão por causa das lâminas previstas como adenocarcinoma. Hipótese: o MIL decide como um detector da classe "positiva" (escamoso, câncer), e a outra classe é a ausência dessa evidência; nessas lâminas, os patches de maior atenção são os mais parecidos com escamoso, o que bate com o descritor ter chamado de normal ou escamoso as regiões de maior atenção em 18 de 39 lâminas de adenocarcinoma.</p>
+    <span class="selo ok">remoção: passou nos dois</span> <span class="selo ok">suficiência, próstata: passou</span> <span class="selo falha">suficiência, pulmão: não passou</span>
+  </div>
+
   <div class="painel">
     <h3>Teste nas 57 lâminas: acurácia balanceada nas 4 classes (rótulo oficial)</h3>
     <div class="barras">
@@ -957,6 +973,24 @@ a sugestão de benignidade.</pre>
     <span class="selo ok">passou nos 3 critérios, nos dois órgãos</span>
   </div>
 
+  <div class="painel destaque">
+    <h3>Avisos colados por código e pré-laudo em inglês (pulmão e próstata)</h3>
+    <p>O modelo continua redigindo o pré-laudo, mas o conteúdo da seção de avisos é substituído por código pelas linhas calculadas, e a checagem passa a conferir o par coordenada–classe de cada região citada. A mesma configuração foi rodada em inglês (campos traduzidos por código, instruções em inglês). Mesmos documentos e modelo. Critérios fixados antes: 0 trocas de classe, 0 avisos em região que não discorda, todas as regiões discordantes na seção, 0 números e coordenadas inventados; em inglês, também a classe igual em ≥ 90%.</p>
+    <div class="tabela"><table>
+      <thead><tr><th></th><th class="num">Pulmão PT</th><th class="num">Pulmão EN</th><th class="num">Próstata PT</th><th class="num">Próstata EN</th></tr></thead>
+      <tbody>
+        <tr><td>Classe igual à sugerida</td><td class="num">78/78</td><td class="num">78/78</td><td class="num">60/60</td><td class="num">60/60</td></tr>
+        <tr><td>Regiões discordantes na seção</td><td class="num">64/64</td><td class="num">64/64</td><td class="num">75/75</td><td class="num">75/75</td></tr>
+        <tr class="vence"><td>Docs. com aviso em região que não discorda (texto do modelo → colado)</td><td class="num">1 → <b>0</b></td><td class="num">4 → <b>0</b></td><td class="num">9 → <b>0</b></td><td class="num">10 → <b>0</b></td></tr>
+        <tr class="vence"><td>Docs. com classe da região trocada (texto do modelo → colado)</td><td class="num">0 → 0</td><td class="num">0 → 0</td><td class="num">3 → <b>0</b></td><td class="num">3 → <b>0</b></td></tr>
+        <tr><td>Números não sustentados</td><td class="num">0/891</td><td class="num">0/574</td><td class="num">0/408</td><td class="num">0/388</td></tr>
+        <tr><td>Coordenadas inventadas</td><td class="num">0/274</td><td class="num"><b>1/284</b></td><td class="num">0/200</td><td class="num">0/276</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Os avisos espúrios e as trocas de classe estavam todos no que o modelo escrevia na seção de avisos e somem com a colagem, nos dois idiomas. A única falha foi em inglês, no pulmão: num documento, o modelo copiou uma coordenada errada na lista de regiões para revisão ([22815,28392] virou [22815,28913]); a checagem acusa, mas o critério pedia zero. Essa lista também pode ser montada por código. Na próstata, os campos ainda vêm do ABMIL sem padronização por centro (quase tudo ISUP 3).</p>
+    <span class="selo ok">português: passou nos dois órgãos</span> <span class="selo ok">inglês, próstata: passou</span> <span class="selo falha">inglês, pulmão: não passou (1 coordenada)</span>
+  </div>
+
   <div class="painel">
     <h3>Como o modelo de linguagem se comporta</h3>
     <ul class="limpa">
@@ -1037,7 +1071,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
       <tr><td>3. Descritor</td><td><span class="selo parcial">bom no DCIS × IC; negativos cortam falsos malignos; atípico ainda fraco</span></td><td>recuperar o DCIS sem perder as benignas</td></tr>
       <tr><td>3½. Decisão da lâmina</td><td><span class="selo ok">MIL com 79 lâminas: 38/57, acurácia balanceada 0,63; benigno × atípico AUC 0,78; no pulmão (TCGA), AUC 0,98; no rim (TCGA, hospitais novos), acurácia balanceada 0,95; na próstata (PANDA), detecta câncer (AUC 0,94) mas gradua mal (kappa 0,24; com o GAT-MIL, 0,44; com o GAT-MIL e a padronização por centro, 0,61; com a rede de grafos, 0,44; na mama o GAT-MIL não ajudou)</span></td><td>MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas; na próstata, adotar GAT-MIL + padronização por centro como padrão; rede de grafos com padronização por centro e na mama</td></tr>
       <tr><td>4. Agregação</td><td><span class="selo parcial">regra ajuda no IC</span></td><td>trocar a contagem dos 32 patches pelos campos fixos</td></tr>
-      <tr><td>5. Síntese</td><td><span class="selo parcial">só redige, com a classe do MIL; números fiéis; com o aviso pronto nos campos, aponta as discordâncias em 27/27 (pulmão) e 35/35 (próstata), antes 5 e 11; ainda acrescenta avisos falsos na próstata (9 de 60)</span></td><td>inserir os avisos por código e conferir o par coordenada–classe; avaliação por patologista</td></tr>
+      <tr><td>5. Síntese</td><td><span class="selo parcial">só redige, com a classe do MIL; números fiéis; com o aviso pronto nos campos, aponta as discordâncias em 27/27 (pulmão) e 35/35 (próstata), antes 5 e 11; com os avisos colados por código, 0 avisos falsos e 0 trocas de classe, em português e em inglês; em inglês, 1 coordenada copiada errada (pulmão)</span></td><td>montar por código a lista de regiões; pré-laudo da próstata com o modelo padronizado; avaliação por patologista</td></tr>
     </tbody>
   </table></div>
   <h3>O que os testes mostraram até aqui</h3>
@@ -1052,7 +1086,8 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
     <li>Padronizar os embeddings por centro foi o que mais ajudou na troca de centro (MIL 0,54; GAT-MIL 0,61). Normalizar a cor não ajudou (GAT-MIL 0,23): a diferença entre hospitais não é só a cor média.</li>
     <li>A rede de grafos chega ao nível do GAT-MIL olhando só as janelas em volta de ~10 pontos por biópsia (67% dos patches): escolher os pontos pela atenção não perde o que importa pro grau.</li>
     <li>No pulmão do dataset do orientador, o núcleo isolado não carrega o subtipo (AUC 0,48 com UNI2-h, 0,60 com medidas clássicas); o mesmo núcleo com o tecido em volta chega a 0,95, no nível do campo de biópsia inteiro.</li>
-    <li>O pré-laudo, quando só redige a partir de campos fixos, fica fiel: a classe bate em 57/57 (mama), 78/78 (pulmão) e 60/60 (próstata), sem números nem coordenadas inventados. Com a regra só nas instruções, quase nunca apontava quando uma região contradiz a classe (1 de 15, 3 de 27, 1 de 35); com o aviso calculado por código e pronto nos campos, aponta em 27 de 27 (pulmão) e 35 de 35 (próstata), sem falso alarme nos documentos sem discordância. Na próstata, o modelo ainda acrescenta avisos em regiões que não discordam (9 de 60).</li>
+    <li>O pré-laudo, quando só redige a partir de campos fixos, fica fiel: a classe bate em 57/57 (mama), 78/78 (pulmão) e 60/60 (próstata), sem números nem coordenadas inventados. Com a regra só nas instruções, quase nunca apontava quando uma região contradiz a classe (1 de 15, 3 de 27, 1 de 35); com o aviso calculado por código e pronto nos campos, aponta em 27 de 27 (pulmão) e 35 de 35 (próstata), sem falso alarme nos documentos sem discordância. Na próstata, o modelo ainda acrescentava avisos em regiões que não discordam (9 de 60); com a seção de avisos colada por código, isso some (0, em português e em inglês).</li>
+    <li>A atenção do MIL é fiel ao modelo pelo teste de remoção (pulmão e próstata), mas nas lâminas previstas como adenocarcinoma os patches de maior atenção não sustentam a classe: ali a atenção aponta o que mais parece escamoso, não a evidência do adenocarcinoma.</li>
   </ul>
   <p class="nota">Ressalvas gerais: 2 lâminas por classe no desenvolvimento; as anotações do BRACS marcam regiões, não cada célula; o rótulo da lâmina é o da lesão mais grave; no PANDA não há identificação do paciente, então dentro do Radboud a mesma pessoa pode ter biópsias no treino e no teste.</p>
 </section>
@@ -1086,6 +1121,8 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
         <tr><td>Pulmão</td><td>LungHist700 → TCGA, 78</td><td>3. Descritor</td><td>Descritor nas 3 regiões de maior atenção</td><td>Lâminas com a classe certa</td><td class="num">58/78 (adenocarcinoma 21/39)</td><td><span class="selo falha">não passou</span></td></tr>
         <tr><td>Pulmão</td><td>TCGA, 78</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige (tipo do MIL)</td><td>Tipo igual; números sem sustentação; coordenadas inventadas; discordâncias apontadas</td><td class="num">78/78; 0 de 1.035; 0 de 436; 3 de 27</td><td><span class="selo ok">passou</span></td></tr>
         <tr><td>Pulmão</td><td>TCGA, 78</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige, com aviso de discordância pronto nos campos</td><td>Discordâncias apontadas; falso alarme; classe igual; números e coordenadas inventados</td><td class="num">27 de 27; 0 de 51; 78/78; 0 e 0</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 78</td><td>3½. Decisão da lâmina</td><td>Atenção do MIL: remoção e suficiência</td><td>Tirar 10% de maior atenção − sorteados; ficar com 20 − sorteados</td><td class="num">+0,120; −0,091</td><td><span class="selo parcial">remoção passou; suficiência não</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 78</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige, avisos colados por código (português; inglês)</td><td>Avisos em região concordante; classe trocada; coordenadas inventadas</td><td class="num">0; 0; 0 de 274 (inglês: 0; 0; 1 de 284)</td><td><span class="selo parcial">português passou; inglês não</span></td></tr>
         <tr><td>Rim</td><td>TCGA-RCC, 162 → 137 (hospitais novos)</td><td>3½. Decisão da lâmina</td><td><b>MIL com atenção</b></td><td>Acurácia balanceada (3 subtipos); AUC macro</td><td class="num"><b>0,953; 0,987</b></td><td><span class="selo ok">passou</span></td></tr>
         <tr><td>Rim</td><td>TCGA-RCC, 180 → 119 (sorteio aleatório)</td><td>3½. Decisão da lâmina</td><td>MIL com atenção</td><td>Acurácia balanceada; AUC macro</td><td class="num">0,983; 1,000</td><td><span class="selo ref">comparação</span></td></tr>
         <tr><td>Rim</td><td>TCGA-RCC, hospitais novos</td><td>3½. Decisão da lâmina</td><td>GAT-MIL</td><td>Acurácia balanceada</td><td class="num">0,945 (diferença −0,008)</td><td><span class="selo ok">não piorou</span></td></tr>
@@ -1103,6 +1140,8 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
         <tr><td>Próstata</td><td>Karolinska, 250 biópsias com câncer</td><td>3½. Explicação</td><td>Atenção do MIL na máscara</td><td>Biópsias com ≥ 2 das 3 regiões no câncer</td><td class="num">190/250 (acaso 0,43)</td><td><span class="selo falha">não passou</span></td></tr>
         <tr><td>Próstata</td><td>Karolinska, 60</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige (grau do MIL)</td><td>Grau igual; números sem sustentação; coordenadas inventadas; discordâncias apontadas</td><td class="num">60/60; 0 de 628; 0 de 315; 1 de 35</td><td><span class="selo ok">passou</span></td></tr>
         <tr><td>Próstata</td><td>Karolinska, 60</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige, com aviso de discordância pronto nos campos</td><td>Discordâncias apontadas; falso alarme; classe igual; números e coordenadas inventados</td><td class="num">35 de 35; 0 de 25; 60/60; 0 e 0 (avisos a mais em 9 de 60)</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Próstata</td><td>Karolinska, 300</td><td>3½. Decisão da lâmina</td><td>Atenção do MIL: remoção e suficiência</td><td>Tirar 10% de maior atenção − sorteados; ficar com 20 − sorteados</td><td class="num">+0,203; +0,188</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Próstata</td><td>Karolinska, 60</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige, avisos colados por código (português; inglês)</td><td>Avisos em região concordante; classe trocada; coordenadas inventadas</td><td class="num">0; 0; 0 de 200 (inglês: 0; 0; 0 de 276)</td><td><span class="selo ok">passou</span></td></tr>
     </tbody>
   </table></div>
   <p class="nota">Acaso: acurácia balanceada 0,25 em 4 classes e 0,33 em 3; AUC 0,5; kappa 0. Mama e próstata com intervalo de 95% por bootstrap (na mama, agrupado por paciente). Resultados de 06/11 ou antes no BRACS usam o agrupamento antigo, com o UDH em atípico.</p>

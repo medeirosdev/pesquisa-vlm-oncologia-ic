@@ -63,7 +63,11 @@ systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 \
 - [ ] Pulmão (orientador): quanto contexto basta? Janelas de tamanhos diferentes em volta do núcleo (224, 336, 448 px) e onde o MIL põe a atenção.
 - [ ] **Ovário (UBC-OCEAN)**: o download pede aceitar as regras da competição no Kaggle (kaggle.com/competitions/UBC-OCEAN/rules). Conferir no train.csv se há informação de centro.
 - [x] ★ **Sinalizar contradições nos campos**: aviso pronto nos campos, pulmão 27/27 e próstata 35/35 documentos apontam a discordância, 0 falso alarme, W1–W3 passaram (19–20/11).
-- [ ] **Avisos inseridos por código, não redigidos**: na próstata o modelo acrescentou avisos em regiões que não discordam (9 de 60 documentos) e trocou a classe da região em 3. Colar a seção de avisos direto no texto e acrescentar à checagem o par coordenada–classe.
+- [x] **Avisos inseridos por código, não redigidos**: 0 avisos espúrios e 0 trocas de classe nos dois órgãos, em português (K1 passou) e em inglês (K2 passou na próstata; no pulmão, 1 coordenada copiada errada fora da seção) (20/11).
+- [ ] **Lista de regiões para revisão montada por código**: a única falha em inglês foi a coordenada copiada pelo modelo nessa lista.
+- [ ] ★ **O aviso marca os erros do MIL?** Nas lâminas com aviso, o MIL erra mais? Fixar o critério antes.
+- [ ] ★ **Pré-laudo da próstata com o modelo melhor**: os pré-laudos usam o ABMIL sem padronização (40 de 60 sugerem ISUP 3); refazer com GAT-MIL + padronização por centro (kappa 0,61).
+- [ ] **Atenção nas lâminas "por ausência"**: no pulmão, a atenção das lâminas previstas como adenocarcinoma não sustenta a classe (suficiência −0,276). Testar atenção por classe (uma cabeça por classe) ou mostrar, nessas lâminas, os patches que mais puxam para a classe prevista.
 - [x] **Hierárquico no nível da lâmina**: rótulo oficial, com negativos, 31/57, 0,518 (0,560 em 3 classes), sem critério. Falta confirmar com critério fixado antes.
 
 ## Descritor
