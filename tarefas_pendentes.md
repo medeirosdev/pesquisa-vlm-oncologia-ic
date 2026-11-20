@@ -66,7 +66,9 @@ systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 \
 - [x] **Avisos inseridos por código, não redigidos**: 0 avisos espúrios e 0 trocas de classe nos dois órgãos, em português (K1 passou) e em inglês (K2 passou na próstata; no pulmão, 1 coordenada copiada errada fora da seção) (20/11).
 - [x] **Lista de regiões para revisão montada por código**: pulmão, F1 passou em português e em inglês, 0 coordenadas inventadas (20/11).
 - [x] ★ **O aviso marca os erros do MIL?** Sim, nos dois órgãos (E passou): pulmão 4/27 com aviso × 0/51 sem; próstata, câncer × benigno 16% × 6% (20/11).
-- [ ] ★ **Pré-laudo da próstata com o modelo melhor**: GAT-MIL padronizado retreinado e campos prontos (`prelaudo_final.py`, etapas gat e campos_prostata; critério F2 fixado). Falta rodar `--etapa redigir_prostata` e `--etapa checar_prostata` com o HD montado.
+- [x] ★ **Pré-laudo da próstata com o modelo melhor**: GAT-MIL padronizado, avisos e regiões colados; F2 passou em português (60/60) e em inglês (56/60, os 4 por erro da extração), 0 avisos espúrios, trocas e coordenadas inventadas (20/11).
+- [ ] **Extração da classe mais robusta**: nos 4 laudos em inglês da próstata, a impressão estava certa e a chamada de extração errou; extrair da seção de impressão por código antes de perguntar ao modelo.
+- [ ] **Teste de remoção da atenção com o GAT-MIL na próstata**: o teste feito usou o ABMIL; os pré-laudos da próstata agora usam o GAT-MIL.
 - [ ] **Atenção nas lâminas "por ausência"**: no pulmão, a atenção das lâminas previstas como adenocarcinoma não sustenta a classe (suficiência −0,276). Testar atenção por classe (uma cabeça por classe) ou mostrar, nessas lâminas, os patches que mais puxam para a classe prevista.
 - [x] **Hierárquico no nível da lâmina**: rótulo oficial, com negativos, 31/57, 0,518 (0,560 em 3 classes), sem critério. Falta confirmar com critério fixado antes.
 
