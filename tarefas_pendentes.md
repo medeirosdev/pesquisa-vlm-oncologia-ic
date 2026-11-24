@@ -69,7 +69,8 @@ systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 \
 - [x] ★ **Pré-laudo da próstata com o modelo melhor**: GAT-MIL padronizado, avisos e regiões colados; F2 passou em português (60/60) e em inglês (56/60, os 4 por erro da extração), 0 avisos espúrios, trocas e coordenadas inventadas (20/11).
 - [x] **Extração da classe mais robusta**: classe lida por código na impressão; 276/276 pré-laudos finais com a classe da decisão (C passou) (20/11).
 - [x] **Teste de remoção da atenção com o GAT-MIL na próstata**: Y1 +0,310 e Y2 +0,124, os dois passaram; negativo nas previstas como ISUP 0 (20/11).
-- [ ] **Segundo modelo de linguagem**: repetir a configuração final (avisos e regiões colados) com outro modelo local, para mostrar que o resultado vem da colagem e não do Gemma.
+- [x] **Segundo modelo de linguagem**: Llama 3.2 3B; L passou em 2 de 4 (falhas: títulos fora do formato em português e um número calculado em inglês); avisos, classe e coordenadas certos nos 4 (23/11).
+- [ ] **Seções críticas montadas pelo código**: o código escreve impressão, avisos e regiões; o modelo escreve só resumo e limitações (ou normalizar títulos `###`/negrito antes de colar). Com o Llama em português, a colagem dependia do título.
 - [ ] **Atenção nas lâminas "por ausência"**: no pulmão, a atenção das lâminas previstas como adenocarcinoma não sustenta a classe (suficiência −0,276). Testar atenção por classe (uma cabeça por classe) ou mostrar, nessas lâminas, os patches que mais puxam para a classe prevista.
 - [x] **Hierárquico no nível da lâmina**: rótulo oficial, com negativos, 31/57, 0,518 (0,560 em 3 classes), sem critério. Falta confirmar com critério fixado antes.
 

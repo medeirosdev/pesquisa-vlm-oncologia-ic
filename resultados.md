@@ -675,6 +675,28 @@ Dois testes com critérios fixados antes de rodar (commit `d9dcb0f`). Scripts: `
 
 - Nos 4 textos em que a regra e o modelo discordam (próstata, inglês), a regra está certa nos 4: o texto é fiel à classe em todos os 276 pré-laudos finais.
 
+## Segundo modelo de linguagem: Llama 3.2 3B na configuração final do pré-laudo (20–23/11)
+
+Pergunta: a fidelidade vem da colagem e da checagem por código, ou de uma propriedade do Gemma 3 4B? Mesmos documentos, campos, instruções, colagem (avisos e regiões) e opções de geração; muda só o modelo que redige (Llama 3.2 3B, de outra família). Classe lida por código na primeira linha da impressão; se a regra não achar, segunda chamada ao mesmo Llama em JSON restrito. Fixado antes de rodar (commit `117ad6f`). Critério L, em cada órgão e idioma: classe = sugerida em ≥ 90% e as condições de F1. Script: `Testes/Pipeline01/prelaudo/segundo_modelo.py`. A rodada foi interrompida três vezes (HD desmontado, fim de sessão) e retomada de onde parou.
+
+| Llama 3.2 3B | Pulmão PT | Pulmão EN | Próstata PT | Próstata EN |
+|---|---|---|---|---|
+| Classe = sugerida (resolvida pela regra) | 57/78 (0/78) | 78/78 (78/78) | 60/60 (0/60) | 60/60 (59/60) |
+| Regiões discordantes na seção de avisos | 64/64 | 64/64 | 55/55 | 55/55 |
+| Documentos com aviso em região concordante | 1 | 0 | 0 | 0 |
+| Documentos com classe trocada | 0 | 0 | 0 | 0 |
+| Números sem sustentação | 0/659 | 0/614 | 0/477 | **1/536** |
+| Coordenadas inventadas | 0/346 | 0/298 | 0/281 | 0/238 |
+| L | **não passou** | **passou** | **passou** | **não passou** |
+
+- Em português, o Llama escreveu os títulos das seções como `### Título` ou em negrito, não como `## Título` (a seção de avisos com o título esperado em 17 de 78 e 14 de 60 documentos). Com isso, a colagem não achou a seção para substituir: a seção calculada entrou no fim do texto, mas a versão escrita pelo modelo ficou. A regra da classe também não achou a impressão (0/78, 0/60), e a extração pelo Llama errou 21 dos 78 no pulmão.
+- Lendo a impressão com qualquer formato de título (depois, sem critério): a classe escrita é a sugerida em todos os 276 laudos (nos 2 casos em que a primeira linha diverge, ela é só uma frase de abertura e a classe vem na linha seguinte). O erro do pulmão em português é da extração, não do texto.
+- O aviso espúrio (pulmão, português) está no resumo escrito pelo modelo, que cita uma coordenada concordante junto de "além disso"/"no entanto".
+- O número sem sustentação (próstata, inglês) é um "69%" calculado pelo modelo (100% − 31%), que não está nos campos.
+- Antes da colagem, o Llama deixa de apontar boa parte das regiões discordantes (pulmão PT 37/64, EN 0/64; próstata PT 19/55, EN 42/55); com a colagem, todas aparecem nos quatro casos.
+
+Leitura: a colagem por código faz o mesmo trabalho com o Llama (todos os avisos certos, nenhuma troca de classe, nenhuma coordenada inventada), mas depende de o modelo usar os títulos pedidos; com outro formato, a seção do modelo fica no texto e a extração da classe falha. O caminho seguro é o código montar as seções críticas (decisão, avisos, regiões) e o modelo escrever só o resumo e as limitações, ou normalizar os títulos antes de colar. A checagem de números pega o único número calculado.
+
 ## Anotações oficiais do BRACS
 
 - `.qpdata` lidas com o QuPath e exportadas pra GeoJSON: 387 de 387 lâminas; totais por classe iguais aos do artigo.
@@ -698,3 +720,4 @@ Detalhes: `Testes/Pipeline01/notas/problemas_e_metrica.md`.
 12. O pré-laudo passa a apontar todas as regiões que contradizem a classe sugerida quando o aviso vem pronto nos campos, calculado por código: pulmão 27 de 27 documentos (antes 5) e próstata 35 de 35 (antes 11), sem falso alarme nos documentos sem discordância e com números, coordenadas e classe fiéis. O modelo ainda acrescenta avisos em regiões que não discordam (próstata, 9 de 60 documentos) e troca a classe da região em 3; a seção de avisos deve ser inserida por código, não redigida. Com a seção colada por código, os avisos espúrios e as trocas de classe somem (0 nos dois órgãos, em português e em inglês); em inglês, uma coordenada copiada errada fora da seção de avisos (1 de 284, pulmão) fez o critério do pulmão não passar.
 13. A atenção do MIL é fiel ao modelo pelo teste de remoção nos dois órgãos (tirar os 10% de maior atenção derruba a probabilidade da classe prevista; tirar 10% sorteados não), mas no pulmão os 20 patches de maior atenção sustentam a classe pior do que 20 sorteados. A diferença está nas lâminas previstas como adenocarcinoma (e nas biópsias previstas como benignas): o MIL decide como um detector da classe "positiva", e nessas lâminas as regiões de maior atenção são as mais parecidas com a outra classe, não a evidência da classe prevista (hipótese, análise feita depois dos resultados).
 14. O aviso de discordância marca os erros do MIL: nas lâminas com aviso o MIL erra mais, no pulmão (4 de 27 contra 0 de 51, todos os erros com aviso, inclusive 3 com confiança alta) e na próstata (câncer × benigno, 16% contra 6%, risco relativo 2,6). Com a lista de regiões também colada por código, o pré-laudo do pulmão fica sem nenhuma coordenada inventada nos dois idiomas. Na próstata, o GAT-MIL padronizado deixa de colapsar em ISUP 3 e a atenção dele cai no câncer em 91% das biópsias (ABMIL 76%); os pré-laudos feitos com ele passam no critério nos dois idiomas, sem aviso espúrio, classe trocada ou coordenada inventada. Com a classe lida do texto por código, a impressão bate com a decisão em todos os 276 pré-laudos finais. A atenção do GAT-MIL também passa nos testes de remoção e de suficiência (+0,310 e +0,124), com a mesma exceção das biópsias previstas como benignas.
+15. Com outro modelo de linguagem (Llama 3.2 3B), a colagem por código mantém os avisos e as coordenadas certos e nenhuma classe trocada nos quatro casos, mas o critério passou só em dois: em português o Llama usa outros títulos de seção, e a colagem e a leitura da classe, que dependem do título, falham (a impressão escrita está certa em todos os laudos); em inglês na próstata ele escreve um número calculado (69%). As seções críticas devem ser montadas pelo código, não localizadas no texto do modelo.
