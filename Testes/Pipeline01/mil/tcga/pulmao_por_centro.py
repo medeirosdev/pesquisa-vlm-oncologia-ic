@@ -21,6 +21,10 @@ Fixado ANTES de rodar (commit anterior aos resultados):
      Z2 (aviso × erro com centros novos): taxa de erro maior nas lâminas com aviso, Fisher unilateral p < 0,05.
   Também reportado (sem critério): IC 95% por bootstrap das lâminas (2.000, semente 0); acerto por classe; a AUC da
      divisão aleatória (tcga_mil.py) ao lado; erros por classe prevista; avisos por classe prevista.
+  Correção depois de um erro de memória na primeira execução, antes de qualquer resultado: o processo foi morto ao
+     aplicar o descritor nas 197 lâminas de uma vez. Agora as previsões e a atenção são gravadas antes, os embeddings
+     saem da memória, e o descritor é aplicado em blocos de 25 lâminas (o descritor é determinístico, então o resultado
+     é o mesmo). Nada mais mudou.
   Limite conhecido: como cada centro manda uma classe só, o centro continua ligado à classe; a divisão por centro mede
      se o modelo acerta em centros que nunca viu, não separa por completo subtipo de centro.
 
@@ -94,13 +98,20 @@ def main():
         print(f"  parte {k}: {len(te)} lâminas ({sum(y[te])} LUSC), centros {sorted({centro(lam[i]) for i in te})}", flush=True)
     p = p_sem.mean(1)
     pred = (p >= 0.5).astype(int)
+    for i in range(len(lam)):
+        np.save(SAIDA / f"{ids[i]}_atencao.npy", att[i].astype(np.float32))
+    np.save(SAIDA / "p_sementes.npy", p_sem)
+    del X
+    import gc
+    gc.collect()
 
-    # descritor e avisos
-    Pd = aplicar_todos([X[i].numpy() for i in range(len(lam))])
+    # descritor (em blocos) e avisos
+    Pd = []
+    for b in range(0, len(lam), 25):
+        Pd += aplicar_todos([np.load(PASTA / i / "amostra2000.npy") for i in ids[b:b + 25]])
     aviso, n_disc = np.zeros(len(lam), bool), np.zeros(len(lam), int)
     por = {}
     for i, l in enumerate(lam):
-        np.save(SAIDA / f"{ids[i]}_atencao.npy", att[i].astype(np.float32))
         np.save(SAIDA / f"{ids[i]}_descritor.npy", Pd[i].astype(np.float32))
         meta = json.loads((PASTA / ids[i] / "meta.json").read_text(encoding="utf-8"))
         xy = np.loadtxt(PASTA / ids[i] / "amostra2000_xy.csv", delimiter=",", skiprows=1, dtype=int).reshape(-1, 2)
