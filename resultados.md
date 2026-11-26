@@ -789,6 +789,31 @@ Pergunta, a partir da revisão: nas lâminas previstas como a classe que o MIL p
 
 Leitura: no pulmão, nas lâminas de adenocarcinoma, a atenção alta não é a evidência da decisão (contribuição líquida zero, mais patches parecidos com escamoso); a decisão vem do conjunto, como na leitura "por ausência", mas não por patches que empurram contra. Na próstata a hipótese não se sustenta pela decomposição. No pré-laudo, as regiões de maior atenção das lâminas "por ausência" não devem ser apresentadas como evidência da classe prevista.
 
+## Aviso tumoral × aviso de tecido normal, e calibração da confiança (26/11)
+
+Perguntas da revisão: (1) uma região de pulmão normal numa lâmina de adenocarcinoma (ou benigna numa biópsia com câncer) é esperada; os erros se concentram nos avisos em que a região é do outro tipo de tumor? (2) Quão calibrada é a confiança que vai no laudo? Mesmos dados de `aviso_linhas_base.py` (pulmão: 197 lâminas por centro; próstata: 300, GAT-MIL padronizado, execução 0). Fixado antes de rodar (commit `a2132c4`; correção dos códigos de classe do pulmão antes de qualquer resultado, `65bc7ff`). Critério T (pulmão): taxa de erro com aviso tumoral maior que com aviso só de pulmão normal, Fisher unilateral p < 0,05. Próstata e calibração: descritivas. Script: `Testes/Pipeline01/prelaudo/aviso_tumoral_calibracao.py`.
+
+| Aviso | Pulmão: lâminas (erros) | Próstata: biópsias (erros) |
+|---|---|---|
+| Tumoral (outro tipo de tumor; Gleason com ISUP 0 previsto) | 35 (10; 29%) | 4 (2) |
+| Só tecido não tumoral (pulmão normal; benigno com ISUP ≥ 1) | 34 (6; 18%) | 164 (23; 14%) |
+| Sem aviso | 128 (5) | 132 (5) |
+
+- **T não passou** (p = 0,22). O aviso de tecido normal também marca erros (6 dos 21 do pulmão); separar os dois tipos não deixa o aviso mais preciso. Na próstata, o aviso tumoral só existe nas previstas como ISUP 0, então a comparação se confunde com a classe.
+
+| Calibração (confiança = probabilidade da classe prevista) | Pulmão (binário) | Próstata (grau exato, 6 classes) |
+|---|---|---|
+| Confiança média / acerto médio | 0,973 / 0,893 | 0,742 / 0,463 |
+| ECE antes → depois da escala de temperatura | 0,092 → 0,036 | 0,279 → 0,089 |
+| Temperatura (5 partes) | 2,97–3,57 | 3,95–4,27 |
+| Faixa "alta" (≥ 0,70) antes: lâminas (acerto) | 190 (0,90) | 177 (0,53) |
+| Faixa "alta" depois | 176 (0,93) | 14 (0,57) |
+
+- A confiança do laudo é superconfiante nos dois órgãos, muito mais na próstata, em que "alta" acerta o grau exato em só 53%. Depois de calibrar, 232 das 300 biópsias caem na faixa baixa (< 0,50). Na próstata a temperatura foi ajustada no próprio Karolinska (transdutivo); no pulmão, nas partes por centro.
+- A temperatura não muda a ordem das lâminas, então não muda o AUROC da confiança nem os resultados de B1/B2.
+
+Leitura: a confiança que vai no laudo precisa ser calibrada antes de ser apresentada como "alta"; sem isso, na próstata ela engana. O aviso de tecido normal deve continuar no laudo: ele também marca erros.
+
 ## Células nas regiões de maior atenção (CellViT), próstata (26/11)
 
 Pergunta: os dados de células que o CellViT dá em cada região que vai para o pré-laudo (número de núcleos, proporção de cada tipo, área nuclear) têm sentido? Na próstata, a máscara do Karolinska separa câncer de tecido benigno. Regiões: as 3 de maior atenção do GAT-MIL padronizado nas 300 biópsias de teste (900 regiões). CellViT-256 x40 com os pesos públicos (tipos do PanNuke), sem treino, numa janela de 256 µm ampliada para 0,25 µm/px; contam os núcleos com centro na própria região (128 µm). Fixado antes de rodar (commit `d26c31f`). Critério N: AUC câncer × benigno da fração de núcleos neoplásicos ≥ 0,70, com limite inferior do IC 95% > 0,5 (bootstrap por biópsia), nas regiões com ≥ 5 núcleos. Script: `Testes/Pipeline01/prelaudo/celulas_regioes.py`.
@@ -857,3 +882,4 @@ Detalhes: `Testes/Pipeline01/notas/problemas_e_metrica.md`.
 17. Pela decomposição exata da margem, nas lâminas previstas como adenocarcinoma os 20 patches de maior atenção têm contribuição líquida zero para a decisão (nas previstas como escamoso, 44% da soma) e, sozinhos, sustentam o adenocarcinoma pior que patches sorteados (−1,98 em logit). A atenção alta nessas lâminas não é evidência da classe prevista. Na próstata, nas biópsias previstas como benignas, os patches de maior atenção empurram a favor do benigno pela decomposição, mas falham nos testes de remoção e suficiência; as duas medidas discordam ali.
 18. A pipeline inteira cabe num notebook com GPU de 4 GB (RTX 3050): ~2 min por lâmina, quase tudo na extração dos embeddings pelo UNI2-h (mediana 92 s em 2.000 patches, pico de 2,65 GB de VRAM); MIL e classificador de patches levam segundos, e o Gemma 3 4B gera um laudo a 14,6 tokens/s (~20 s). Só com CPU, ~30 min por lâmina.
 19. Os dados de células do CellViT nas regiões de maior atenção têm sentido na próstata: a fração de núcleos neoplásicos separa regiões de câncer de benignas (AUC 0,756; o número de núcleos, 0,856), mas os tipos sem retreino não servem como contagem (mesmo no câncer, só 6% dos núcleos são chamados de neoplásicos). Número e área dos núcleos são os dados mais confiáveis para o laudo.
+20. A confiança que vai no laudo é superconfiante (ECE 0,09 no pulmão e 0,28 na próstata; na próstata, "alta" acerta o grau exato em só 53%) e precisa ser calibrada; a escala de temperatura leva o ECE a 0,04 e 0,09. Separar o aviso tumoral do aviso de tecido normal não o torna mais preciso (pulmão, 29% × 18% de erro, p = 0,22).
