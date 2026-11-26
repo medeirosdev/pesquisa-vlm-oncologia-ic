@@ -714,6 +714,41 @@ Pergunta, a partir da revisão do paper: o resultado do GAT-MIL padronizado se r
 - O 0,570 da rodada que gerou os pré-laudos ficou abaixo das 5 execuções (0,621 a 0,719): foi uma execução baixa, não a regra.
 - Mesmo o melhor modelo chama de câncer 38% das biópsias benignas (especificidade 0,62); o ABMIL original, 92%.
 
+## Pulmão com divisão por centro de origem (25/11)
+
+Pergunta, a partir da revisão do paper: na amostra do TCGA nenhum dos 54 centros de origem mandou as duas classes, e 65 das 80 lâminas de teste vinham de centros também presentes no treino; a AUC de 0,981 pode estar inflada pelo centro. Aqui as 197 lâminas são previstas em validação cruzada de 5 partes agrupada por centro (53 centros; nenhum centro em duas partes), ABMIL com 5 sementes. Fixado antes de rodar (commit `2e0c884`; a correção de memória do `37f9d66` foi feita antes de qualquer resultado). Critérios: Z1, AUC ≥ 0,85 e acurácia balanceada ≥ 0,75; Z2, erro maior nas lâminas com aviso, Fisher p < 0,05. Script: `Testes/Pipeline01/mil/tcga/pulmao_por_centro.py`.
+
+| | Divisão aleatória (78 de teste) | Divisão por centro (197) |
+|---|---|---|
+| AUC (IC 95%) | 0,981 (0,953–1,0) | **0,947** (0,910–0,976) |
+| Acurácia balanceada (IC 95%) | 0,949 | **0,893** (0,848–0,934) |
+| Acerto adenocarcinoma / escamoso | — | 86/98 / 90/99 |
+| Erros | 4 | 21 |
+| Erro com aviso / sem aviso | 4/27 / 0/51 | **16/69 (0,23) / 5/128 (0,04)**, p = 0,0001 |
+
+- **Z1 passou** e **Z2 passou**. Com centros novos, a AUC cai de 0,98 para 0,95: parte do resultado anterior vinha do centro, mas o subtipo continua sendo reconhecido.
+- Com 21 erros, o resultado aviso × erro deixa de se apoiar em 4: 16 dos 21 erros têm aviso. Os avisos continuam concentrados nas lâminas previstas como adenocarcinoma (58 de 69).
+
+## O aviso contra as linhas de base (25/11)
+
+Pergunta, a partir da revisão: o aviso acrescenta algo à confiança do classificador para achar os erros? Pulmão: as 197 lâminas da divisão por centro (21 erros). Próstata: as 300 de teste, GAT-MIL padronizado da execução 0 de `panda_repeticoes.py` (30 erros câncer × benigno). Sinais: aviso (número de regiões discordantes), confiança (1 − probabilidade da classe prevista), sementes (desvio entre as 5 sementes), classe prevista ("por ausência") e a combinação confiança + aviso (regressão logística fora da amostra). Fixado antes de rodar (commit `2e0c884`). Critérios: B1, AUROC do aviso com IC acima de 0,5; B2, AUROC(combinação) − AUROC(confiança) > 0 com IC acima de 0. Script: `Testes/Pipeline01/prelaudo/aviso_linhas_base.py`.
+
+| AUROC para achar erro (IC 95%) | Pulmão (21 erros) | Próstata (30 erros) |
+|---|---|---|
+| Aviso | **0,765** (0,648–0,862) | **0,715** (0,616–0,809) |
+| Confiança | 0,769 (0,646–0,871) | 0,779 (0,685–0,860) |
+| Discordância entre as 5 sementes | 0,777 (0,652–0,882) | **0,913** (0,874–0,944) |
+| Classe prevista | 0,470 | 0,567 |
+| Combinação confiança + aviso | 0,725 | 0,807 |
+| Erros pegos marcando tantas lâminas quanto o aviso (k) | k = 69: aviso 16, confiança 16, sementes 16, acaso 7,4 | k = 168: aviso 25, confiança 27, sementes 30, acaso 16,8 |
+
+- **B1 passou** nos dois órgãos: o aviso acha erros bem acima do acaso.
+- **B2 não passou** em nenhum: somar o aviso à confiança não melhora (pulmão −0,045, IC −0,207 a 0,107; próstata +0,028, IC −0,016 a 0,068). Na mesma taxa de marcação, o aviso pega o mesmo que a confiança no pulmão e um pouco menos na próstata.
+- A discordância entre as 5 sementes, que já existe e não custa nada, é o melhor sinal na próstata (AUROC 0,913; pega os 30 erros marcando 168).
+- A classe prevista sozinha não marca erro (0,47 e 0,57), então o aviso não é só um disfarce da classe.
+
+Leitura: o aviso é informativo e explicável (aponta a região que contradiz a decisão), mas como sinal de triagem não acrescenta à incerteza do próprio classificador; para triagem, a discordância entre sementes é melhor. No paper, a contribuição do aviso deve ser a de explicação honesta, não a de detector de erro superior.
+
 ## Anotações oficiais do BRACS
 
 - `.qpdata` lidas com o QuPath e exportadas pra GeoJSON: 387 de 387 lâminas; totais por classe iguais aos do artigo.
