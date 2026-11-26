@@ -27,6 +27,8 @@ Fixado ANTES de rodar (commit anterior aos resultados):
      centro, ajuste em 4 e aplicação na 5ª; próstata: 5 partes estratificadas pelo grau real, semente 0, dentro do
      próprio teste, porque não há validação separada do Karolinska; isso é transdutivo e fica marcado). Probabilidades
      com piso de 1e-6 antes do logaritmo. Mesmas medidas depois de calibrar.
+  Correção antes de rodar: no pulmão, as classes das regiões estão gravadas com os códigos do descritor ("nor", "aca",
+     "scc"), não com os nomes por extenso; a primeira versão comparava com os nomes. Nada mais mudou.
   Limites conhecidos: a temperatura não muda a ordem das lâminas, então não muda AUROC nem risco-cobertura; na
      próstata a calibração usa o próprio centro de teste.
 
@@ -62,11 +64,11 @@ def dados_pulmao():
     por = json.loads((RESULTADOS_DIR / "pulmao_centro" / "por_lamina.json").read_text(encoding="utf-8"))
     out = []
     for d in por.values():
-        tipo = "carcinoma escamoso" if d["previsto"] == 1 else "adenocarcinoma"
-        outro = "adenocarcinoma" if d["previsto"] == 1 else "carcinoma escamoso"
+        tipo = "scc" if d["previsto"] == 1 else "aca"   # códigos do descritor (pulmao_descritor.CLASSES)
+        outro = "aca" if d["previsto"] == 1 else "scc"
         disc = [c for c in d["regioes"] if c != tipo]
         p = np.array([1 - d["p_lusc"], d["p_lusc"]])
-        out.append({"tumoral": sum(c == outro for c in disc), "nao_tumoral": sum(c == "pulmão normal" for c in disc),
+        out.append({"tumoral": sum(c == outro for c in disc), "nao_tumoral": sum(c == "nor" for c in disc),
                     "erro": d["previsto"] != d["real"], "probs": p, "real": d["real"], "parte": d["parte"]})
     return out
 
