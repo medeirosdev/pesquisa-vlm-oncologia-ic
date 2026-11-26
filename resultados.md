@@ -749,6 +749,28 @@ Pergunta, a partir da revisão: o aviso acrescenta algo à confiança do classif
 
 Leitura: o aviso é informativo e explicável (aponta a região que contradiz a decisão), mas como sinal de triagem não acrescenta à incerteza do próprio classificador; para triagem, a discordância entre sementes é melhor. No paper, a contribuição do aviso deve ser a de explicação honesta, não a de detector de erro superior.
 
+## Seções montadas pelo código e linha de base sem modelo de linguagem (25–26/11)
+
+Pergunta, a partir da revisão: o que o modelo de linguagem acrescenta a um template, e quantos erros ele comete quando escreve livremente? Braço T: o laudo inteiro montado pelo código a partir dos campos, sem modelo de linguagem. Braço M: o código monta impressão, avisos, regiões e limitações; o modelo escreve só o parágrafo de resumo da evidência, e as medidas são feitas só nesse parágrafo. Documentos da configuração final (pulmão 78, próstata 60 com o GAT-MIL padronizado), português e inglês, Gemma 3 4B e Llama 3.2 3B. Fixado antes de rodar (commit `193cc67`). Critério Q, em cada um dos 8 casos (modelo × órgão × idioma): no parágrafo, 0 números sem sustentação, 0 coordenadas inventadas, 0 classes trocadas e 0 avisos em região concordante; e classe lida = sugerida em 100%. Script: `Testes/Pipeline01/prelaudo/secoes_por_codigo.py`.
+
+| Parágrafo livre (braço M) | Classe lida = sugerida | Números sem sustentação (documentos) | Coordenadas inventadas | Classe trocada | Aviso em região concordante (documentos marcados) | Palavras |
+|---|---|---|---|---|---|---|
+| Gemma, pulmão, pt | 78/78 | 5 (3) | 0 | 0 | 12 (8) | 60 |
+| Gemma, pulmão, en | 78/78 | 5 (3) | 1 | 0 | 22 (11) | 57 |
+| Gemma, próstata, pt | 60/60 | 5 (5) | 0 | 0 | 24 (15) | 63 |
+| Gemma, próstata, en | 60/60 | 0 (0) | 0 | 0 | 31 (18) | 67 |
+| Llama, pulmão, pt | 78/78 | 27 (7) | 0 | 0 | 16 (6) | 65 |
+| Llama, pulmão, en | 78/78 | 26 (7) | 0 | 0 | 11 (5) | 70 |
+| Llama, próstata, pt | 60/60 | 36 (9) | 0 | 0 | 3 (1) | 68 |
+| Llama, próstata, en | 60/60 | 18 (6) | 1 | 0 | 5 (3) | 61 |
+
+- **Q não passou em nenhum dos 8 casos.** Nenhuma classe trocada e classe lida certa em todos os 552 laudos (a impressão é montada pelo código); os erros estão nos números e nos avisos do parágrafo livre.
+- O braço T passa por construção na mesma checagem (0 em tudo, 64/64 e 55/55 regiões discordantes na seção de avisos, 276/276 classes lidas), com um resumo de 55–74 palavras, do mesmo tamanho do parágrafo dos modelos.
+- Números: o Llama erra 4 a 7 vezes mais que o Gemma (18–36 contra 0–5) e converte unidades que não existem nos campos (por exemplo 25,4, 3048, 4572: coordenadas em pixels tratadas como polegadas ou milímetros); o Gemma erra pouco (3–5 documentos por caso) e em inglês na próstata não erra nenhum.
+- Avisos em região concordante: a medida foi feita para a seção de avisos, uma linha por região, e no parágrafo livre ela conta também frases que citam regiões concordantes e discordantes juntas ou que negam o aviso ("No discordant warnings were identified, and regions [...]"). Contagem feita depois dos resultados, sem critério: dos documentos marcados, 13 de 67 têm uma negação do aviso na frase; separar os falsos positivos da medida dos erros reais pede leitura manual, que não foi feita. Os números da tabela são, portanto, um limite superior.
+
+Leitura: tirando o modelo de linguagem, o laudo fica correto por construção e com o mesmo tamanho; com ele, mesmo escrevendo só um parágrafo, aparecem números sem sustentação, poucos com o Gemma e muitos com o Llama. O texto livre do modelo é o único lugar em que ainda há erro; no paper, o template deve ser a linha de base, e o parágrafo do modelo, se mantido, precisa vir marcado como texto não verificado.
+
 ## Anotações oficiais do BRACS
 
 - `.qpdata` lidas com o QuPath e exportadas pra GeoJSON: 387 de 387 lâminas; totais por classe iguais aos do artigo.
@@ -773,3 +795,4 @@ Detalhes: `Testes/Pipeline01/notas/problemas_e_metrica.md`.
 13. A atenção do MIL é fiel ao modelo pelo teste de remoção nos dois órgãos (tirar os 10% de maior atenção derruba a probabilidade da classe prevista; tirar 10% sorteados não), mas no pulmão os 20 patches de maior atenção sustentam a classe pior do que 20 sorteados. A diferença está nas lâminas previstas como adenocarcinoma (e nas biópsias previstas como benignas): o MIL decide como um detector da classe "positiva", e nessas lâminas as regiões de maior atenção são as mais parecidas com a outra classe, não a evidência da classe prevista (hipótese, análise feita depois dos resultados).
 14. O aviso de discordância marca os erros do MIL: nas lâminas com aviso o MIL erra mais, no pulmão (4 de 27 contra 0 de 51, todos os erros com aviso, inclusive 3 com confiança alta) e na próstata (câncer × benigno, 16% contra 6%, risco relativo 2,6). Com a lista de regiões também colada por código, o pré-laudo do pulmão fica sem nenhuma coordenada inventada nos dois idiomas. Na próstata, o GAT-MIL padronizado deixa de colapsar em ISUP 3 e a atenção dele cai no câncer em 91% das biópsias (ABMIL 76%); os pré-laudos feitos com ele passam no critério nos dois idiomas, sem aviso espúrio, classe trocada ou coordenada inventada. Com a classe lida do texto por código, a impressão bate com a decisão em todos os 276 pré-laudos finais. A atenção do GAT-MIL também passa nos testes de remoção e de suficiência (+0,310 e +0,124), com a mesma exceção das biópsias previstas como benignas.
 15. Com outro modelo de linguagem (Llama 3.2 3B), a colagem por código mantém os avisos e as coordenadas certos e nenhuma classe trocada nos quatro casos, mas o critério passou só em dois: em português o Llama usa outros títulos de seção, e a colagem e a leitura da classe, que dependem do título, falham (a impressão escrita está certa em todos os laudos); em inglês na próstata ele escreve um número calculado (69%). As seções críticas devem ser montadas pelo código, não localizadas no texto do modelo.
+16. Com todas as seções críticas montadas pelo código e o modelo escrevendo só o parágrafo de resumo, a classe lida fica certa em 552 de 552 laudos e nenhuma classe é trocada, mas o parágrafo livre ainda traz números sem sustentação (Gemma em 0 a 5 documentos por caso, Llama em 6 a 9) e o critério não passou em nenhum caso. Um template sem modelo de linguagem, do mesmo tamanho, passa por construção. A pipeline com divisão por centro de origem mantém a decisão do pulmão (AUC 0,947) e o aviso continua marcando os erros (16 de 21), mas como sinal de triagem não acrescenta à confiança do classificador; a discordância entre as 5 sementes é melhor na próstata (AUROC 0,913).
