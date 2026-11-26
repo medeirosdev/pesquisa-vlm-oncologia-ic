@@ -1040,6 +1040,39 @@ a sugestão de benignidade.</pre>
     <span class="selo ok">pulmão EN e próstata PT: passou</span> <span class="selo falha">pulmão PT e próstata EN: não passou</span>
   </div>
 
+  <div class="painel destaque">
+    <h3>Seções montadas pelo código e template sem modelo de linguagem</h3>
+    <p>Pergunta da revisão: o que o modelo de linguagem acrescenta a um template, e quantos erros comete escrevendo livremente? No template, o código monta o laudo inteiro. No braço com modelo, o código monta impressão, avisos, regiões e limitações, e o modelo escreve só o parágrafo de resumo; a checagem é feita só nesse parágrafo. Critério fixado antes, em 8 casos (modelo × órgão × idioma): 0 números sem sustentação, 0 coordenadas inventadas, 0 classes trocadas, 0 avisos em região concordante e classe lida certa em 100%.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Parágrafo livre</th><th class="num">Pulmão PT</th><th class="num">Pulmão EN</th><th class="num">Próstata PT</th><th class="num">Próstata EN</th></tr></thead>
+      <tbody>
+        <tr class="vence"><td>Template: erros (todas as medidas)</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr>
+        <tr><td>Gemma: números sem sustentação (documentos)</td><td class="num">5 (3)</td><td class="num">5 (3)</td><td class="num">5 (5)</td><td class="num">0 (0)</td></tr>
+        <tr><td>Llama: números sem sustentação (documentos)</td><td class="num">27 (7)</td><td class="num">26 (7)</td><td class="num">36 (9)</td><td class="num">18 (6)</td></tr>
+        <tr><td>Aviso em região concordante, Gemma; Llama (limite superior)</td><td class="num">12; 16</td><td class="num">22; 11</td><td class="num">24; 3</td><td class="num">31; 5</td></tr>
+        <tr><td>Classe trocada; classe lida certa</td><td class="num">0; 78/78</td><td class="num">0; 78/78</td><td class="num">0; 60/60</td><td class="num">0; 60/60</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">A classe fica certa em 552 de 552 laudos, porque a impressão é montada pelo código. Os erros ficam no parágrafo livre: o Llama converte coordenadas em pixels como se fossem polegadas ou milímetros; o Gemma erra pouco. A medida de aviso em região concordante foi feita para a seção de avisos e, no texto livre, também conta negações ("nenhum aviso de discordância... regiões [x,y]"); por isso é um limite superior. O template, do mesmo tamanho, passa por construção: ele é a linha de base, e o parágrafo do modelo, se mantido, deve vir marcado como não verificado.</p>
+    <span class="selo falha">Q: não passou em nenhum dos 8 casos</span> <span class="selo ok">classe certa e nenhuma troca: 552/552</span>
+  </div>
+
+  <div class="painel">
+    <h3>O aviso contra as linhas de base</h3>
+    <p>O aviso acrescenta algo à confiança do classificador para achar os erros? AUROC para achar erro, pulmão (197 lâminas com divisão por centro, 21 erros) e próstata (300, 30 erros câncer × benigno). Critérios fixados antes: B1, aviso acima do acaso; B2, confiança + aviso melhor que a confiança sozinha.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>AUROC (IC 95%)</th><th class="num">Pulmão</th><th class="num">Próstata</th></tr></thead>
+      <tbody>
+        <tr><td>Aviso</td><td class="num">0,765 (0,648–0,862)</td><td class="num">0,715 (0,616–0,809)</td></tr>
+        <tr><td>Confiança</td><td class="num">0,769</td><td class="num">0,779</td></tr>
+        <tr class="vence"><td>Discordância entre as 5 sementes</td><td class="num">0,777</td><td class="num"><b>0,913</b></td></tr>
+        <tr><td>Confiança + aviso</td><td class="num">0,725</td><td class="num">0,807</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">O aviso acha erros acima do acaso nos dois órgãos, mas não acrescenta à confiança. Para triagem, a discordância entre sementes é melhor; o papel do aviso é explicar (apontar a região que contradiz a decisão), não detectar erro melhor que a incerteza do próprio classificador.</p>
+    <span class="selo ok">B1: passou nos dois</span> <span class="selo falha">B2: não passou</span>
+  </div>
+
   <div class="painel">
     <h3>Como o modelo de linguagem se comporta</h3>
     <ul class="limpa">
@@ -1138,6 +1171,11 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
     <li>O pré-laudo, quando só redige a partir de campos fixos, fica fiel: a classe bate em 57/57 (mama), 78/78 (pulmão) e 60/60 (próstata), sem números nem coordenadas inventados. Com a regra só nas instruções, quase nunca apontava quando uma região contradiz a classe (1 de 15, 3 de 27, 1 de 35); com o aviso calculado por código e pronto nos campos, aponta em 27 de 27 (pulmão) e 35 de 35 (próstata), sem falso alarme nos documentos sem discordância. Na próstata, o modelo ainda acrescentava avisos em regiões que não discordam (9 de 60); com a seção de avisos colada por código, isso some (0, em português e em inglês).</li>
     <li>A atenção do MIL é fiel ao modelo pelo teste de remoção (pulmão e próstata), mas nas lâminas previstas como adenocarcinoma os patches de maior atenção não sustentam a classe: ali a atenção aponta o que mais parece escamoso, não a evidência do adenocarcinoma.</li>
     <li>O aviso de discordância marca os erros do MIL: no pulmão, os 4 erros estão entre as 27 lâminas com aviso (a confiança do MIL pega só 1); na próstata, o MIL erra câncer × benigno em 16% das biópsias com aviso e em 6% das sem aviso.</li>
+    <li>Com divisão por centro de origem (cada lâmina prevista por modelos que nunca viram o centro dela), o pulmão fica em AUC 0,947 e acurácia balanceada 0,893 (antes 0,981 na divisão aleatória), e o aviso continua marcando os erros (16 de 21, p = 0,0001).</li>
+    <li>Na próstata, em 5 execuções, o GAT-MIL padronizado fica em kappa 0,649 ± 0,040, acima do ABMIL original em todas; a padronização por centro pesa mais que o grafo.</li>
+    <li>O aviso acha erros acima do acaso (AUROC 0,77 e 0,72), mas não acrescenta à confiança do classificador; a discordância entre as 5 sementes é o melhor sinal na próstata (0,91).</li>
+    <li>Com as seções críticas montadas pelo código, a classe fica certa em 552 de 552 laudos; o parágrafo livre do modelo ainda traz números sem sustentação (Gemma poucos, Llama muitos). Um template sem modelo de linguagem passa por construção.</li>
+    <li>Pela decomposição exata da margem, nas lâminas previstas como adenocarcinoma os patches de maior atenção têm contribuição líquida zero e, sozinhos, sustentam a classe pior que sorteados: ali a atenção alta não é evidência da classe prevista.</li>
   </ul>
   <p class="nota">Ressalvas gerais: 2 lâminas por classe no desenvolvimento; as anotações do BRACS marcam regiões, não cada célula; o rótulo da lâmina é o da lesão mais grave; no PANDA não há identificação do paciente, então dentro do Radboud a mesma pessoa pode ter biópsias no treino e no teste.</p>
 </section>
@@ -1200,13 +1238,19 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
         <tr><td>Próstata</td><td>Karolinska, 300</td><td>3½. Decisão da lâmina</td><td>Atenção do GAT-MIL padronizado: remoção e suficiência</td><td>Tirar 10% de maior atenção − sorteados; ficar com 20 − sorteados</td><td class="num">+0,310; +0,124</td><td><span class="selo ok">passou</span></td></tr>
         <tr><td>Pulmão e próstata</td><td>276 pré-laudos finais</td><td>5. Pré-laudo</td><td>Classe lida por código na impressão (modelo só como reserva)</td><td>Classe = decisão</td><td class="num">276/276 (antes 272/276)</td><td><span class="selo ok">passou</span></td></tr>
         <tr><td>Pulmão e próstata</td><td>276 pré-laudos</td><td>5. Pré-laudo</td><td>Llama 3.2 3B no lugar do Gemma, mesma colagem</td><td>Critério em 4 casos (órgão × idioma)</td><td class="num">2 de 4; avisos e coordenadas certos nos 4</td><td><span class="selo parcial">parcial</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 197 lâminas, 5 partes por centro de origem</td><td>3½. Decisão da lâmina</td><td>ABMIL, centros nunca vistos</td><td>AUC; acurácia balanceada</td><td class="num">0,947 (0,910–0,976); 0,893</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 197, por centro</td><td>5. Pré-laudo</td><td>Aviso × erro do MIL</td><td>Erros com aviso; Fisher</td><td class="num">16 de 21; p = 0,0001</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Próstata</td><td>Radboud → Karolinska, 300, 5 execuções</td><td>3½. Decisão da lâmina</td><td>GAT-MIL padronizado (× ABMIL original)</td><td>Kappa quadrático, média ± desvio</td><td class="num">0,649 ± 0,040 (0,295)</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Pulmão e próstata</td><td>197 e 300</td><td>5. Pré-laudo</td><td>Aviso contra confiança e discordância entre sementes</td><td>AUROC para achar erro: aviso; ganho sobre a confiança</td><td class="num">0,765 e 0,715; sem ganho</td><td><span class="selo parcial">B1 passou, B2 não</span></td></tr>
+        <tr><td>Pulmão e próstata</td><td>552 laudos</td><td>5. Pré-laudo</td><td>Seções montadas pelo código; modelo escreve só o resumo (Gemma; Llama)</td><td>Erros no parágrafo livre, 8 casos</td><td class="num">classe 552/552; números sem sustentação 0–5 e 18–36 por caso</td><td><span class="selo falha">não passou</span></td></tr>
+        <tr><td>Pulmão e próstata</td><td>197 e 300</td><td>3½. Explicação</td><td>Decomposição exata da margem nas lâminas "por ausência"</td><td>Contribuição dos 20 de maior atenção; suficiência em logit</td><td class="num">pulmão −0,002 e −1,98; próstata +0,366</td><td><span class="selo parcial">H2 passou; H1 e H3 não</span></td></tr>
     </tbody>
   </table></div>
   <p class="nota">Acaso: acurácia balanceada 0,25 em 4 classes e 0,33 em 3; AUC 0,5; kappa 0. Mama e próstata com intervalo de 95% por bootstrap (na mama, agrupado por paciente). Resultados de 06/11 ou antes no BRACS usam o agrupamento antigo, com o UDH em atípico.</p>
 </section>
 
 <footer>
-  <p>Pipeline Ideia 01 · orientação Prof. João Batista Florindo · situação em 14/11/2026. Modelos: QuiltNet-B-32, UNI2-h, CellViT-256, Gemma 3 4B e MedGemma 4B, todos rodando localmente.</p>
+  <p>Pipeline Ideia 01 · orientação Prof. João Batista Florindo · situação em 26/11/2026. Modelos: QuiltNet-B-32, UNI2-h, CellViT-256, Gemma 3 4B e MedGemma 4B, todos rodando localmente.</p>
   <p>Imagens de lâminas: BRACS (Brancati et al., <i>BRACS: A Dataset for BReAst Carcinoma Subtyping in H&amp;E Histology Images</i>, Database, 2022), licença CC BY-NC 4.0. Núcleos anotados: NuCLS (Amgad et al., GigaScience, 2022), CC0. Lâminas de pulmão e rim: TCGA-LUAD, TCGA-LUSC, TCGA-KIRC, TCGA-KIRP e TCGA-KICH (NCI Genomic Data Commons, acesso aberto); só resultados numéricos. Imagens de pulmão para o descritor: LungHist700 (Diosdado et al., Scientific Data, 2024), CC BY 4.0; só resultados numéricos. Biópsias de próstata: PANDA (Bulten et al., Nature Medicine, 2022), CC BY-NC-SA 4.0; as figuras dos grafos desenham sobre uma biópsia do PANDA e seguem a mesma licença. Imagens do BACH não são reproduzidas (licença CC BY-NC-ND); só os resultados numéricos.</p>
 </footer>
 
