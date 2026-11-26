@@ -789,6 +789,25 @@ Pergunta, a partir da revisão: nas lâminas previstas como a classe que o MIL p
 
 Leitura: no pulmão, nas lâminas de adenocarcinoma, a atenção alta não é a evidência da decisão (contribuição líquida zero, mais patches parecidos com escamoso); a decisão vem do conjunto, como na leitura "por ausência", mas não por patches que empurram contra. Na próstata a hipótese não se sustenta pela decomposição. No pré-laudo, as regiões de maior atenção das lâminas "por ausência" não devem ser apresentadas como evidência da classe prevista.
 
+## Células nas regiões de maior atenção (CellViT), próstata (26/11)
+
+Pergunta: os dados de células que o CellViT dá em cada região que vai para o pré-laudo (número de núcleos, proporção de cada tipo, área nuclear) têm sentido? Na próstata, a máscara do Karolinska separa câncer de tecido benigno. Regiões: as 3 de maior atenção do GAT-MIL padronizado nas 300 biópsias de teste (900 regiões). CellViT-256 x40 com os pesos públicos (tipos do PanNuke), sem treino, numa janela de 256 µm ampliada para 0,25 µm/px; contam os núcleos com centro na própria região (128 µm). Fixado antes de rodar (commit `d26c31f`). Critério N: AUC câncer × benigno da fração de núcleos neoplásicos ≥ 0,70, com limite inferior do IC 95% > 0,5 (bootstrap por biópsia), nas regiões com ≥ 5 núcleos. Script: `Testes/Pipeline01/prelaudo/celulas_regioes.py`.
+
+| Medida por região (mediana) | Câncer (659 regiões) | Benigno (187) | AUC câncer × benigno |
+|---|---|---|---|
+| Fração de núcleos neoplásicos | 0,062 | 0,000 | **0,756** (0,721–0,792) |
+| Número de núcleos (região de 128 µm) | 88 | 39 | 0,856 |
+| Área nuclear mediana (µm²) | 28,9 | 24,1 | 0,713 |
+| Fração conjuntivo / epitelial / inflamatório | 0,44 / 0,10 / 0,03 | 0,66 / 0,23 / 0,04 | — |
+
+- **N passou** (AUC 0,756, IC 0,721–0,792). De fora: 53 regiões sem rótulo claro na máscara e 1 com menos de 5 núcleos.
+- O número de núcleos separa melhor que a fração neoplásica (0,856): as regiões de câncer são mais celulares.
+- Os valores absolutos dos tipos não podem ser lidos literalmente: mesmo nas regiões de câncer, a fração neoplásica mediana é 6% e a maior parte dos núcleos vira "conjuntivo" (44%). Na mama (NuCLS), o CellViT original também trocava tumor por outro tipo (sensibilidade 0,46). Causas prováveis: os pesos foram treinados a 0,25 µm/px e o Karolinska tem 0,45 µm/px (janela ampliada), e o PanNuke tem poucas lâminas de próstata.
+- Por classe do classificador de patches, a fração neoplásica sobe de benigno (0,00) para Gleason 3 (0,12) e Gleason 4 (0,15); Gleason 5 tem só 9 regiões.
+- Tempo: mediana de 1,2 s por região na GPU (~4 s por lâmina para 3 regiões).
+
+Leitura: os dados de células nas regiões são informativos para comparar regiões (mais núcleos, núcleos maiores e mais "neoplásicos" no câncer), mas os tipos do CellViT sem retreino não servem como contagem diagnóstica. No laudo, o número de núcleos e a área são os dados mais confiáveis; a proporção de tipos deve vir com essa ressalva.
+
 ## Custo da pipeline num notebook (26/11)
 
 Pergunta: quanto custa rodar a pipeline num computador comum, com GPU e só com CPU? Notebook com RTX 3050 Laptop (4 GB), i5-11400H (6 núcleos, 12 threads), 15,4 GB de RAM. 3 lâminas de teste do pulmão (464 MB a 2,9 GB; 11.760 a 31.066 patches de tecido; 2.000 sorteados), cada etapa cronometrada separadamente. Medição descritiva, sem critério; o que seria medido foi fixado antes (commit `57a2a59`), com duas correções antes de qualquer medida do modelo de linguagem (`edad449`: liberar a VRAM do PyTorch antes do Ollama; `f704763`: converter o UNI2-h na CPU). As tentativas anteriores falharam por falta de memória na GPU, duas delas porque outro projeto usava a GPU; esta rodou com a máquina ociosa (nenhum outro processo na GPU, carga < 3 por 5 minutos). Script: `Testes/Pipeline01/ferramentas/medir_recursos.py`.
@@ -837,3 +856,4 @@ Detalhes: `Testes/Pipeline01/notas/problemas_e_metrica.md`.
 16. Com todas as seções críticas montadas pelo código e o modelo escrevendo só o parágrafo de resumo, a classe lida fica certa em 552 de 552 laudos e nenhuma classe é trocada, mas o parágrafo livre ainda traz números sem sustentação (Gemma em 0 a 5 documentos por caso, Llama em 6 a 9) e o critério não passou em nenhum caso. Um template sem modelo de linguagem, do mesmo tamanho, passa por construção. A pipeline com divisão por centro de origem mantém a decisão do pulmão (AUC 0,947) e o aviso continua marcando os erros (16 de 21), mas como sinal de triagem não acrescenta à confiança do classificador; a discordância entre as 5 sementes é melhor na próstata (AUROC 0,913).
 17. Pela decomposição exata da margem, nas lâminas previstas como adenocarcinoma os 20 patches de maior atenção têm contribuição líquida zero para a decisão (nas previstas como escamoso, 44% da soma) e, sozinhos, sustentam o adenocarcinoma pior que patches sorteados (−1,98 em logit). A atenção alta nessas lâminas não é evidência da classe prevista. Na próstata, nas biópsias previstas como benignas, os patches de maior atenção empurram a favor do benigno pela decomposição, mas falham nos testes de remoção e suficiência; as duas medidas discordam ali.
 18. A pipeline inteira cabe num notebook com GPU de 4 GB (RTX 3050): ~2 min por lâmina, quase tudo na extração dos embeddings pelo UNI2-h (mediana 92 s em 2.000 patches, pico de 2,65 GB de VRAM); MIL e classificador de patches levam segundos, e o Gemma 3 4B gera um laudo a 14,6 tokens/s (~20 s). Só com CPU, ~30 min por lâmina.
+19. Os dados de células do CellViT nas regiões de maior atenção têm sentido na próstata: a fração de núcleos neoplásicos separa regiões de câncer de benignas (AUC 0,756; o número de núcleos, 0,856), mas os tipos sem retreino não servem como contagem (mesmo no câncer, só 6% dos núcleos são chamados de neoplásicos). Número e área dos núcleos são os dados mais confiáveis para o laudo.
