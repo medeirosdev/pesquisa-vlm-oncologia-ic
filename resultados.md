@@ -697,6 +697,23 @@ Pergunta: a fidelidade vem da colagem e da checagem por código, ou de uma propr
 
 Leitura: a colagem por código faz o mesmo trabalho com o Llama (todos os avisos certos, nenhuma troca de classe, nenhuma coordenada inventada), mas depende de o modelo usar os títulos pedidos; com outro formato, a seção do modelo fica no texto e a extração da classe falha. O caminho seguro é o código montar as seções críticas (decisão, avisos, regiões) e o modelo escrever só o resumo e as limitações, ou normalizar os títulos antes de colar. A checagem de números pega o único número calculado.
 
+## Próstata: 5 execuções do desenho 2 × 2 (ABMIL ou GAT-MIL × embeddings originais ou padronizados) (25/11)
+
+Pergunta, a partir da revisão do paper: o resultado do GAT-MIL padronizado se repete (uma execução deu kappa 0,609, outra 0,570, e o mínimo fixado era 0,60)? E o ganho vem do grafo ou da padronização? Mesmas 600 de treino (Radboud) e 300 de teste (Karolinska); 5 execuções, a execução r com as sementes 5r a 5r + 4. Fixado antes de rodar (commit `2e0c884`). Critérios: S1, GAT-MIL padronizado − ABMIL original > 0 em todas as execuções; S2, média do GAT-MIL padronizado ≥ 0,60. Script: `Testes/Pipeline01/mil/panda/panda_repeticoes.py`.
+
+| Média de 5 execuções | ABMIL original | GAT-MIL original | ABMIL padronizado | GAT-MIL padronizado |
+|---|---|---|---|---|
+| Kappa quadrático (média ± desvio) | 0,295 ± 0,052 | 0,448 ± 0,075 | 0,590 ± 0,031 | **0,649 ± 0,040** |
+| AUC benigno × câncer | 0,953 | 0,960 | 0,957 | 0,970 |
+| Especificidade (benignas chamadas de benignas) | 0,08 | 0,27 | 0,44 | 0,62 |
+| Sensibilidade ao câncer | 0,994 | 0,993 | 0,978 | 0,966 |
+| Acurácia exata (ISUP) | 0,285 | 0,358 | 0,404 | 0,461 |
+
+- **S1 passou** (diferença de +0,27 a +0,41 nas 5 execuções) e **S2 passou** (0,649).
+- O efeito maior é da padronização (no GAT-MIL, +0,13 a +0,30 por execução); o grafo acrescenta menos (com padronização, +0,04 a +0,09).
+- O 0,570 da rodada que gerou os pré-laudos ficou abaixo das 5 execuções (0,621 a 0,719): foi uma execução baixa, não a regra.
+- Mesmo o melhor modelo chama de câncer 38% das biópsias benignas (especificidade 0,62); o ABMIL original, 92%.
+
 ## Anotações oficiais do BRACS
 
 - `.qpdata` lidas com o QuPath e exportadas pra GeoJSON: 387 de 387 lâminas; totais por classe iguais aos do artigo.
