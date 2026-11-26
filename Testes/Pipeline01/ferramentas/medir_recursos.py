@@ -19,6 +19,10 @@ Fixado ANTES de medir (commit anterior às medidas; medição descritiva, sem cr
   Memória: pico de memória da GPU pelo PyTorch (etapas 2 e 3) e pelo nvidia-smi durante o modelo de linguagem; pico
      de RAM do processo Python (ru_maxrss) e do processo do Ollama (VmHWM).
   Também registrado: modelo da GPU e da CPU, RAM total, versão do Ollama e quantização do modelo de linguagem.
+  Correção depois da primeira execução, antes de qualquer medida do modelo de linguagem: o Ollama não conseguiu memória
+     na GPU porque o PyTorch ainda guardava a VRAM das etapas 2 e 3, e a chamada falhou (erro 500); o vigia da VRAM não
+     parava e o script não saiu. Agora o UNI2-h e os ABMIL saem da memória e o cache da GPU é liberado antes da etapa 5
+     (num hospital as etapas também rodariam em sequência), e o vigia para mesmo com erro. As etapas 1 a 4 não mudaram.
 
 Uso (venv do projeto; HD montado; Ollama no ar): .venv/bin/python ferramentas/medir_recursos.py
 Saída: resultados/recursos/resumo.json
@@ -82,15 +86,17 @@ def chamar_llm(campos, instrucoes, cpu):
             if v.isdigit():
                 vram.append(int(v))
             time.sleep(0.5)
-    th = threading.Thread(target=vigiar)
+    th = threading.Thread(target=vigiar, daemon=True)
     th.start()
     t0 = time.time()
     req = urllib.request.Request(sintese.OLLAMA, data=json.dumps(corpo).encode(), headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=3600) as r:
-        resp = json.loads(r.read())
+    try:
+        with urllib.request.urlopen(req, timeout=3600) as r:
+            resp = json.loads(r.read())
+    finally:
+        parar[0] = True
+        th.join()
     dt = time.time() - t0
-    parar[0] = True
-    th.join()
     return {"segundos": round(dt, 1), "tokens_gerados": resp.get("eval_count"),
             "tokens_por_segundo": round(resp["eval_count"] / (resp["eval_duration"] / 1e9), 2) if resp.get("eval_duration") else None,
             "vram_pico_mib_nvidia_smi": max(vram) if vram else None, "ram_pico_ollama_mib": vmhwm(ollama_pid())}
@@ -191,6 +197,13 @@ def main():
         r["etapa4_descritor_s_com_treino_lunghist700"] = round(time.time() - t0, 1)
         por.append(r)
         print(r, flush=True)
+
+    # libera a GPU para o modelo de linguagem
+    del modelos, uni, uni_cpu, x, E
+    import gc
+    gc.collect()
+    if gpu:
+        torch.cuda.empty_cache()
 
     # 5. pré-laudo (campos reais de um documento do pulmão, português)
     from aviso_discordancia import SAIDA as SAIDA_AVISO, documentos
