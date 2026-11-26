@@ -126,9 +126,11 @@ def etapa_template():
     print("template pronto")
 
 
-def etapa_redigir(modelo):
+def etapa_redigir(modelo, semente=0):
     import sintese
-    nome = MODELOS[modelo]
+    nome = MODELOS[modelo] + (f"_s{semente}" if semente else "")
+    if semente:
+        sintese.OPCOES = dict(sintese.OPCOES, seed=semente)
     for (orgao, lg), docs in casos().items():
         pasta = SAIDA / nome / lg / orgao
         pasta.mkdir(parents=True, exist_ok=True)
@@ -193,5 +195,6 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--etapa", choices=["template", "redigir", "checar"], required=True)
     p.add_argument("--modelo", choices=list(MODELOS), default="gemma3:4b")
+    p.add_argument("--semente", type=int, default=0, help="semente do modelo de linguagem (0 = a rodada original)")
     a = p.parse_args()
-    {"template": etapa_template, "redigir": lambda: etapa_redigir(a.modelo), "checar": etapa_checar}[a.etapa]()
+    {"template": etapa_template, "redigir": lambda: etapa_redigir(a.modelo, a.semente), "checar": etapa_checar}[a.etapa]()
