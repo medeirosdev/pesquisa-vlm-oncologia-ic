@@ -789,6 +789,32 @@ Pergunta, a partir da revisão: nas lâminas previstas como a classe que o MIL p
 
 Leitura: no pulmão, nas lâminas de adenocarcinoma, a atenção alta não é a evidência da decisão (contribuição líquida zero, mais patches parecidos com escamoso); a decisão vem do conjunto, como na leitura "por ausência", mas não por patches que empurram contra. Na próstata a hipótese não se sustenta pela decomposição. No pré-laudo, as regiões de maior atenção das lâminas "por ausência" não devem ser apresentadas como evidência da classe prevista.
 
+## Aviso por grau na próstata e proporções do classificador de patches (26/11)
+
+Perguntas da revisão: (1) a regra da próstata só compara benigno com Gleason; um aviso por padrão incompatível com o grau previsto marca os erros de grau? (2) Como a proporção de cada padrão, que vai no laudo, se distribui pela classe real? Próstata: 300 biópsias de teste, GAT-MIL padronizado, execução 0. Fixado antes de rodar (commit `db8b6ab`). Aviso de grau, nas previstas como ISUP ≥ 1: alguma região com padrão incompatível pela definição do ISUP (ISUP 1 com Gleason 4 ou 5; ISUP 2–3 com Gleason 5; ISUP 5 com Gleason 3; ISUP 4 nunca). Critério G: erro de grau (ISUP previsto ≠ real) maior com aviso, Fisher unilateral p < 0,05. Script: `Testes/Pipeline01/prelaudo/aviso_grau_descritor.py`.
+
+| Previstas como ISUP ≥ 1 (266) | Com aviso de grau (30) | Sem (236) | Fisher |
+|---|---|---|---|
+| Erro de grau | 17 (57%) | 137 (58%) | p = 0,64 |
+| Erro de 2 ou mais graus | 9 (30%) | 50 (21%) | p = 0,19 |
+
+- **G não passou**: o aviso de grau não marca mais erros de grau. Avisos por grau previsto: ISUP 1, 16/46; ISUP 5, 12/60; ISUP 2–3, 2/109.
+- Mas, quando aparece, ele aponta a direção do erro: com padrão mais alto que o grau (ISUP 1 com Gleason 4/5, 18 biópsias), o grau real fica em média +0,94 acima do previsto; com padrão mais baixo (ISUP 5 com Gleason 3, 12), −1,75 abaixo. Análise sem critério.
+
+| Proporção mediana dos patches (classificador de patches) | | | | |
+|---|---|---|---|---|
+| Pulmão | normal | adenocarcinoma | escamoso | classe tumoral mais frequente = tipo real |
+| Adenocarcinoma real (98) | 0,36 | 0,58 | 0,02 | 91/98 |
+| Escamoso real (99) | 0,22 | 0,27 | 0,38 | 64/99 |
+| Próstata | benigno | Gleason 3 | Gleason 4 | Gleason 5 |
+| ISUP 0 real | 0,95 | 0,01 | 0,02 | 0,00 |
+| ISUP 3 real | 0,80 | 0,03 | 0,14 | 0,00 |
+| ISUP 5 real | 0,73 | 0,03 | 0,20 | 0,00 |
+
+- No pulmão, o classificador de patches chama parte do escamoso de adenocarcinoma; a classe tumoral mais frequente erra o tipo em 35 de 99 escamosos. Na próstata, "benigno" domina até no ISUP 5, Gleason 4 cresce com o grau e Gleason 3 e 5 quase nunca aparecem.
+
+Leitura: a proporção de padrões é informativa no conjunto (cresce com a classe real), mas não pode ser lida como fração de tumor da lâmina, sobretudo na próstata; no laudo, ela deve vir como "segundo o classificador de patches", com essa ressalva. O aviso de grau não serve como sinal de erro, mas indica para que lado o grau pode estar errado quando aparece.
+
 ## Aviso tumoral × aviso de tecido normal, e calibração da confiança (26/11)
 
 Perguntas da revisão: (1) uma região de pulmão normal numa lâmina de adenocarcinoma (ou benigna numa biópsia com câncer) é esperada; os erros se concentram nos avisos em que a região é do outro tipo de tumor? (2) Quão calibrada é a confiança que vai no laudo? Mesmos dados de `aviso_linhas_base.py` (pulmão: 197 lâminas por centro; próstata: 300, GAT-MIL padronizado, execução 0). Fixado antes de rodar (commit `a2132c4`; correção dos códigos de classe do pulmão antes de qualquer resultado, `65bc7ff`). Critério T (pulmão): taxa de erro com aviso tumoral maior que com aviso só de pulmão normal, Fisher unilateral p < 0,05. Próstata e calibração: descritivas. Script: `Testes/Pipeline01/prelaudo/aviso_tumoral_calibracao.py`.
@@ -883,3 +909,4 @@ Detalhes: `Testes/Pipeline01/notas/problemas_e_metrica.md`.
 18. A pipeline inteira cabe num notebook com GPU de 4 GB (RTX 3050): ~2 min por lâmina, quase tudo na extração dos embeddings pelo UNI2-h (mediana 92 s em 2.000 patches, pico de 2,65 GB de VRAM); MIL e classificador de patches levam segundos, e o Gemma 3 4B gera um laudo a 14,6 tokens/s (~20 s). Só com CPU, ~30 min por lâmina.
 19. Os dados de células do CellViT nas regiões de maior atenção têm sentido na próstata: a fração de núcleos neoplásicos separa regiões de câncer de benignas (AUC 0,756; o número de núcleos, 0,856), mas os tipos sem retreino não servem como contagem (mesmo no câncer, só 6% dos núcleos são chamados de neoplásicos). Número e área dos núcleos são os dados mais confiáveis para o laudo.
 20. A confiança que vai no laudo é superconfiante (ECE 0,09 no pulmão e 0,28 na próstata; na próstata, "alta" acerta o grau exato em só 53%) e precisa ser calibrada; a escala de temperatura leva o ECE a 0,04 e 0,09. Separar o aviso tumoral do aviso de tecido normal não o torna mais preciso (pulmão, 29% × 18% de erro, p = 0,22).
+21. Um aviso por padrão de Gleason incompatível com o grau previsto não marca mais erros de grau (57% × 58%), mas indica a direção do erro quando aparece (+0,9 grau com padrão mais alto, −1,75 com mais baixo). A proporção de padrões do classificador de patches cresce com a classe real, mas não é fração de tumor: na próstata, "benigno" domina até no ISUP 5.
