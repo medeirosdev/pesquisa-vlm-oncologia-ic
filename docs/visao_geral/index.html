@@ -635,11 +635,12 @@ categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
       <tbody>
         <tr><td>Núcleo isolado, medidas clássicas (forma, cor, textura)</td><td class="num">0,599</td><td class="num">0,518</td></tr>
         <tr><td>Núcleo isolado, UNI2-h + MIL</td><td class="num">0,479</td><td class="num">0,532</td></tr>
-        <tr class="vence"><td>Mesmo núcleo com o tecido em volta, UNI2-h + MIL</td><td class="num"><b>0,948</b> (0,879–0,996)</td><td class="num">0,866</td></tr>
+        <tr class="vence"><td>Mesmo núcleo com o tecido em volta (janela de 224 px, ~17% do campo), UNI2-h + MIL</td><td class="num"><b>0,862</b> (0,738–0,959)</td><td class="num">0,809</td></tr>
+        <tr><td>Janela de 448 px reduzida à metade (~67% do campo, mesma escala de um recorte do campo)</td><td class="num">0,948</td><td class="num">0,866</td></tr>
         <tr><td>Campo de biópsia inteiro, UNI2-h + MIL</td><td class="num">0,942</td><td class="num"><b>0,886</b></td></tr>
       </tbody>
     </table></div>
-    <p class="nota">O núcleo sozinho fica no acaso, com o UNI2-h e com medidas clássicas. Com o tecido em volta, o mesmo núcleo chega ao nível do campo inteiro (diferença de AUC +0,47, IC 0,29 a 0,65). Neste conjunto, o subtipo está no arranjo do tecido, não no núcleo; super-resolução do núcleo não traria essa informação. Ressalvas: 52 pacientes, um só hospital, máscaras dos núcleos de uma segmentação antiga.</p>
+    <p class="nota">O núcleo sozinho fica no acaso, com o UNI2-h e com medidas clássicas. Com o tecido em volta numa janela de 224 px, o mesmo núcleo vai a AUC 0,86 (+0,42 sobre o núcleo sozinho, IC 0,21 a 0,61). Com a janela de 448 px chega a 0,95, mas essa janela tem o tamanho e a escala de um recorte do campo, então igualar o campo inteiro acontece por construção (correção de 26/11). Neste conjunto, o subtipo está no arranjo do tecido, não no núcleo; super-resolução do núcleo não traria essa informação. Ressalvas: 52 pacientes, um só hospital, máscaras dos núcleos de uma segmentação antiga.</p>
     <span class="selo parcial">passou em 2 de 4 critérios</span>
   </div>
 
@@ -1167,7 +1168,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
     <li>Dar ao MIL a vizinhança dos patches (GAT-MIL) melhora a graduação da próstata (0,24 → 0,44 entre centros; 0,78 → 0,81 dentro). Na mama não ajudou e no pulmão empatou, com o grafo montado só sobre a amostra de 2.000 patches.</li>
     <li>Padronizar os embeddings por centro foi o que mais ajudou na troca de centro (MIL 0,54; GAT-MIL 0,61). Normalizar a cor não ajudou (GAT-MIL 0,23): a diferença entre hospitais não é só a cor média.</li>
     <li>A rede de grafos chega ao nível do GAT-MIL olhando só as janelas em volta de ~10 pontos por biópsia (67% dos patches): escolher os pontos pela atenção não perde o que importa pro grau.</li>
-    <li>No pulmão do dataset do orientador, o núcleo isolado não carrega o subtipo (AUC 0,48 com UNI2-h, 0,60 com medidas clássicas); o mesmo núcleo com o tecido em volta chega a 0,95, no nível do campo de biópsia inteiro.</li>
+    <li>No pulmão do dataset do orientador, o núcleo isolado não carrega o subtipo (AUC 0,48 com UNI2-h, 0,60 com medidas clássicas); o mesmo núcleo com o tecido em volta (janela de 224 px) chega a 0,86.</li>
     <li>O pré-laudo, quando só redige a partir de campos fixos, fica fiel: a classe bate em 57/57 (mama), 78/78 (pulmão) e 60/60 (próstata), sem números nem coordenadas inventados. Com a regra só nas instruções, quase nunca apontava quando uma região contradiz a classe (1 de 15, 3 de 27, 1 de 35); com o aviso calculado por código e pronto nos campos, aponta em 27 de 27 (pulmão) e 35 de 35 (próstata), sem falso alarme nos documentos sem discordância. Na próstata, o modelo ainda acrescentava avisos em regiões que não discordam (9 de 60); com a seção de avisos colada por código, isso some (0, em português e em inglês).</li>
     <li>A atenção do MIL é fiel ao modelo pelo teste de remoção (pulmão e próstata), mas nas lâminas previstas como adenocarcinoma os patches de maior atenção não sustentam a classe: ali a atenção aponta o que mais parece escamoso, não a evidência do adenocarcinoma.</li>
     <li>O aviso de discordância marca os erros do MIL: no pulmão, os 4 erros estão entre as 27 lâminas com aviso (a confiança do MIL pega só 1); na próstata, o MIL erra câncer × benigno em 16% das biópsias com aviso e em 6% das sem aviso.</li>
@@ -1175,6 +1176,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
     <li>Na próstata, em 5 execuções, o GAT-MIL padronizado fica em kappa 0,649 ± 0,040, acima do ABMIL original em todas; a padronização por centro pesa mais que o grafo.</li>
     <li>O aviso acha erros acima do acaso (AUROC 0,77 e 0,72), mas não acrescenta à confiança do classificador; a discordância entre as 5 sementes é o melhor sinal na próstata (0,91).</li>
     <li>Com as seções críticas montadas pelo código, a classe fica certa em 552 de 552 laudos; o parágrafo livre do modelo ainda traz números sem sustentação (Gemma poucos, Llama muitos). Um template sem modelo de linguagem passa por construção.</li>
+    <li>A pipeline inteira cabe num notebook com GPU de 4 GB: ~2 min por lâmina, quase tudo na extração dos embeddings; só com CPU, ~30 min.</li>
     <li>Pela decomposição exata da margem, nas lâminas previstas como adenocarcinoma os patches de maior atenção têm contribuição líquida zero e, sozinhos, sustentam a classe pior que sorteados: ali a atenção alta não é evidência da classe prevista.</li>
   </ul>
   <p class="nota">Ressalvas gerais: 2 lâminas por classe no desenvolvimento; as anotações do BRACS marcam regiões, não cada célula; o rótulo da lâmina é o da lesão mais grave; no PANDA não há identificação do paciente, então dentro do Radboud a mesma pessoa pode ter biópsias no treino e no teste.</p>
@@ -1218,7 +1220,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
         <tr><td>Rim</td><td>TCGA-RCC, hospitais novos</td><td>3½. Decisão da lâmina</td><td>GAT-MIL</td><td>Acurácia balanceada</td><td class="num">0,945 (diferença −0,008)</td><td><span class="selo ok">não piorou</span></td></tr>
         <tr><td>Pulmão</td><td>Orientador, 52 pacientes (validação cruzada por paciente)</td><td>3½. Decisão do paciente</td><td><b>MIL com atenção, campos de biópsia</b></td><td>Acurácia balanceada; AUC (adeno × epidermoide)</td><td class="num"><b>0,886; 0,942</b></td><td><span class="selo ok">passou</span></td></tr>
         <tr><td>Pulmão</td><td>Orientador, 52 pacientes</td><td>3½. Decisão do paciente</td><td>MIL com atenção, núcleo isolado</td><td>AUC</td><td class="num">0,479 (clássico: 0,599)</td><td><span class="selo falha">no acaso</span></td></tr>
-        <tr><td>Pulmão</td><td>Orientador, 52 pacientes</td><td>3½. Decisão do paciente</td><td>MIL com atenção, núcleo + tecido em volta</td><td>AUC</td><td class="num">0,948 (+0,47 sobre o núcleo isolado)</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Pulmão</td><td>Orientador, 52 pacientes</td><td>3½. Decisão do paciente</td><td>MIL com atenção, núcleo + tecido em volta (janela de 224 px)</td><td>AUC</td><td class="num">0,862 (+0,42 sobre o núcleo isolado)</td><td><span class="selo ok">passou</span></td></tr>
         <tr><td>Próstata</td><td>PANDA, Radboud 600 → Karolinska 300</td><td>3½. Decisão da lâmina</td><td>MIL com atenção</td><td>Kappa quadrático; AUC benigno × câncer</td><td class="num">0,237; 0,940</td><td><span class="selo parcial">detecta, não gradua</span></td></tr>
         <tr><td>Próstata</td><td>PANDA, Radboud, validação cruzada (600)</td><td>3½. Decisão da lâmina</td><td>MIL com atenção</td><td>Kappa quadrático</td><td class="num">0,784</td><td><span class="selo ref">referência</span></td></tr>
         <tr><td>Próstata</td><td>Radboud → Karolinska / dentro do Radboud</td><td>3½. Decisão da lâmina</td><td>GAT-MIL</td><td>Kappa quadrático</td><td class="num">0,436 / 0,806</td><td><span class="selo ok">passou</span></td></tr>
@@ -1244,6 +1246,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
         <tr><td>Pulmão e próstata</td><td>197 e 300</td><td>5. Pré-laudo</td><td>Aviso contra confiança e discordância entre sementes</td><td>AUROC para achar erro: aviso; ganho sobre a confiança</td><td class="num">0,765 e 0,715; sem ganho</td><td><span class="selo parcial">B1 passou, B2 não</span></td></tr>
         <tr><td>Pulmão e próstata</td><td>552 laudos</td><td>5. Pré-laudo</td><td>Seções montadas pelo código; modelo escreve só o resumo (Gemma; Llama)</td><td>Erros no parágrafo livre, 8 casos</td><td class="num">classe 552/552; números sem sustentação 0–5 e 18–36 por caso</td><td><span class="selo falha">não passou</span></td></tr>
         <tr><td>Pulmão e próstata</td><td>197 e 300</td><td>3½. Explicação</td><td>Decomposição exata da margem nas lâminas "por ausência"</td><td>Contribuição dos 20 de maior atenção; suficiência em logit</td><td class="num">pulmão −0,002 e −1,98; próstata +0,366</td><td><span class="selo parcial">H2 passou; H1 e H3 não</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 3 lâminas</td><td>Custo</td><td>Notebook, RTX 3050 4 GB, i5 de 6 núcleos, 15 GB de RAM</td><td>Tempo por lâmina, GPU / só CPU</td><td class="num">~2 min / ~30 min (UNI2-h: mediana 92 s, pico 2,65 GB; Gemma 14,6 tokens/s)</td><td><span class="selo ref">sem critério</span></td></tr>
     </tbody>
   </table></div>
   <p class="nota">Acaso: acurácia balanceada 0,25 em 4 classes e 0,33 em 3; AUC 0,5; kappa 0. Mama e próstata com intervalo de 95% por bootstrap (na mama, agrupado por paciente). Resultados de 06/11 ou antes no BRACS usam o agrupamento antigo, com o UDH em atípico.</p>

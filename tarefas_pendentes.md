@@ -1,6 +1,6 @@
 # Tarefas pendentes
 
-Estado em 14/11/2026. Resultados em [resultados.md](resultados.md); histórico em [linha_do_tempo.md](linha_do_tempo.md); ideias em [brainstorming_melhorias.md](brainstorming_melhorias.md).
+Estado em 26/11/2026. Resultados em [resultados.md](resultados.md); histórico em [linha_do_tempo.md](linha_do_tempo.md); ideias em [brainstorming_melhorias.md](brainstorming_melhorias.md).
 
 Ordem sugerida: 1) resolver a cobrança do GitHub; 2) baixar as 379 lâminas de treino e treinar o MIL com elas (o MIL com 79 lâminas já chegou a 38/57); 3) recuperar o DCIS; 4) refazer o pacote com cotas com o descritor corrigido; 5) confirmar nas 30 lâminas de teste não usadas.
 
@@ -59,7 +59,7 @@ systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 \
 - [ ] Rede de grafos com a padronização por centro; rede de grafos no BRACS (rebaixar as 61 lâminas de validação e embutir as janelas em volta dos pontos); protótipos por classe.
 - [x] **Rim (TCGA-RCC, 3 subtipos), treino e teste em hospitais diferentes** (pré-registro `e9efc8e`): R1 passou (MIL nos hospitais novos: acurácia balanceada 0,953, AUC macro 0,987; no sorteio aleatório, 0,983); R2 passou (GAT-MIL 0,945, não pior). A padronização por hospital não se aplica no TCGA (um subtipo por hospital).
 - [ ] **Glioma (TCGA-LGG e GBM, grau 2 × 3 × 4), MIL × GAT-MIL × rede de grafos sobre o tecido inteiro** (`mil/tcga/glioma_grafos.py`; G1: AUC grau 4 ≥ 0,90; G2 e G3: kappa maior que o do MIL com IC > 0): parado a pedido em 16/11, com 135 de 180 lâminas embutidas no HD (a 127 falhou no download e precisa ser refeita); retomar a fila de embutir e depois rodar o teste.
-- [x] **Pulmão, dataset do orientador (adeno × epidermoide, 52 pacientes): só o núcleo × núcleo com contexto** (pré-registro `a225cd8`): P1 passou (biópsia, acurácia balanceada 0,886); P2 não passou (só o núcleo, AUC 0,479); P3 passou (núcleo + contexto, AUC 0,948; +0,47); P4 não passou (clássico 0,599, também no acaso). A pasta de "citologia" são núcleos recortados da própria biópsia: confirmar com o orientador se existe uma coleta citológica de verdade.
+- [x] **Pulmão, dataset do orientador (adeno × epidermoide, 52 pacientes): só o núcleo × núcleo com contexto** (pré-registro `a225cd8`): P1 passou (biópsia, acurácia balanceada 0,886); P2 não passou (só o núcleo, AUC 0,479); P3 passou (núcleo + contexto, AUC 0,948; +0,47; corrigido em 26/11: essa janela tem o tamanho de um recorte do campo, então o número justo de contexto local é o da janela de 224 px, 0,862); P4 não passou (clássico 0,599, também no acaso). A pasta de "citologia" são núcleos recortados da própria biópsia: confirmar com o orientador se existe uma coleta citológica de verdade.
 - [ ] Pulmão (orientador): quanto contexto basta? Janelas de tamanhos diferentes em volta do núcleo (224, 336, 448 px) e onde o MIL põe a atenção.
 - [ ] **Ovário (UBC-OCEAN)**: o download pede aceitar as regras da competição no Kaggle (kaggle.com/competitions/UBC-OCEAN/rules). Conferir no train.csv se há informação de centro.
 - [x] ★ **Sinalizar contradições nos campos**: aviso pronto nos campos, pulmão 27/27 e próstata 35/35 documentos apontam a discordância, 0 falso alarme, W1–W3 passaram (19–20/11).
@@ -70,8 +70,18 @@ systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 \
 - [x] **Extração da classe mais robusta**: classe lida por código na impressão; 276/276 pré-laudos finais com a classe da decisão (C passou) (20/11).
 - [x] **Teste de remoção da atenção com o GAT-MIL na próstata**: Y1 +0,310 e Y2 +0,124, os dois passaram; negativo nas previstas como ISUP 0 (20/11).
 - [x] **Segundo modelo de linguagem**: Llama 3.2 3B; L passou em 2 de 4 (falhas: títulos fora do formato em português e um número calculado em inglês); avisos, classe e coordenadas certos nos 4 (23/11).
-- [ ] **Seções críticas montadas pelo código**: o código escreve impressão, avisos e regiões; o modelo escreve só resumo e limitações (ou normalizar títulos `###`/negrito antes de colar). Com o Llama em português, a colagem dependia do título.
-- [ ] **Atenção nas lâminas "por ausência"**: no pulmão, a atenção das lâminas previstas como adenocarcinoma não sustenta a classe (suficiência −0,276). Testar atenção por classe (uma cabeça por classe) ou mostrar, nessas lâminas, os patches que mais puxam para a classe prevista.
+- [x] **Seções críticas montadas pelo código** (Q, `193cc67`): o código monta impressão, avisos, regiões e limitações; o modelo escreve só o resumo. Classe certa em 552/552, mas o parágrafo livre ainda tem números sem sustentação; Q não passou em nenhum dos 8 casos; o template sem modelo passa por construção (26/11).
+- [x] **Atenção nas lâminas "por ausência"** (H1–H3, `57a2a59`): decomposição exata da margem. Pulmão-adenocarcinoma: contribuição líquida zero (H1 não), suficiência −1,98 em logit (H2 passou); próstata ISUP 0: H3 não passou (26/11).
+- [ ] Atenção por classe (uma cabeça por classe, CLAM multi-branch) nas lâminas "por ausência", se houver tempo.
+
+### Revisão crítica do paper (25–26/11)
+
+- [x] Pulmão por centro de origem (Z1, Z2 passaram): AUC 0,947, 16/21 erros com aviso.
+- [x] Próstata, 5 execuções do 2 × 2 (S1, S2 passaram): GAT-MIL padronizado κ 0,649 ± 0,040.
+- [x] Aviso contra linhas de base (B1 passou, B2 não): o aviso explica, mas não supera a confiança; sementes 0,913 na próstata.
+- [ ] **Custo da pipeline** (`ferramentas/medir_recursos.py`): rodando em 26/11 com a máquina ociosa.
+- [ ] Auditoria manual da checagem (40 laudos, 2 anotadores): descartada por agora; vai para as limitações.
+- [ ] Paper: tabelas e texto em inglês com os resultados novos (o autor escreve a prosa); suplemento anônimo (instruções, regras do aviso, divisões, commits dos critérios).
 - [x] **Hierárquico no nível da lâmina**: rótulo oficial, com negativos, 31/57, 0,518 (0,560 em 3 classes), sem critério. Falta confirmar com critério fixado antes.
 
 ## Descritor
