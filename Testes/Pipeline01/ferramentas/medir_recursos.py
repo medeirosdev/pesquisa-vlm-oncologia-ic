@@ -166,7 +166,7 @@ def main():
             r["etapa2_vram_pico_mib"] = round(torch.cuda.max_memory_allocated() / 2**20)
             E = np.concatenate(embs)
         # 2. UNI2-h na CPU (64 patches, estimado para a amostra inteira)
-        uni_cpu = uni.float().cpu()
+        uni_cpu = uni.cpu().float()
         t0 = time.time()
         for i in range(0, N_CPU, 16):
             lote = np.stack([_preparar(lam.janela_nativa(x0, y0, lado)) for x0, y0 in amostra[i:i + 16]])
