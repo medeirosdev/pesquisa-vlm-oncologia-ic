@@ -895,6 +895,18 @@ Leitura: dar um ramo de atenção para cada classe não resolve o comportamento 
 
 Leitura: o texto livre do modelo traz também erros de sentido que a checagem de existência não via, mais frequentes no Gemma (que escreve mais sobre proporções); o template não os tem. A medida antiga de aviso em região concordante no texto livre deve ser trocada pela S2.
 
+## Remoção e suficiência no pulmão com a divisão por centro (27/11)
+
+Pergunta, a partir da revisão 02: a Fig. 3 do pulmão (remoção e suficiência da atenção, na probabilidade) usava a divisão aleatória, que vaza o centro de origem; o padrão se mantém com a validação cruzada por centro? Mesmo teste de `remocao_atencao.py` nas 197 lâminas, nas 5 partes por centro de `pulmao_por_centro.py` (5 sementes; classe prevista igual à de `pulmao_centro` em 197/197). Fixado antes de rodar (commit `76f2b7e`). Critérios X1c e X2c (os mesmos X1 e X2). Script: `Testes/Pipeline01/mil/remocao_atencao_centro.py`.
+
+| Diferença pareada (maior atenção − sorteio), IC 95% | Todas (197) | Previstas adenocarcinoma (95) | Previstas escamoso (102) |
+|---|---|---|---|
+| Remoção, 10% | **+0,200** (0,149 a 0,251) | −0,017 (−0,031 a −0,006) | +0,401 (0,322 a 0,486) |
+| Suficiência, 20 patches | −0,032 (−0,090 a 0,025) | −0,267 (−0,347 a −0,187) | +0,186 (0,136 a 0,240) |
+
+- **X1c passou** e **X2c não passou**, como na divisão aleatória (+0,120 e −0,091). O padrão por classe prevista se repete: nas previstas como adenocarcinoma, os patches de maior atenção sustentam a classe pior que sorteados (−0,267; antes −0,276).
+- Leitura: o achado da "classe por ausência" no pulmão não vem da divisão aleatória contaminada. A Fig. 3 passa a usar esta divisão no pulmão.
+
 ## Custo da pipeline num notebook (26/11)
 
 Pergunta: quanto custa rodar a pipeline num computador comum, com GPU e só com CPU? Notebook com RTX 3050 Laptop (4 GB), i5-11400H (6 núcleos, 12 threads), 15,4 GB de RAM. 3 lâminas de teste do pulmão (464 MB a 2,9 GB; 11.760 a 31.066 patches de tecido; 2.000 sorteados), cada etapa cronometrada separadamente. Medição descritiva, sem critério; o que seria medido foi fixado antes (commit `57a2a59`), com duas correções antes de qualquer medida do modelo de linguagem (`edad449`: liberar a VRAM do PyTorch antes do Ollama; `f704763`: converter o UNI2-h na CPU). As tentativas anteriores falharam por falta de memória na GPU, duas delas porque outro projeto usava a GPU; esta rodou com a máquina ociosa (nenhum outro processo na GPU, carga < 3 por 5 minutos). Script: `Testes/Pipeline01/ferramentas/medir_recursos.py`.
@@ -947,4 +959,5 @@ Detalhes: `Testes/Pipeline01/notas/problemas_e_metrica.md`.
 20. A confiança que vai no laudo é superconfiante (ECE 0,09 no pulmão e 0,28 na próstata; na próstata, "alta" acerta o grau exato em só 53%) e precisa ser calibrada; a escala de temperatura leva o ECE a 0,04 e 0,09. Separar o aviso tumoral do aviso de tecido normal não o torna mais preciso (pulmão, 29% × 18% de erro, p = 0,22).
 21. Um aviso por padrão de Gleason incompatível com o grau previsto não marca mais erros de grau (57% × 58%), mas indica a direção do erro quando aparece (+0,9 grau com padrão mais alto, −1,75 com mais baixo). A proporção de padrões do classificador de patches cresce com a classe real, mas não é fração de tumor: na próstata, "benigno" domina até no ISUP 5.
 22. A diferença de erros entre os modelos de linguagem não depende da semente (Gemma 8–12 documentos com número sem sustentação, Llama 23–31). A suficiência negativa da classe "por ausência" se mantém com atenção por classe e com o grafo fixo. Uma checagem semântica mostra que o texto livre também erra o sentido (predominância invertida, como no exemplo do paper), e que a contagem antiga de aviso em região concordante era falso positivo.
+23. Refeitos com a divisão por centro, os testes de remoção e suficiência do pulmão repetem o padrão da divisão aleatória (remoção +0,20; suficiência −0,27 nas previstas como adenocarcinoma): o achado não vem do vazamento de centro.
 22. Um MIL com atenção por classe (multi-ramo, um ramo por classe) mantém o desempenho no pulmão por centro (AUC 0,945, acurácia balanceada 0,878; M1 passou), mas não resolve a "classe por ausência": a suficiência na margem continua negativa nas lâminas previstas como adenocarcinoma (−1,92; M2 não passou) e nas biópsias previstas como ISUP 0 (−3,05; M3 não passou). O achado não depende da atenção única. (Sem critério: κ quadrático 0,721 na próstata nas 300 de desenvolvimento, contra 0,540 do ABMIL padronizado.)
