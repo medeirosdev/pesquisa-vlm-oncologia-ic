@@ -21,6 +21,10 @@ Fixado ANTES de rodar (commit anterior aos resultados):
   Também reportado: a medida antiga (avisos_por_codigo.medir no parágrafo) ao lado; até 3 exemplos marcados por caso e
      medida em exemplos.json, para conferência visual.
   Critério V (validade mínima da checagem): S1 e S2 dão 0 no resumo do template nos 4 casos (órgão × idioma).
+  Correção depois da primeira execução (antes de registrar qualquer resultado): o código pegava a primeira menção de
+     cada classe na frase, mesmo antes da expressão de predominância, e não a primeira depois dela, como está definido
+     acima (ex.: "diagnóstico de adenocarcinoma..., baseado na predominância de ... adenocarcinoma" era marcado). Agora
+     segue a definição. Critério e listas não mudaram.
   Limites conhecidos: regras por palavras-chave; não substituem leitura humana; S1 só cobre afirmações de predominância.
 
 Uso (venv do projeto): .venv/bin/python prelaudo/checagem_semantica.py
@@ -64,8 +68,8 @@ def s1(texto, campos, lg, classes):
         citadas = sorted((fl.find(c), c) for c in classes if c in fl)
         if not citadas:
             continue
-        depois = [c for p, c in citadas if p >= ini]
-        afirmada = depois[0] if depois else citadas[0][1]
+        depois = sorted((fl.find(c, ini), c) for c in classes if fl.find(c, ini) >= 0)
+        afirmada = depois[0][1] if depois else citadas[0][1]
         if afirmada != maior:
             out.append(f)
     return out
