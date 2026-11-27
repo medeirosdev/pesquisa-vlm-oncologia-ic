@@ -47,6 +47,8 @@ Uso:
     .venv/bin/python prelaudo/prostata_r0.py --etapa secoes_redigir --modelo llama3.2:3b
     .venv/bin/python prelaudo/prostata_r0.py --etapa secoes_checar
     .venv/bin/python prelaudo/prostata_r0.py --etapa checagem_semantica
+    .venv/bin/python prelaudo/prostata_r0.py --etapa llama_redigir      # Ollama no ar com llama3.2:3b
+    .venv/bin/python prelaudo/prostata_r0.py --etapa llama_checar
 """
 
 import argparse
@@ -468,12 +470,40 @@ def etapa_checagem_semantica():
         print(k, v)
 
 
+# ---------------------------------------------------------------- 6. Llama 3.2 3B com avisos e regiões colados (L)
+
+def _segundo_modelo_r0():
+    """segundo_modelo.py com os documentos da próstata do modelo r0 (mesmas instruções, colagem, extração e critério L),
+    gravando em resultados/segundo_modelo_r0/. Acrescentado em 27/11 para tirar a última tabela que misturava execuções
+    (as linhas do Llama na tabela de avisos); critério L fixado antes de rodar, o mesmo de segundo_modelo.py."""
+    import avisos_por_codigo as apc
+    import segundo_modelo as sm
+    from aviso_discordancia import instrucoes
+    ler = lambda p_: p_.read_text(encoding="utf-8")  # noqa: E731
+    pro = documentos_prostata_r0()
+    sm.casos = lambda: {
+        ("prostata", "pt"): (instrucoes("prostata"),
+                             [(k, s_, c, ler(SAIDA_FINAL / "prostata" / "pt" / f"{k}_campos.txt")) for k, s_, c in pro]),
+        ("prostata", "en"): (apc.INSTRUCOES_EN["prostata"],
+                             [(k, s_, c, ler(SAIDA_FINAL / "prostata" / "en" / f"{k}_campos.txt")) for k, s_, c in pro])}
+    sm.SAIDA = RESULTADOS_DIR / "segundo_modelo_r0"
+    return sm
+
+
+def etapa_llama_redigir():
+    _segundo_modelo_r0().etapa_redigir()
+
+
+def etapa_llama_checar():
+    _segundo_modelo_r0().etapa_checar()
+
+
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--etapa", choices=[
         "campos", "aviso_erro", "celulas_regioes", "celulas_cellvit", "celulas_avaliar",
         "redigir_prelaudo_final", "checar_prelaudo_final",
-        "secoes_template", "secoes_redigir", "secoes_checar", "checagem_semantica",
+        "secoes_template", "secoes_redigir", "secoes_checar", "checagem_semantica", "llama_redigir", "llama_checar",
     ], required=True)
     p.add_argument("--modelo", choices=["gemma3:4b", "llama3.2:3b"], default="gemma3:4b")
     a = p.parse_args()
@@ -489,5 +519,7 @@ if __name__ == "__main__":
         "secoes_redigir": lambda: etapa_secoes_redigir(a.modelo),
         "secoes_checar": etapa_secoes_checar,
         "checagem_semantica": etapa_checagem_semantica,
+        "llama_redigir": etapa_llama_redigir,
+        "llama_checar": etapa_llama_checar,
     }
     mapa[a.etapa]()
