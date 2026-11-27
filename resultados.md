@@ -937,6 +937,22 @@ Perguntas da revisão 02 (item D): o CellViT dá dados com sentido também no pu
 
 Leitura: no pulmão, os tipos do CellViT acompanham o padrão da região (o escamoso tem núcleos maiores e quase todos chamados de neoplásicos); na próstata, número e área separam, mas os tipos não servem como contagem. As células agora entram no laudo pelo código, sem erro.
 
+## Próstata, teste externo: aviso × erro e atenção no câncer (27/11)
+
+Pergunta: o aviso de discordância, que marca os erros no desenvolvimento, ainda marca os erros nas 500 biópsias externas nunca usadas, na distribuição natural, onde o modelo erra muito mais (sobretudo benigno chamado de câncer)? Mesmo modelo congelado de `panda_externo.py`, retreinado com as mesmas sementes guardando a atenção (este retreino: kappa 0,240, AUC câncer 0,941; antes 0,265 e 0,943); classificador de patches refeito exatamente (diferença máxima nas 300 de desenvolvimento: 3 × 10⁻⁸). Fixado antes de rodar (commit `b2cf478`). Critério E_ext: erro câncer × benigno com taxa maior com aviso, Fisher unilateral p < 0,05. Script: `Testes/Pipeline01/mil/panda/panda_externo_aviso.py`.
+
+| Externo (500 biópsias; 130 erros câncer × benigno) | Erro com sinal | Erro sem sinal | Erros pegos | Risco relativo (IC 95%) |
+|---|---|---|---|---|
+| Aviso (357 biópsias) | **0,353** (126/357) | 0,028 (4/143) | 126 de 130 | 12,6 (5,9–51,8) |
+| Confiança < 0,70 (244) | 0,389 | 0,137 | 95 de 130 | 2,8 (2,1–4,1) |
+| Aviso ou confiança < 0,70 (418) | 0,309 | 0,012 | 129 de 130 | 25,3 (6,7–31,4) |
+
+- **E_ext passou** (p < 0,001). Com o aviso também há mais erro de grau exato (0,69 × 0,39) e de 2 graus ou mais (0,40 × 0,07).
+- O aviso é sensível, mas pouco específico: marca 71% das biópsias externas (no desenvolvimento, 56%). A maior parte dos erros externos são benignas chamadas de câncer, e nelas alguma região de maior atenção é chamada de benigna pelo classificador de patches.
+- Sem critério: nas 330 biópsias externas com câncer e máscara, ≥ 2 das 3 regiões de maior atenção estão no câncer anotado em 279 (85%; acaso 30%).
+
+Leitura: no centro novo, na distribuição natural, o grau do modelo não se sustenta, mas o aviso continua marcando onde ele erra: quase toda biópsia sem aviso está certa quanto a câncer × benigno (139 de 143). A atenção continua caindo no câncer.
+
 ## Custo da pipeline num notebook (26/11)
 
 Pergunta: quanto custa rodar a pipeline num computador comum, com GPU e só com CPU? Notebook com RTX 3050 Laptop (4 GB), i5-11400H (6 núcleos, 12 threads), 15,4 GB de RAM. 3 lâminas de teste do pulmão (464 MB a 2,9 GB; 11.760 a 31.066 patches de tecido; 2.000 sorteados), cada etapa cronometrada separadamente. Medição descritiva, sem critério; o que seria medido foi fixado antes (commit `57a2a59`), com duas correções antes de qualquer medida do modelo de linguagem (`edad449`: liberar a VRAM do PyTorch antes do Ollama; `f704763`: converter o UNI2-h na CPU). As tentativas anteriores falharam por falta de memória na GPU, duas delas porque outro projeto usava a GPU; esta rodou com a máquina ociosa (nenhum outro processo na GPU, carga < 3 por 5 minutos). Script: `Testes/Pipeline01/ferramentas/medir_recursos.py`.
@@ -993,3 +1009,4 @@ Detalhes: `Testes/Pipeline01/notas/problemas_e_metrica.md`.
 24. Num teste externo intocado do Karolinska (500 biópsias, distribuição natural), o GAT-MIL padronizado mantém a detecção de câncer (AUC 0,94) mas não gradua (kappa 0,27, contra 0,63 no conjunto em que foi escolhido; especificidade 0,29); a padronização pelo centro novo não ajuda fora do lote balanceado. O kappa da próstata reportado antes era otimista. Com um modelo único, o aviso continua marcando erros (14,9% × 3,8%) e os pré-laudos colados continuam fiéis.
 25. Um MIL com atenção por classe (multi-ramo, um ramo por classe) mantém o desempenho no pulmão por centro (AUC 0,945, acurácia balanceada 0,878; M1 passou), mas não resolve a "classe por ausência": a suficiência na margem continua negativa nas lâminas previstas como adenocarcinoma (−1,92; M2 não passou) e nas biópsias previstas como ISUP 0 (−3,05; M3 não passou). O achado não depende da atenção única. (Sem critério: κ quadrático 0,721 na próstata nas 300 de desenvolvimento, contra 0,540 do ABMIL padronizado.)
 26. O CellViT dá dados com sentido nos dois órgãos: no pulmão, a fração de núcleos neoplásicos separa as regiões de tumor das de pulmão normal (AUC 0,84) e acompanha o padrão (escamoso com núcleos maiores); na próstata, com o modelo único, o resultado se mantém (0,75; número de núcleos 0,83). As linhas de células entram no laudo montado pelo código sem nenhum erro.
+27. No teste externo da próstata, onde o grau não se sustenta, o aviso de discordância continua marcando os erros câncer × benigno (126 dos 130 erros; 35% de erro com aviso contra 3% sem), mas marca 71% das biópsias; quase toda biópsia sem aviso está certa. A atenção cai no câncer anotado em 85% das biópsias externas com câncer (acaso 30%).
