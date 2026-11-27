@@ -876,6 +876,25 @@ Pergunta, a partir da revisão: no ABMIL a atenção é única para todas as cla
 
 Leitura: dar um ramo de atenção para cada classe não resolve o comportamento de "classe por ausência"; o achado de suficiência negativa nessas lâminas não depende de a atenção ser única.
 
+## Sementes do modelo de linguagem, grafo fixo no GAT-MIL e checagem semântica do texto (26–27/11)
+
+**Sementes (critério R, commit `db8b6ab`; `prelaudo/secoes_sementes.py`).** O parágrafo do modelo foi gerado de novo com as sementes 1 e 2 (temperatura 0,2), além da 0. Documentos com número sem sustentação, somados nos 4 casos (órgão × idioma): Gemma 11 / 12 / 8, Llama 29 / 31 / 23 nas sementes 0 / 1 / 2. **R passou**: a diferença entre os modelos não depende da semente. Faixas por caso em `resultados/secoes_por_codigo/sementes.json`.
+
+**GAT-MIL com grafo fixo (critério F, commit `0eed00e`; `mil/gat_grafo_fixo.py`).** Próstata, previstas como ISUP 0 (35): suficiência na margem com o grafo fixo −2,92 (IC −3,33 a −2,48), com o grafo refeito −2,74; remoção −3,37 e −3,85. Grupo positivo (265): +2,32 e +2,54. **F não passou**: a discordância entre a decomposição (+0,37 a favor do benigno) e as perturbações não vem de refazer o grafo. Com o multi-ramo (M3), a suficiência negativa na classe "por ausência" se mantém em três modelos.
+
+**Checagem semântica (critério V, commits `be4c2da` e a correção do S1; `prelaudo/checagem_semantica.py`).** Sobre os parágrafos já gerados, sem rodar modelo de linguagem. S1: afirmação de predominância conferida contra a maior proporção dos campos. S2: aviso em região concordante refeito por frase (uma coordenada, expressão de discordância, sem negação). Correção depois da primeira execução, antes de registrar: o S1 pegava a primeira menção da classe na frase, e não a primeira depois da expressão, como definido.
+
+| Parágrafos com S1 (predominância contraditória), sementes 0 / 1 / 2 | Pulmão pt | Pulmão en | Próstata pt | Próstata en |
+|---|---|---|---|---|
+| Gemma | 27 / 23 / 26 | 14 / 12 / 11 | 17 / 19 / 18 | 4 / 2 / 6 |
+| Llama | 6 / 11 / 7 | 10 / 8 / 10 | 6 / 9 / 4 | 1 / 4 / 2 |
+
+- **V passou**: S1 e S2 dão 0 no resumo do template nos 4 casos.
+- S2 deu 0 em todos os parágrafos (teste sintético confirma que o detector dispara): a contagem antiga de "aviso em região concordante" no texto livre (12 a 53 por caso) era toda de frases com várias regiões juntas ou com negação.
+- S1 pega o erro da Fig. 4 (TCGA-55-6987, "predominância de adenocarcinoma, 32,7%" com pulmão normal 66,7%) e outros do mesmo tipo ("predominant findings are Gleason 4, 20.7%" com 649 patches benignos). É um limite superior: falsos positivos conhecidos (vistos nos exemplos, regra não alterada) por flexão de gênero ("benigna" não casa com "benigno") e por frases sobre o peso das regiões, não sobre proporções. Exemplos em `resultados/checagem_semantica/exemplos.json`.
+
+Leitura: o texto livre do modelo traz também erros de sentido que a checagem de existência não via, mais frequentes no Gemma (que escreve mais sobre proporções); o template não os tem. A medida antiga de aviso em região concordante no texto livre deve ser trocada pela S2.
+
 ## Custo da pipeline num notebook (26/11)
 
 Pergunta: quanto custa rodar a pipeline num computador comum, com GPU e só com CPU? Notebook com RTX 3050 Laptop (4 GB), i5-11400H (6 núcleos, 12 threads), 15,4 GB de RAM. 3 lâminas de teste do pulmão (464 MB a 2,9 GB; 11.760 a 31.066 patches de tecido; 2.000 sorteados), cada etapa cronometrada separadamente. Medição descritiva, sem critério; o que seria medido foi fixado antes (commit `57a2a59`), com duas correções antes de qualquer medida do modelo de linguagem (`edad449`: liberar a VRAM do PyTorch antes do Ollama; `f704763`: converter o UNI2-h na CPU). As tentativas anteriores falharam por falta de memória na GPU, duas delas porque outro projeto usava a GPU; esta rodou com a máquina ociosa (nenhum outro processo na GPU, carga < 3 por 5 minutos). Script: `Testes/Pipeline01/ferramentas/medir_recursos.py`.
@@ -927,4 +946,5 @@ Detalhes: `Testes/Pipeline01/notas/problemas_e_metrica.md`.
 19. Os dados de células do CellViT nas regiões de maior atenção têm sentido na próstata: a fração de núcleos neoplásicos separa regiões de câncer de benignas (AUC 0,756; o número de núcleos, 0,856), mas os tipos sem retreino não servem como contagem (mesmo no câncer, só 6% dos núcleos são chamados de neoplásicos). Número e área dos núcleos são os dados mais confiáveis para o laudo.
 20. A confiança que vai no laudo é superconfiante (ECE 0,09 no pulmão e 0,28 na próstata; na próstata, "alta" acerta o grau exato em só 53%) e precisa ser calibrada; a escala de temperatura leva o ECE a 0,04 e 0,09. Separar o aviso tumoral do aviso de tecido normal não o torna mais preciso (pulmão, 29% × 18% de erro, p = 0,22).
 21. Um aviso por padrão de Gleason incompatível com o grau previsto não marca mais erros de grau (57% × 58%), mas indica a direção do erro quando aparece (+0,9 grau com padrão mais alto, −1,75 com mais baixo). A proporção de padrões do classificador de patches cresce com a classe real, mas não é fração de tumor: na próstata, "benigno" domina até no ISUP 5.
+22. A diferença de erros entre os modelos de linguagem não depende da semente (Gemma 8–12 documentos com número sem sustentação, Llama 23–31). A suficiência negativa da classe "por ausência" se mantém com atenção por classe e com o grafo fixo. Uma checagem semântica mostra que o texto livre também erra o sentido (predominância invertida, como no exemplo do paper), e que a contagem antiga de aviso em região concordante era falso positivo.
 22. Um MIL com atenção por classe (multi-ramo, um ramo por classe) mantém o desempenho no pulmão por centro (AUC 0,945, acurácia balanceada 0,878; M1 passou), mas não resolve a "classe por ausência": a suficiência na margem continua negativa nas lâminas previstas como adenocarcinoma (−1,92; M2 não passou) e nas biópsias previstas como ISUP 0 (−3,05; M3 não passou). O achado não depende da atenção única. (Sem critério: κ quadrático 0,721 na próstata nas 300 de desenvolvimento, contra 0,540 do ABMIL padronizado.)
