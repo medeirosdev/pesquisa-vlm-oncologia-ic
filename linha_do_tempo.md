@@ -167,6 +167,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 | 27/11 | Células do CellViT no pulmão (78 lâminas baixadas de novo, só as janelas das regiões guardadas): fração neoplásica separa regiões de tumor das de pulmão normal, AUC 0,84 (NP passou); próstata com o modelo único, AUC 0,75 (N passou de novo); células dentro do laudo montado pelo código, 0 erros (T0 passou). |
 | 27/11 | Aviso × erro no teste externo da próstata (500 biópsias, fixado antes): o aviso marca 126 dos 130 erros câncer × benigno (35% de erro com aviso × 3% sem; E_ext passou), mas aparece em 71% das biópsias; atenção no câncer anotado em 85% das externas com câncer (acaso 30%). |
 | 27/11 | Llama 3.2 3B com avisos e regiões colados na próstata do modelo único (fixado antes): classe, avisos e coordenadas certos, mas 1 número calculado em 60 laudos em cada idioma (L não passou; em português tinha passado na execução anterior). Nenhuma tabela da próstata mistura execuções agora. |
+| 27/11 | Checagem de ligação número ↔ classe no texto do modelo (fixada antes; v2 pós-hoc): o template fica sem erro (V2 e V2b passaram), mas a regra tem precisão baixa (1 de 40 e 11 de 39 marcações eram erros reais); os erros de ligação existem e precisam de leitura humana. |
 
 ## Onde paramos
 

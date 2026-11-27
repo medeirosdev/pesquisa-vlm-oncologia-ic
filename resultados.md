@@ -970,6 +970,22 @@ Pergunta: a última tabela que misturava execuções (as linhas do Llama na tabe
 
 Leitura: o resultado do Llama com colagem é instável no limite (0 ou 1 número calculado em 60 laudos), e o padrão de erro é o mesmo do parágrafo livre: o modelo calcula números. Com isso, nenhuma tabela da próstata mistura execuções.
 
+## Checagem de ligação número ↔ classe no parágrafo do modelo de linguagem (27/11)
+
+Pergunta da revisão 01 (C5): a checagem de números confere se cada número existe nos campos, não se ele está ligado à classe certa. Uma regra automática consegue medir isso? Scripts: `prelaudo/checagem_ligacao.py` (v1, commit `8f83770`) e `prelaudo/checagem_ligacao_v2.py` (v2, pós-hoc, commit `399ff17`); critérios V2 e V2b (0 ligações erradas no resumo do template) fixados antes. Só proporções e contagens de patches por classe.
+
+| | v1 (classe mais próxima) | v2 (número e classe colados; pós-hoc) |
+|---|---|---|
+| Template, ligações erradas (4 casos) | 0 (**V2 passou**) | 0 (**V2b passou**) |
+| Marcações nos parágrafos (Gemma + Llama, 4 casos) | 332 | 39 |
+| Erros reais numa amostra lida frase a frase | 1 de 40 (precisão 0,03) | 11 de 39 (0,28) |
+
+- A classificação das amostras foi feita lendo cada frase na sessão de análise, não por anotadores independentes (`resultados/checagem_ligacao/amostras_classificadas.json`).
+- Os erros reais existem e a checagem de existência não os vê: "Gleason 4 with 201 patches (43.7%)" (201 e 43,7% são do benigno), "carcinoma escamoso, representando 61,4%" (é a proporção do adenocarcinoma), "adenocarcinoma in 76.5%" (é o pulmão normal).
+- Os falsos positivos vêm da forma livre do texto: classe depois do número, "respectivamente", listas, flexões ("benignos").
+
+Leitura: uma regra por palavras não mede a ligação com confiança (precisão 0,03 e 0,28); a medida precisa de leitura humana (auditoria do item C5). O template não tem esse erro por construção.
+
 ## Custo da pipeline num notebook (26/11)
 
 Pergunta: quanto custa rodar a pipeline num computador comum, com GPU e só com CPU? Notebook com RTX 3050 Laptop (4 GB), i5-11400H (6 núcleos, 12 threads), 15,4 GB de RAM. 3 lâminas de teste do pulmão (464 MB a 2,9 GB; 11.760 a 31.066 patches de tecido; 2.000 sorteados), cada etapa cronometrada separadamente. Medição descritiva, sem critério; o que seria medido foi fixado antes (commit `57a2a59`), com duas correções antes de qualquer medida do modelo de linguagem (`edad449`: liberar a VRAM do PyTorch antes do Ollama; `f704763`: converter o UNI2-h na CPU). As tentativas anteriores falharam por falta de memória na GPU, duas delas porque outro projeto usava a GPU; esta rodou com a máquina ociosa (nenhum outro processo na GPU, carga < 3 por 5 minutos). Script: `Testes/Pipeline01/ferramentas/medir_recursos.py`.
@@ -1028,3 +1044,4 @@ Detalhes: `Testes/Pipeline01/notas/problemas_e_metrica.md`.
 26. O CellViT dá dados com sentido nos dois órgãos: no pulmão, a fração de núcleos neoplásicos separa as regiões de tumor das de pulmão normal (AUC 0,84) e acompanha o padrão (escamoso com núcleos maiores); na próstata, com o modelo único, o resultado se mantém (0,75; número de núcleos 0,83). As linhas de células entram no laudo montado pelo código sem nenhum erro.
 27. No teste externo da próstata, onde o grau não se sustenta, o aviso de discordância continua marcando os erros câncer × benigno (126 dos 130 erros; 35% de erro com aviso contra 3% sem), mas marca 71% das biópsias; quase toda biópsia sem aviso está certa. A atenção cai no câncer anotado em 85% das biópsias externas com câncer (acaso 30%).
 28. Com o modelo único, o Llama com avisos e regiões colados mantém classe, avisos e coordenadas certos na próstata, mas escreve um número calculado (complemento de uma probabilidade) em 1 de 60 laudos em cada idioma; o critério L, que tinha passado em português na execução anterior, não passou. As seções críticas certas vêm da colagem; o texto do modelo continua calculando números.
+29. O texto livre do modelo também liga números à classe errada ("Gleason 4 with 201 patches (43.7%)", quando 201 é do benigno), o que a checagem de existência não vê; mas uma regra automática não mede isso com confiança (precisão de 0,03 e 0,28 em amostras lidas). A ligação exige leitura humana.
