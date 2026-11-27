@@ -46,6 +46,7 @@ Uso:
     .venv/bin/python prelaudo/prostata_r0.py --etapa secoes_redigir --modelo gemma3:4b
     .venv/bin/python prelaudo/prostata_r0.py --etapa secoes_redigir --modelo llama3.2:3b
     .venv/bin/python prelaudo/prostata_r0.py --etapa secoes_checar
+    .venv/bin/python prelaudo/prostata_r0.py --etapa checagem_semantica
 """
 
 import argparse
@@ -440,12 +441,39 @@ def etapa_secoes_checar():
     (SAIDA_SECOES / "resumo.json").write_text(json.dumps(resumo, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
+# ---------------------------------------------------------------- 5. checagem semântica (S1/S2) nos parágrafos de r0
+
+def etapa_checagem_semantica():
+    """A mesma checagem de checagem_semantica.py (S1 predominância, S2 aviso por frase sem negação; critério V no
+    template), sem rodar modelo de linguagem, sobre os parágrafos de secoes_por_codigo_r0. Acrescentada em 27/11,
+    depois dos resultados de r0 e antes de olhar S1/S2 nele; não muda regra nem critério."""
+    import avisos_por_codigo as apc
+    import secoes_por_codigo as spc
+    from checagem_semantica import s1, s2
+    res = {}
+    for (orgao, lg), docs in casos_secoes_r0().items():
+        classes = [c.lower() for c in apc.LINGUA[lg]["classes"][orgao]]
+        for p_ in ["template"] + [n for n in spc.MODELOS.values() if (SAIDA_SECOES / n / lg / orgao / "registro.json").exists()]:
+            n1 = n1d = n2 = n2d = 0
+            for k, sug, base, campos in docs:
+                texto = spc.resumo_template(campos, lg) if p_ == "template" else \
+                    (SAIDA_SECOES / p_ / lg / orgao / f"{k}_paragrafo.txt").read_text(encoding="utf-8")
+                a, b = s1(texto, campos, lg, classes), s2(texto, base, orgao, sug, lg)
+                n1, n1d, n2, n2d = n1 + len(a), n1d + bool(a), n2 + len(b), n2d + bool(b)
+            res[f"{p_}_{orgao}_{lg}"] = {"n": len(docs), "S1_frases": n1, "S1_paragrafos": n1d, "S2_frases": n2,
+                                         "S2_paragrafos": n2d}
+    res["criterio_V"] = all(v["S1_frases"] == 0 and v["S2_frases"] == 0 for k, v in res.items() if k.startswith("template_"))
+    (SAIDA_SECOES / "checagem_semantica.json").write_text(json.dumps(res, indent=2, ensure_ascii=False), encoding="utf-8")
+    for k, v in res.items():
+        print(k, v)
+
+
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--etapa", choices=[
         "campos", "aviso_erro", "celulas_regioes", "celulas_cellvit", "celulas_avaliar",
         "redigir_prelaudo_final", "checar_prelaudo_final",
-        "secoes_template", "secoes_redigir", "secoes_checar",
+        "secoes_template", "secoes_redigir", "secoes_checar", "checagem_semantica",
     ], required=True)
     p.add_argument("--modelo", choices=["gemma3:4b", "llama3.2:3b"], default="gemma3:4b")
     a = p.parse_args()
@@ -460,5 +488,6 @@ if __name__ == "__main__":
         "secoes_template": etapa_secoes_template,
         "secoes_redigir": lambda: etapa_secoes_redigir(a.modelo),
         "secoes_checar": etapa_secoes_checar,
+        "checagem_semantica": etapa_checagem_semantica,
     }
     mapa[a.etapa]()
