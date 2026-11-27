@@ -1005,6 +1005,24 @@ Pergunta da revisão 01 (C3): os testes de remoção e suficiência tiram patche
 
 Leitura: a atenção aponta os patches que carregam a informação da decisão também no critério com retreino; isso não contradiz a "classe por ausência" (os patches de maior atenção nas lâminas previstas como adenocarcinoma podem informar a decisão sem ser evidência positiva dela).
 
+## Laudos em documentos reservados da próstata (27/11)
+
+Pergunta da revisão 01 (D3): as regras do laudo (avisos, montagem das seções pelo código, leitura da classe e checagens) foram desenhadas em sequência nos mesmos 60 documentos; elas valem em documentos novos? As 240 biópsias de desenvolvimento que nunca viraram laudo, modelo único r0, regras sem nenhuma mudança (140 com região discordante). Fixado antes de rodar (commit `7400ae3`). Critério R1: no template, 0 erros e classe lida 100% em pt e en. Script: `Testes/Pipeline01/prelaudo/reservados_prostata.py`.
+
+| Próstata | Reservados (240) | Os 60 de antes |
+|---|---|---|
+| Template: classe trocada, aviso concordante, coordenadas e números inventados; classe lida | 0, 0, 0, 0; 240/240 (pt e en) — **R1 passou** | 0, 0, 0, 0; 60/60 |
+| Parágrafos com número sem sustentação, Gemma pt / en | 18 (7,5%) / 4 (1,7%) | 11 (18%) / 1 (1,7%) |
+| Parágrafos com número sem sustentação, Llama pt / en | 31 (13%) / 29 (12%) | 13 (22%) / 5 (8%) |
+| Predominância contraditória (S1), Gemma pt / en | 54 (22%) / 17 (7%) | 18 (30%) / 6 (10%) |
+| Predominância contraditória (S1), Llama pt / en | 28 (12%) / 19 (8%) | 6 (10%) / 4 (7%) |
+| Aviso em região concordante por frase (S2) | 0 em todos | 0 em todos |
+
+- Classe lida pela impressão: 240/240 nos 4 casos com modelo de linguagem. Q não passou em nenhum caso, como nos 60.
+- Falhas que não apareceram nos 60: o Llama em português trocou a classe de uma região uma vez e inventou 4 coordenadas; o Gemma em inglês inventou 1 coordenada. Só no parágrafo livre; as seções montadas pelo código ficam certas.
+
+Leitura: as regras do laudo generalizam para documentos que não foram usados para desenhá-las; o parágrafo livre do modelo mantém taxas de erro da mesma ordem e mostra, com mais documentos, mais tipos de falha.
+
 ## Custo da pipeline num notebook (26/11)
 
 Pergunta: quanto custa rodar a pipeline num computador comum, com GPU e só com CPU? Notebook com RTX 3050 Laptop (4 GB), i5-11400H (6 núcleos, 12 threads), 15,4 GB de RAM. 3 lâminas de teste do pulmão (464 MB a 2,9 GB; 11.760 a 31.066 patches de tecido; 2.000 sorteados), cada etapa cronometrada separadamente. Medição descritiva, sem critério; o que seria medido foi fixado antes (commit `57a2a59`), com duas correções antes de qualquer medida do modelo de linguagem (`edad449`: liberar a VRAM do PyTorch antes do Ollama; `f704763`: converter o UNI2-h na CPU). As tentativas anteriores falharam por falta de memória na GPU, duas delas porque outro projeto usava a GPU; esta rodou com a máquina ociosa (nenhum outro processo na GPU, carga < 3 por 5 minutos). Script: `Testes/Pipeline01/ferramentas/medir_recursos.py`.
@@ -1065,3 +1083,4 @@ Detalhes: `Testes/Pipeline01/notas/problemas_e_metrica.md`.
 28. Com o modelo único, o Llama com avisos e regiões colados mantém classe, avisos e coordenadas certos na próstata, mas escreve um número calculado (complemento de uma probabilidade) em 1 de 60 laudos em cada idioma; o critério L, que tinha passado em português na execução anterior, não passou. As seções críticas certas vêm da colagem; o texto do modelo continua calculando números.
 29. O texto livre do modelo também liga números à classe errada ("Gleason 4 with 201 patches (43.7%)", quando 201 é do benigno), o que a checagem de existência não vê; mas uma regra automática não mede isso com confiança (precisão de 0,03 e 0,28 em amostras lidas). A ligação exige leitura humana.
 30. Pelo ROAR (tirar e retreinar), a atenção aponta os patches que carregam a informação da decisão: sem os 50% de maior atenção, a AUC cai de 0,95 para 0,81 no pulmão e de 0,94 para 0,56 na próstata, e sem 50% sorteados não muda.
+31. Nas 240 biópsias da próstata que nunca viraram laudo, as regras do laudo, sem mudança, mantêm o template sem erro e a classe lida certa em todos; o parágrafo livre do modelo erra em taxas da mesma ordem dos 60 de antes e, com mais documentos, também troca classe e inventa coordenadas (raramente).
