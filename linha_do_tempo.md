@@ -168,6 +168,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 | 27/11 | Aviso × erro no teste externo da próstata (500 biópsias, fixado antes): o aviso marca 126 dos 130 erros câncer × benigno (35% de erro com aviso × 3% sem; E_ext passou), mas aparece em 71% das biópsias; atenção no câncer anotado em 85% das externas com câncer (acaso 30%). |
 | 27/11 | Llama 3.2 3B com avisos e regiões colados na próstata do modelo único (fixado antes): classe, avisos e coordenadas certos, mas 1 número calculado em 60 laudos em cada idioma (L não passou; em português tinha passado na execução anterior). Nenhuma tabela da próstata mistura execuções agora. |
 | 27/11 | Checagem de ligação número ↔ classe no texto do modelo (fixada antes; v2 pós-hoc): o template fica sem erro (V2 e V2b passaram), mas a regra tem precisão baixa (1 de 40 e 11 de 39 marcações eram erros reais); os erros de ligação existem e precisam de leitura humana. |
+| 27/11 | ROAR (tirar os patches de maior atenção de todas as lâminas e retreinar; fixado antes): sem os 50% de maior atenção, AUC 0,95 → 0,81 no pulmão e 0,94 → 0,56 na próstata; sem 50% sorteados, nada muda (ROAR-P e ROAR-Q passaram). |
 
 ## Onde paramos
 

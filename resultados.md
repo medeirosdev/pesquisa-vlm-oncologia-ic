@@ -986,6 +986,25 @@ Pergunta da revisão 01 (C5): a checagem de números confere se cada número exi
 
 Leitura: uma regra por palavras não mede a ligação com confiança (precisão 0,03 e 0,28); a medida precisa de leitura humana (auditoria do item C5). O template não tem esse erro por construção.
 
+## ROAR: remover os patches de maior atenção e retreinar (27/11)
+
+Pergunta da revisão 01 (C3): os testes de remoção e suficiência tiram patches só na hora de prever, o que é quase tautológico para pooling por atenção e põe o modelo fora da distribuição do treino. No ROAR (Hooker et al., 2019), os patches saem de todas as lâminas (treino e teste) e o modelo é retreinado. Fixado antes de rodar (commit `9d1fdb4`). Critérios ROAR-P (pulmão) e ROAR-Q (próstata): com 50% removidos, AUC(maior atenção) < AUC(sorteio), com limite superior do IC 95% da diferença < 0. Script: `Testes/Pipeline01/mil/roar.py`.
+
+| Tirar e retreinar | Pulmão, ABMIL por centro (197): AUC / AB | Próstata, GAT-MIL padr. (300 de desenvolvimento): AUC câncer / κ |
+|---|---|---|
+| Nada | 0,947 / 0,893 | 0,964 / 0,617 |
+| 10% sorteados / de maior atenção | 0,945 / 0,935 | — |
+| 50% sorteados | 0,949 / 0,893 | 0,943 / 0,634 |
+| **50% de maior atenção** | **0,810** / 0,761 | **0,558** / 0,120 |
+| 90% sorteados / de maior atenção | 0,948 / **0,702** | — |
+| Diferença em 50% (IC 95%) | −0,139 (−0,201 a −0,081) | −0,384 (−0,456 a −0,313) |
+
+- **ROAR-P e ROAR-Q passaram.** Mesmo retreinando, tirar os patches de maior atenção derruba o desempenho, e tirar a mesma fração sorteada não muda nada: a informação da classe está concentrada nos patches que a atenção aponta.
+- Com 10% no pulmão, não há diferença (−0,010, IC −0,032 a 0,011): a informação é redundante entre os patches de maior atenção.
+- No pulmão, a queda é parecida nas duas classes (sensibilidade para adenocarcinoma 0,89 → 0,77; escamoso 0,90 → 0,76). Na próstata, sem os 50% de maior atenção, quase todas as benignas viram câncer (especificidade 0,64 → 0,06).
+
+Leitura: a atenção aponta os patches que carregam a informação da decisão também no critério com retreino; isso não contradiz a "classe por ausência" (os patches de maior atenção nas lâminas previstas como adenocarcinoma podem informar a decisão sem ser evidência positiva dela).
+
 ## Custo da pipeline num notebook (26/11)
 
 Pergunta: quanto custa rodar a pipeline num computador comum, com GPU e só com CPU? Notebook com RTX 3050 Laptop (4 GB), i5-11400H (6 núcleos, 12 threads), 15,4 GB de RAM. 3 lâminas de teste do pulmão (464 MB a 2,9 GB; 11.760 a 31.066 patches de tecido; 2.000 sorteados), cada etapa cronometrada separadamente. Medição descritiva, sem critério; o que seria medido foi fixado antes (commit `57a2a59`), com duas correções antes de qualquer medida do modelo de linguagem (`edad449`: liberar a VRAM do PyTorch antes do Ollama; `f704763`: converter o UNI2-h na CPU). As tentativas anteriores falharam por falta de memória na GPU, duas delas porque outro projeto usava a GPU; esta rodou com a máquina ociosa (nenhum outro processo na GPU, carga < 3 por 5 minutos). Script: `Testes/Pipeline01/ferramentas/medir_recursos.py`.
@@ -1045,3 +1064,4 @@ Detalhes: `Testes/Pipeline01/notas/problemas_e_metrica.md`.
 27. No teste externo da próstata, onde o grau não se sustenta, o aviso de discordância continua marcando os erros câncer × benigno (126 dos 130 erros; 35% de erro com aviso contra 3% sem), mas marca 71% das biópsias; quase toda biópsia sem aviso está certa. A atenção cai no câncer anotado em 85% das biópsias externas com câncer (acaso 30%).
 28. Com o modelo único, o Llama com avisos e regiões colados mantém classe, avisos e coordenadas certos na próstata, mas escreve um número calculado (complemento de uma probabilidade) em 1 de 60 laudos em cada idioma; o critério L, que tinha passado em português na execução anterior, não passou. As seções críticas certas vêm da colagem; o texto do modelo continua calculando números.
 29. O texto livre do modelo também liga números à classe errada ("Gleason 4 with 201 patches (43.7%)", quando 201 é do benigno), o que a checagem de existência não vê; mas uma regra automática não mede isso com confiança (precisão de 0,03 e 0,28 em amostras lidas). A ligação exige leitura humana.
+30. Pelo ROAR (tirar e retreinar), a atenção aponta os patches que carregam a informação da decisão: sem os 50% de maior atenção, a AUC cai de 0,95 para 0,81 no pulmão e de 0,94 para 0,56 na próstata, e sem 50% sorteados não muda.
