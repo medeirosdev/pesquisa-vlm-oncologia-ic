@@ -1,0 +1,1290 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pipeline Ideia 01</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: uma lâmina lida de cima a baixo — faixa da pipeline no topo, depois um bloco por estágio, na ordem em que o dado passa. Cores da coloração H&E. */
+:root {
+  --vidro: #f6f4f8;        /* fundo: lâmina de vidro, neutro com leve viés rosado */
+  --papel: #ffffff;        /* superfícies */
+  --tinta: #1f1a2b;        /* texto */
+  --tinta-2: #5d5470;      /* texto secundário */
+  --linha: #e2dcea;        /* bordas e grades */
+  --hema: #3f2f8f;         /* hematoxilina: núcleos — acento principal */
+  --hema-suave: #ebe7f8;
+  --eosina: #c8456f;       /* eosina: citoplasma/estroma — acento secundário */
+  --eosina-suave: #fbe9ef;
+  --ok: #1f7a4d; --ok-suave: #e3f3ea;
+  --falha: #b3361f; --falha-suave: #fbe7e2;
+  --parcial: #9a6a06; --parcial-suave: #fbf1db;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-texto: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --font-dados: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --raio: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --vidro: #14111b; --papel: #1d1927; --tinta: #ece8f3; --tinta-2: #a99fbc; --linha: #2f2940;
+    --hema: #a99cf0; --hema-suave: #2a2448; --eosina: #f08aa9; --eosina-suave: #3a1e2b;
+    --ok: #5fcf95; --ok-suave: #173326; --falha: #f08a72; --falha-suave: #3a1d17;
+    --parcial: #e5b24a; --parcial-suave: #3a2d12; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --vidro: #14111b; --papel: #1d1927; --tinta: #ece8f3; --tinta-2: #a99fbc; --linha: #2f2940;
+  --hema: #a99cf0; --hema-suave: #2a2448; --eosina: #f08aa9; --eosina-suave: #3a1e2b;
+  --ok: #5fcf95; --ok-suave: #173326; --falha: #f08a72; --falha-suave: #3a1d17;
+  --parcial: #e5b24a; --parcial-suave: #3a2d12; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--vidro); color: var(--tinta);
+  font-family: var(--font-texto); font-size: 17px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 64px;
+}
+.wrap { max-width: 1080px; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2.1rem, 5vw, 3.3rem); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.15rem; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.rotulo { font-family: var(--font-dados); font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tinta-2); }
+.num { font-family: var(--font-dados); font-variant-numeric: tabular-nums; }
+a { color: var(--hema); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--eosina); outline-offset: 2px; }
+
+/* topo */
+header.topo { padding-block: 56px 28px; display: grid; gap: 18px; }
+.topo .lead { font-size: 1.15rem; color: var(--tinta-2); }
+.fatos { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-top: 8px; }
+.fato { padding: 14px 16px; border-left: 3px solid var(--hema); background: var(--papel); border-radius: 0 var(--raio) var(--raio) 0; }
+.fato:nth-child(even) { border-left-color: var(--eosina); }
+.fato b { display: block; font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; }
+.fato span { color: var(--tinta-2); font-size: 0.92rem; }
+
+/* faixa da pipeline */
+.faixa { margin-block: 28px 8px; overflow-x: auto; }
+.faixa ol { list-style: none; margin: 0; padding: 4px 0; display: grid; grid-template-columns: repeat(6, minmax(140px, 1fr)); gap: 0; min-width: 880px; }
+.faixa a.novo { border-color: var(--eosina); }
+.faixa a.novo .n { color: var(--eosina); }
+.faixa li { position: relative; padding-right: 26px; }
+.faixa li:not(:last-child)::after {
+  content: ""; position: absolute; right: 6px; top: 34px; width: 14px; height: 14px;
+  border-top: 2px solid var(--tinta-2); border-right: 2px solid var(--tinta-2); transform: rotate(45deg);
+}
+.faixa a { display: grid; gap: 6px; padding: 14px; height: 100%; text-decoration: none; color: var(--tinta);
+  background: var(--papel); border: 1px solid var(--linha); border-radius: var(--raio); transition: border-color .15s, transform .15s; }
+.faixa a:hover { border-color: var(--hema); transform: translateY(-2px); }
+.faixa .n { font-family: var(--font-dados); font-size: 0.8rem; color: var(--hema); }
+.faixa strong { font-family: var(--font-display); font-size: 1.05rem; }
+.faixa small { color: var(--tinta-2); font-size: 0.85rem; line-height: 1.35; }
+
+/* selos */
+.selo { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+.selo::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.ok { color: var(--ok); background: var(--ok-suave); }
+.falha { color: var(--falha); background: var(--falha-suave); }
+.parcial { color: var(--parcial); background: var(--parcial-suave); }
+.ref { color: var(--tinta-2); background: var(--linha); }
+
+/* seções */
+section.estagio { margin-top: 56px; display: grid; gap: 20px; scroll-margin-top: 16px; }
+.cab { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; align-items: baseline; }
+.cab .marca { font-family: var(--font-display); font-weight: 700; font-size: 2.6rem; color: var(--hema); line-height: 1; grid-row: span 2; }
+.cab.eo .marca { color: var(--eosina); }
+.cab p { color: var(--tinta-2); grid-column: 2; }
+.grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.painel { background: var(--papel); border: 1px solid var(--linha); border-radius: var(--raio); padding: 18px 20px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.painel.destaque { border-color: var(--hema); box-shadow: 0 0 0 3px var(--hema-suave); }
+.entrada-saida { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; font-size: 0.95rem; }
+.entrada-saida div { padding: 10px 12px; background: var(--vidro); border-radius: 8px; }
+.entrada-saida .seta { color: var(--tinta-2); font-family: var(--font-dados); }
+ul.limpa { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; }
+ul.limpa li { max-width: 68ch; }
+.nota { font-size: 0.92rem; color: var(--tinta-2); }
+
+/* barras: largura = valor / máximo da escala */
+.barras { display: grid; gap: 9px; }
+.barra { display: grid; grid-template-columns: minmax(120px, 34%) 1fr 64px; gap: 10px; align-items: center; font-size: 0.92rem; }
+.barra .nome { min-width: 0; }
+.barra .trilho { position: relative; height: 14px; background: var(--vidro); border-radius: 4px; overflow: hidden; }
+.barra .trilho i { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--hema); }
+.barra.e .trilho i { background: var(--eosina); }
+.barra.cinza .trilho i { background: var(--tinta-2); opacity: .55; }
+.barra .trilho .acaso { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--tinta); opacity: .55; }
+.barra .valor { font-family: var(--font-dados); font-variant-numeric: tabular-nums; text-align: right; }
+.legenda-acaso { font-size: 0.82rem; color: var(--tinta-2); display: flex; align-items: center; gap: 8px; }
+.legenda-acaso::before { content: ""; width: 2px; height: 14px; background: var(--tinta); opacity: .55; }
+
+/* tabelas */
+.tabela { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--linha); vertical-align: top; }
+th { font-family: var(--font-dados); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tinta-2); font-weight: 600; }
+td.num, th.num { text-align: right; }
+tr.vence td { background: var(--hema-suave); }
+.geral td { vertical-align: top; font-size: 0.9rem; }
+.geral td:first-child { font-family: var(--font-display); font-weight: 600; white-space: nowrap; }
+
+/* figuras */
+figure { margin: 0; display: grid; gap: 8px; min-width: 0; }
+figure img { width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--linha); background: var(--papel); display: block; }
+figcaption { font-size: 0.86rem; color: var(--tinta-2); max-width: 68ch; }
+.figuras { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.figuras.quatro { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.grade.dois, .figuras.mapas { grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); }
+.chaves { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.85rem; color: var(--tinta-2); }
+.chaves span { display: inline-flex; align-items: center; gap: 6px; }
+.chaves i { width: 12px; height: 12px; border: 2px solid currentColor; border-radius: 2px; }
+.c-dcis { color: #3f2f8f; } .c-ic { color: #c8456f; } .c-ben { color: #1f7a4d; } .c-roi { color: #969696; }
+
+/* desafios e exemplos */
+.desafios { background: var(--eosina-suave); border-radius: var(--raio); padding: 16px 20px; display: grid; gap: 10px; }
+.desafios h3 { color: var(--eosina); }
+.exemplo { display: grid; gap: 10px; }
+pre.saida { margin: 0; font-family: var(--font-dados); font-size: 0.82rem; line-height: 1.5; background: var(--vidro); border: 1px solid var(--linha);
+  border-radius: 8px; padding: 12px 14px; overflow-x: auto; white-space: pre-wrap; color: var(--tinta); }
+.par { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+
+/* rodapé */
+.final { margin-top: 64px; display: grid; gap: 16px; }
+footer { margin-top: 40px; color: var(--tinta-2); font-size: 0.88rem; border-top: 1px solid var(--linha); padding-top: 16px; }
+
+@media (max-width: 560px) {
+  body { font-size: 16px; }
+  .barra { grid-template-columns: 1fr 56px; }
+  .barra .nome { grid-column: 1 / -1; }
+  .entrada-saida { grid-template-columns: 1fr; }
+  .entrada-saida .seta { transform: rotate(90deg); justify-self: center; }
+  .cab .marca { font-size: 2rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)} body{margin:0} img{max-width:100%} [hidden]{display:none!important}</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="topo">
+  <span class="rotulo">Iniciação Científica · UNICAMP · VLMs na Oncologia</span>
+  <h1>Pipeline Ideia 01: da lâmina inteira ao pré-laudo</h1>
+  <p class="lead">Uma lâmina de mama corada em H&amp;E tem dezenas de milhares de pixels de lado. A pipeline a reduz, em cinco estágios, a um texto curto que um modelo de linguagem pequeno, rodando localmente, transforma num rascunho de pré-laudo; uma etapa nova decide a classe da lâmina inteira. Abaixo, cada estágio com o que faz, o que foi testado e o que os números mostram.</p>
+  <div class="fatos">
+    <div class="fato"><b class="num">18 + 61 + 57</b><span>lâminas do BRACS: desenvolvimento, validação oficial e teste oficial</span></div>
+    <div class="fato"><b class="num">0,95</b><span>AUC DCIS × carcinoma invasivo em outra instituição (BACH)</span></div>
+    <div class="fato"><b class="num">17 → 38 de 57</b><span>lâminas certas: do modelo de linguagem decidindo ao MIL com atenção treinado com 79 lâminas (acurácia balanceada 0,42 → 0,63; acaso = 0,25)</span></div>
+    <div class="fato"><b class="num">0,98</b><span>AUC adenocarcinoma × carcinoma escamoso no pulmão (TCGA), com a mesma receita de classificação retreinada em lâminas de pulmão</span></div>
+    <div class="fato"><b class="num">4 GB</b><span>de GPU: tudo roda localmente, sem enviar dados do paciente</span></div>
+  </div>
+</header>
+
+<nav class="faixa" aria-label="Estágios da pipeline">
+  <ol>
+    <li><a href="#e1"><span class="n">estágio 1</span><strong>Filtro de tecido</strong><small>descarta o fundo branco</small></a></li>
+    <li><a href="#e2"><span class="n">estágio 2</span><strong>Roteador</strong><small>escolhe 32 patches de milhares</small></a></li>
+    <li><a href="#e3"><span class="n">estágio 3</span><strong>Descritor</strong><small>categoria e subtipo de cada patch</small></a></li>
+    <li><a href="#lamina" class="novo"><span class="n">novo · 3½</span><strong>Decisão da lâmina</strong><small>a classe final sai de um classificador, não do modelo de linguagem</small></a></li>
+    <li><a href="#e4"><span class="n">estágio 4</span><strong>Agregação</strong><small>junta tudo num prompt</small></a></li>
+    <li><a href="#e5"><span class="n">estágio 5</span><strong>Síntese</strong><small>modelo local escreve o pré-laudo</small></a></li>
+  </ol>
+</nav>
+
+<!-- DADOS -->
+<section class="estagio" id="dados">
+  <div class="cab eo"><span class="marca">◇</span><h2>Dados e como cada teste é feito</h2><p>Todo teste tem regra e critério de sucesso fixados e registrados em commit antes de rodar, e é avaliado em lâminas que o método não viu.</p></div>
+  <div class="grade">
+    <div class="painel">
+      <h3>Conjuntos usados</h3>
+      <div class="tabela"><table>
+        <thead><tr><th>Conjunto</th><th>O que é</th><th>Uso</th></tr></thead>
+        <tbody>
+          <tr><td>BRACS</td><td>547 lâminas de mama, 4.537 regiões anotadas em 7 classes (N, PB, UDH, FEA, ADH, DCIS, IC)</td><td>18 lâminas de desenvolvimento, 61 da validação oficial e 57 do teste oficial; 3.655 regiões de treino para treinar o descritor</td></tr>
+          <tr><td>BACH</td><td>Imagens de microscopia de outra instituição (Porto): 100 <i>in situ</i>, 100 invasivo</td><td>teste de generalização</td></tr>
+          <tr><td>TCGA (pulmão)</td><td>Lâminas de diagnóstico de adenocarcinoma (LUAD) e carcinoma escamoso (LUSC) de pulmão, acesso aberto</td><td>200 lâminas sorteadas (120 treino, 80 teste) para testar a generalização a outro órgão</td></tr>
+          <tr><td>TCGA (rim)</td><td>Lâminas de diagnóstico de carcinoma renal de células claras (KIRC), papilífero (KIRP) e cromófobo (KICH), acesso aberto</td><td>300 lâminas sorteadas (100 por subtipo), com treino e teste em hospitais diferentes</td></tr>
+          <tr><td>Pulmão (orientador)</td><td>Dataset do orientador, não público: 52 pacientes (25 adenocarcinoma, 27 epidermoide), 1.647 campos de biópsia H&amp;E e 5.593 núcleos isolados recortados desses campos</td><td>testar se o subtipo está no núcleo ou no tecido em volta (validação cruzada por paciente)</td></tr>
+          <tr><td>LungHist700</td><td>691 imagens de microscópio de pulmão (normal, adenocarcinoma, carcinoma escamoso) de 45 pacientes</td><td>treinar o descritor por patch do pulmão</td></tr>
+          <tr><td>PANDA</td><td>Biópsias de próstata com grau ISUP 0–5 e máscara de rótulos, de dois centros (Radboud e Karolinska)</td><td>900 biópsias sorteadas (600 treino no Radboud, 300 teste no Karolinska) para testar uma tarefa de graduação</td></tr>
+          <tr><td>NuCLS</td><td>1.744 campos de mama do TCGA, ~59 mil núcleos classificados por patologista</td><td>validar a segmentação de núcleos</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="painel">
+      <h3>Unidades e métricas</h3>
+      <ul class="limpa">
+        <li><b>Patch (tile):</b> 512 × 512 px no nível de 40x, ou 128 × 128 µm de tecido.</li>
+        <li><b>Acerto por categoria</b> (descritor): média do acerto em cada classe real; com 3 classes o acaso é 33%, com 4 é 25%.</li>
+        <li><b>Acerto do pré-laudo</b> (estágio 5): lâminas certas / total de lâminas, e o mesmo por classe; cada linha das tabelas soma as colunas.</li>
+        <li><b>Acurácia balanceada:</b> média do acerto em cada classe, para a classe mais comum não dominar o número. É a métrica principal da decisão da lâmina. Acaso: 0,25 com 4 classes, 0,33 com 3.</li>
+        <li><b>Intervalo de 95%:</b> calculado por bootstrap agrupado por paciente; intervalos que se sobrepõem indicam que a diferença ainda não está provada.</li>
+        <li><b>Exploratório:</b> análise feita sem critério fixado antes; não conta como confirmação.</li>
+        <li><b>Agrupamento das classes</b> (oficial do BRACS): benigno = N, PB, UDH; atípico = FEA, ADH; maligno = DCIS, IC. Até 06/11 o projeto colocava o UDH em atípico; os resultados de lâmina foram repontuados ou refeitos, e os que não puderam ser estão marcados como "agrupamento antigo".</li>
+        <li><b>AUC:</b> chance de um patch de IC ter pontuação maior que um de DCIS. 0,5 é o acaso, 1,0 é separação perfeita.</li>
+        <li><b>Controle com rótulos embaralhados:</b> mostra quanto se acerta só por sorte.</li>
+        <li><b>Kappa quadrático</b> (graduação, PANDA): concordância entre o grau previsto e o real, descontado o que se acertaria por acaso. O erro pesa pelo quadrado da distância: errar 1 grau pesa 1, 2 graus pesa 4, chamar um ISUP 5 de benigno pesa 25. 0 é o acaso, 1 é concordância perfeita; leitura usual: abaixo de 0,4 fraco, 0,4–0,6 moderado, 0,6–0,8 bom, acima de 0,8 muito bom. É a métrica oficial do desafio PANDA. Pune o "chute no meio": prever ISUP 3 em quase tudo dá acurácia exata razoável e kappa baixo.</li>
+      </ul>
+    </div>
+    <div class="painel">
+      <h3>Termos da decisão da lâmina</h3>
+      <ul class="limpa">
+        <li><b>Embedding:</b> os 1.536 números com que o UNI2-h descreve cada patch. Os modelos de decisão da lâmina só veem esses números, não a imagem.</li>
+        <li><b>MIL com atenção</b> (ABMIL): trata a lâmina como um saco de patches; dá um peso de atenção a cada um e decide pela média ponderada. Não sabe quem é vizinho de quem.</li>
+        <li><b>GAT-MIL</b> (MIL com atenção em grafo): antes da decisão, cada patch mistura o próprio embedding com o dos 8 vizinhos encostados, com um peso aprendido por vizinho. Leva a arquitetura do tecido em conta.</li>
+        <li><b>Rede de grafos</b> (ideia proposta em 14/11/2026): escolhe pontos de interesse pela atenção de um MIL, monta um grafo local denso numa janela de 7 × 7 patches em volta de cada ponto e liga os pontos numa rede em que a atenção entre eles diminui com a distância.</li>
+        <li><b>Padronização por centro:</b> cada um dos 1.536 números do embedding vira (valor − média do centro) ÷ desvio do centro, com média e desvio calculados separadamente nos patches de cada hospital, sem usar o diagnóstico. Remove o deslocamento que coloração, preparo e escâner causam nos números. Exemplo: se uma das notas tem média 2,0 no Radboud e 2,8 no Karolinska, as duas passam a ter média 0. Exige um lote de lâminas do hospital novo antes de usar.</li>
+        <li><b>Normalização de cor</b> (Reinhard): ajusta a cor da imagem para a cor média do treino antes de calcular o embedding. Mexe na imagem; a padronização mexe nos números.</li>
+        <li><b>Troca de centro:</b> treinar num hospital e testar em outro. Na próstata, treino no Radboud e teste no Karolinska.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ESTÁGIO 1 -->
+<section class="estagio" id="e1">
+  <div class="cab"><span class="marca">1</span><h2>Filtro de tecido</h2><p>Separa tecido de fundo branco pela saturação da cor (limiar de Otsu e operações morfológicas). Só patches com pelo menos 50% de tecido seguem.</p></div>
+  <div class="grade">
+    <div class="painel">
+      <div class="entrada-saida"><div>Lâmina inteira<br><span class="nota">41.001 patches na BRACS_748</span></div><span class="seta">→</span><div>Patches com tecido<br><span class="nota">15.138 (63% da área era fundo)</span></div></div>
+      <span class="selo ok">resolvido</span>
+    </div>
+    <div class="painel">
+      <h3>Quanto das regiões anotadas a máscara cobre</h3>
+      <div class="barras">
+        <div class="barra"><span class="nome">BRACS_748 (98 regiões)</span><span class="trilho"><i style="width:96%"></i></span><span class="valor">96%</span></div>
+        <div class="barra"><span class="nome">16 lâminas, pior caso</span><span class="trilho"><i style="width:74%"></i></span><span class="valor">74%</span></div>
+        <div class="barra"><span class="nome">16 lâminas, melhor caso</span><span class="trilho"><i style="width:100%"></i></span><span class="valor">100%</span></div>
+      </div>
+      <p class="nota">A exceção (38%) é uma lâmina normal em que a caixa retangular da anotação envolve muito estroma claro em volta de um lóbulo pequeno.</p>
+    </div>
+  </div>
+  <div class="figuras">
+    <figure><img src="img/e1_lamina.jpg" alt="Miniatura da lâmina BRACS_748 corada em H&amp;E, com tecido mamário cercado de fundo branco" loading="lazy"><figcaption>Entrada: miniatura da lâmina BRACS_748 (carcinoma invasivo), reduzida 32 vezes.</figcaption></figure>
+    <figure><img src="img/e1_mascara.jpg" alt="A mesma lâmina com a área detectada como tecido destacada" loading="lazy"><figcaption>Saída: a máscara de tecido (Otsu na saturação + morfologia) sobre a lâmina. Só a área destacada segue para os próximos estágios.</figcaption></figure>
+  </div>
+  <div class="par">
+    <div class="desafios">
+      <h3>Problemas e desafios</h3>
+      <ul class="limpa">
+        <li>Escolher o filtro: seis foram comparados. Sem verdade de campo, "% de tecido" não dizia qual era melhor; a métrica passou a ser quanto das regiões anotadas a máscara cobre.</li>
+        <li>Lâminas com pirâmides diferentes (níveis 1/4/8x em vez de 1/4/16/32x) quebravam os scripts; o nível passou a ser escolhido pelo fator de redução.</li>
+        <li>Estroma muito claro e gordura ficam de fora da máscara. Isso é desejado na maioria dos casos, mas derruba a cobertura em lâminas normais com lóbulos pequenos.</li>
+      </ul>
+    </div>
+    <div class="exemplo painel">
+      <h3>Exemplo de resultado</h3>
+      <pre class="saida">BRACS_748
+patches no nível de 40x:   41.001
+patches com ≥ 50% tecido: 15.138  (descarta 63% da área)
+regiões anotadas cobertas: 98 de 98  (cobertura média 96%)</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ESTÁGIO 2 -->
+<section class="estagio" id="e2">
+  <div class="cab"><span class="marca">2</span><h2>Roteador</h2><p>Descrever milhares de patches geraria texto demais. O roteador pontua cada patch e escolhe os 32 mais relevantes, mantendo pelo menos 192 µm entre eles para não ficarem todos no mesmo foco.</p></div>
+  <div class="grade">
+    <div class="painel">
+      <h3>Como pontua</h3>
+      <ul class="limpa">
+        <li><b>Por frases (o atual):</b> similaridade do patch, no QuiltNet, com frases "suspeitas" menos a similaridade com frases "benignas".</li>
+        <li><b>UNI2-h "não benigno":</b> probabilidade de não ser benigno, dada por uma camada treinada nas outras lâminas.</li>
+        <li><b>UNI2-h por categoria:</b> divide os 32 patches entre as categorias encontradas.</li>
+      </ul>
+      <p class="nota">Medido pelas regiões anotadas, o roteador parecia fraco (precisão ~0,2), porque as anotações não marcam toda a lesão. Contando os núcleos tumorais de cada patch escolhido, sem depender das anotações, ele funciona bem nas lâminas malignas.</p>
+    </div>
+    <div class="painel destaque">
+      <h3>Fração dos 32 patches com tumor (7 lâminas malignas)</h3>
+      <div class="barras">
+        <div class="barra"><span class="nome">UNI2-h "não benigno"</span><span class="trilho"><i style="width:88%"></i><span class="acaso" style="left:52%"></span></span><span class="valor">0,88</span></div>
+        <div class="barra"><span class="nome">Por frases (atual)</span><span class="trilho"><i style="width:86%"></i><span class="acaso" style="left:52%"></span></span><span class="valor">0,86</span></div>
+        <div class="barra e"><span class="nome">UNI2-h por categoria</span><span class="trilho"><i style="width:54%"></i><span class="acaso" style="left:52%"></span></span><span class="valor">0,54</span></div>
+        <div class="barra cinza"><span class="nome">Sorteio</span><span class="trilho"><i style="width:52%"></i></span><span class="valor">0,52</span></div>
+      </div>
+      <span class="legenda-acaso">sorteio (0,52)</span>
+      <p class="nota">Em lâminas benignas e atípicas ainda não há uma métrica boa para o roteador.</p>
+    </div>
+  </div>
+  <div class="figuras">
+    <figure><img src="img/e2_selecao_748.jpg" alt="Lâmina BRACS_748 com 32 quadrados coloridos marcando os patches escolhidos" loading="lazy"><figcaption>BRACS_748 (carcinoma invasivo): os 32 patches escolhidos, coloridos pelo que o descritor disse de cada um. Quase todos caem no tumor.</figcaption></figure>
+    <figure><img src="img/e2_selecao_1370.jpg" alt="Lâmina BRACS_1370 com patches verdes no tecido benigno e alguns violeta e rosa" loading="lazy"><figcaption>BRACS_1370 (lesão benigna): a maioria dos patches sai benigna (verde), mas 12 saem malignos. Esses falsos positivos chegam até o pré-laudo.</figcaption></figure>
+  </div>
+  <div class="chaves"><span class="c-dcis"><i></i>DCIS</span><span class="c-ic"><i></i>carcinoma invasivo</span><span class="c-ben"><i></i>benigno</span><span class="c-roi"><i></i>região anotada pelo patologista</span></div>
+  <div class="painel destaque">
+    <h3>Em teste: pacote com cota fixa por classe</h3>
+    <p>Em vez de só os 32 patches mais suspeitos, um pacote com número fixo de cada classe: 8 benignos, 6 atípicos, 6 DCIS e 6 carcinoma invasivo, os de maior confiança em cada uma. Três versões da evidência são comparadas nas 61 lâminas de validação, com o modelo de linguagem decidindo:</p>
+    <ul class="limpa">
+      <li><b>A:</b> os 32 mais suspeitos (como hoje);</li>
+      <li><b>B:</b> o pacote com cotas;</li>
+      <li><b>C:</b> o pacote com cotas + a proporção de cada classe na lâmina inteira.</li>
+    </ul>
+    <span class="selo ref" id="cotas-status">em andamento: 30 de 183 pré-laudos · critério fixado antes: acurácia balanceada de C maior que a de A</span>
+  </div>
+  <div class="par">
+    <div class="desafios">
+      <h3>Problemas e desafios</h3>
+      <ul class="limpa">
+        <li>Orçamento de texto: cobrir mais de 80% das regiões anotadas exigiria 512 patches, cerca de 23 mil tokens, muito acima do que um modelo pequeno lê bem.</li>
+        <li>A métrica pelas anotações engana: o patologista marca algumas regiões, não toda a lesão, então um patch de tumor fora da anotação conta como erro.</li>
+        <li>O roteador procura o que parece "suspeito". Em lâminas benignas e atípicas, isso puxa justamente os patches mais parecidos com câncer e alimenta os falsos positivos.</li>
+        <li>Memória: calcular o QuiltNet em 15 mil patches por lâmina, numa GPU de 4 GB, exigiu rodar um modelo por vez.</li>
+      </ul>
+    </div>
+    <div class="exemplo painel">
+      <h3>Exemplo de resultado</h3>
+      <pre class="saida">BRACS_748 · 15.138 candidatos → 32 escolhidos
+pontuação = sim(frase suspeita) − sim(frase benigna)
+distância mínima entre patches: 192 µm
+
+patches escolhidos com tumor (≥ 20 núcleos):
+  roteador por frases   0,97
+  sorteio               0,24</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ESTÁGIO 3 -->
+<section class="estagio" id="e3">
+  <div class="cab"><span class="marca">3</span><h2>Descritor</h2><p>Transforma cada patch escolhido em texto. É o estágio com mais testes, porque é onde a separação entre benigno, atípico, DCIS e carcinoma invasivo acontece.</p></div>
+
+  <div class="grade">
+    <div class="painel">
+      <h3>Três métodos</h3>
+      <ul class="limpa">
+        <li><b>Frases (zero-shot):</b> compara o patch com um banco de frases no QuiltNet. Não usa exemplos rotulados.</li>
+        <li><b>Camada treinada:</b> regressão logística sobre o embedding do UNI2-h (1.536 números por patch), treinada nas outras lâminas.</li>
+        <li><b>Núcleos (CellViT):</b> fração de núcleos tumorais com um núcleo de estroma a até 20 µm, inspirada na perda da camada mioepitelial no carcinoma invasivo.</li>
+      </ul>
+    </div>
+    <div class="painel destaque">
+      <h3>Descritor atual: hierárquico com UNI2-h</h3>
+      <p>Primeiro a categoria (benigno, atípico, maligno); se maligno, DCIS ou carcinoma invasivo. Uma tabela fixa transforma o resultado em texto:</p>
+      <p class="num" style="font-size:.9rem;padding:10px 12px;background:var(--vidro);border-radius:8px">[94720,22016] (maligno 1.00) invasive carcinoma 0.98</p>
+      <span class="selo ok">passou: 55,8% contra 42,3% das frases</span>
+    </div>
+  </div>
+
+  <div class="grade">
+    <div class="painel">
+      <h3>DCIS × carcinoma invasivo, em lâmina fora do treino (AUC)</h3>
+      <div class="barras">
+        <div class="barra"><span class="nome">UNI2-h + camada</span><span class="trilho"><i style="width:97%"></i><span class="acaso" style="left:50%"></span></span><span class="valor">0,96–0,99</span></div>
+        <div class="barra"><span class="nome">QuiltNet + camada</span><span class="trilho"><i style="width:87%"></i><span class="acaso" style="left:50%"></span></span><span class="valor">0,83–0,95</span></div>
+        <div class="barra e"><span class="nome">Núcleos (sem treino)</span><span class="trilho"><i style="width:74%"></i><span class="acaso" style="left:50%"></span></span><span class="valor">0,66–0,84</span></div>
+        <div class="barra cinza"><span class="nome">Frases (zero-shot)</span><span class="trilho"><i style="width:53%"></i><span class="acaso" style="left:50%"></span></span><span class="valor">0,50–0,58</span></div>
+      </div>
+      <span class="legenda-acaso">acaso (0,5). Barra na média das 3 lâminas com DCIS e IC juntos; controle embaralhado: 0,38–0,46</span>
+      <p class="nota">O mesmo embedding do QuiltNet que fica no acaso com frases chega a 0,83–0,95 com uma camada treinada: a informação estava na imagem; o que falhava era a comparação com texto.</p>
+    </div>
+    <div class="painel">
+      <h3>Generalização: treinado no BRACS (Nápoles), testado no BACH (Porto)</h3>
+      <div class="barras">
+        <div class="barra"><span class="nome">UNI2-h + camada</span><span class="trilho"><i style="width:95%"></i><span class="acaso" style="left:50%"></span></span><span class="valor">0,95</span></div>
+        <div class="barra e"><span class="nome">Núcleos (sem treino)</span><span class="trilho"><i style="width:63%"></i><span class="acaso" style="left:50%"></span></span><span class="valor">0,63</span></div>
+        <div class="barra cinza"><span class="nome">QuiltNet + camada</span><span class="trilho"><i style="width:57%"></i><span class="acaso" style="left:50%"></span></span><span class="valor">0,57</span></div>
+      </div>
+      <span class="legenda-acaso">acaso (0,5); AUC por imagem, sem retreino</span>
+      <p class="nota">Só o UNI2-h mantém o desempenho fora da instituição de origem. O QuiltNet parecia bom no BRACS, mas aprendeu algo específico daquelas lâminas.</p>
+    </div>
+  </div>
+
+  <div class="painel">
+    <h3>Acerto nas 4 classes finais (18 lâminas, lâmina fora do treino; agrupamento antigo)</h3>
+    <div class="tabela"><table>
+      <thead><tr><th>Método</th><th class="num">Benigno</th><th class="num">Atípico</th><th class="num">DCIS</th><th class="num">IC</th><th class="num">Média</th></tr></thead>
+      <tbody>
+        <tr><td>Hierarquia com frases</td><td class="num">57%</td><td class="num">46%</td><td class="num">16%</td><td class="num">50%</td><td class="num">42,3%</td></tr>
+        <tr class="vence"><td><b>Hierarquia com UNI2-h</b></td><td class="num">58%</td><td class="num">14%</td><td class="num">78%</td><td class="num">74%</td><td class="num"><b>55,8%</b></td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">O ganho vem dos malignos. O atípico é o ponto fraco: há pouco dado de treino (972 patches, quase todos de 3 lâminas).</p>
+  </div>
+
+  <div class="painel destaque">
+    <h3>Descritor treinado nas regiões anotadas do BRACS (novo)</h3>
+    <p>A mesma hierarquia, agora treinada com as regiões de treino do BRACS (23.669 patches de 3.402 regiões, até 16 por região) em vez dos patches de 18 lâminas. O atípico ganha muito mais exemplos: FEA 624 e ADH 387 regiões.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Acerto por patch, nas 312 regiões de validação (rótulo oficial)</th><th class="num">Benigno</th><th class="num">Atípico</th><th class="num">Maligno</th></tr></thead>
+      <tbody><tr><td>Descritor das regiões</td><td class="num">84%</td><td class="num">35%</td><td class="num">90%</td></tr>
+      <tr><td>Com negativos benignos</td><td class="num">88%</td><td class="num">37%</td><td class="num">87%</td></tr></tbody>
+    </table></div>
+    <p class="nota">Agrupamento antigo (UDH em atípico): no teste externo, o atípico passou de 1 para 10 de 24 lâminas; com o rótulo oficial, a mesma regra acerta 5 de 17, porque parte do ganho vinha das lâminas UDH. O custo: o descritor marca patches como DCIS ou carcinoma invasivo também em lâminas benignas (por exemplo, 115 de 2.000 patches "invasivos" numa lâmina benigna da validação).</p>
+  </div>
+
+  <div class="grade">
+    <div class="painel">
+      <h3>Os núcleos medem com precisão? (validação no NuCLS)</h3>
+      <div class="tabela"><table>
+        <thead><tr><th></th><th class="num">CellViT original</th><th class="num">Treinado no NuCLS</th></tr></thead>
+        <tbody>
+          <tr><td>Núcleos encontrados</td><td class="num" colspan="2" style="text-align:center">82–93%</td></tr>
+          <tr><td>Tumor: sensibilidade / valor preditivo</td><td class="num">0,46 / 0,86</td><td class="num">0,83 / 0,88</td></tr>
+          <tr><td>Estroma: sensibilidade / valor preditivo</td><td class="num">0,80 / 0,44</td><td class="num">0,72 / 0,52</td></tr>
+          <tr><td>Medida vs. anotação (Spearman)</td><td class="num">0,28</td><td class="num">0,35</td></tr>
+        </tbody>
+      </table></div>
+      <span class="selo falha">não passou (critério: Spearman ≥ 0,7)</span>
+      <p class="nota">Medidas mais robustas (distância mediana ao estroma; contato com 3 vizinhos) também ficaram entre 0,27 e 0,37. Decisão: os núcleos servem como sinal, mas o número não vai para o texto do laudo.</p>
+    </div>
+    <div class="painel">
+      <h3>Também testado, sem ganho</h3>
+      <div class="tabela"><table>
+        <tbody>
+          <tr><td>Trocar frases uma a uma</td><td><span class="selo falha">não se repetiu em lâminas novas</span></td></tr>
+          <tr><td>Ensemble de frases</td><td><span class="selo falha">DCIS × IC 0,54–0,57</span></td></tr>
+          <tr><td>Média com os 8 patches vizinhos</td><td><span class="selo falha">+3 pontos, só no IC</span></td></tr>
+          <tr><td>Tipo de tecido em volta do patch</td><td><span class="selo falha">relação invertida</span></td></tr>
+          <tr><td>"Tumor cercado de tumor → IC"</td><td><span class="selo parcial">passou, efeito fraco (~55%)</span></td></tr>
+          <tr><td>UNI2-h + núcleos juntos</td><td><span class="selo falha">não acrescenta</span></td></tr>
+          <tr><td>Contornos oficiais das anotações</td><td><span class="selo ref">a maioria é retângulo</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <h3>Exemplos de patches e o que o descritor escreveu</h3>
+  <div class="figuras quatro">
+    <figure><img src="img/e3_patch_dcis.jpg" alt="Patch com células tumorais preenchendo um ducto" loading="lazy"><figcaption><span class="selo ok">certo</span> BRACS_748<br><code>(maligno 1.00) ductal carcinoma in situ 0.99</code></figcaption></figure>
+    <figure><img src="img/e3_patch_ic.jpg" alt="Patch com células tumorais em lâminas no estroma" loading="lazy"><figcaption><span class="selo ok">certo</span> BRACS_748<br><code>(maligno 1.00) invasive carcinoma 0.98</code></figcaption></figure>
+    <figure><img src="img/e3_patch_benigno.jpg" alt="Patch com epitélio benigno e estroma colagenoso" loading="lazy"><figcaption><span class="selo ok">certo</span> BRACS_1370<br><code>(benigno 1.00) benign tissue</code></figcaption></figure>
+    <figure><img src="img/e3_patch_falso_positivo.jpg" alt="Patch de estroma com uma fenda no tecido, sem epitélio" loading="lazy"><figcaption><span class="selo falha">falso positivo</span> BRACS_1370: só estroma e uma fenda no tecido<br><code>(maligno 1.00) invasive carcinoma 1.00</code></figcaption></figure>
+  </div>
+
+  <h3>Núcleos segmentados pelo CellViT</h3>
+  <div class="figuras">
+    <figure><img src="img/e3_nucleos_dcis.jpg" alt="Núcleos tumorais em bloco com uma borda lisa contra o estroma" loading="lazy"><figcaption>DCIS: o tumor forma um bloco com uma borda única contra o estroma; os núcleos do estroma (azul) ficam enfileirados do outro lado. Fração de núcleos tumorais encostados no estroma: 0,10.</figcaption></figure>
+    <figure><img src="img/e3_nucleos_ic.jpg" alt="Núcleos tumorais em ninhos com filetes de estroma entre eles" loading="lazy"><figcaption>Carcinoma invasivo: ninhos de tumor com filetes de estroma entremeados. Fração: 0,29. Vermelho: neoplásico; magenta: epitelial; azul: conjuntivo; verde: inflamatório.</figcaption></figure>
+  </div>
+
+  <div class="par">
+    <div class="desafios">
+      <h3>Problemas e desafios</h3>
+      <ul class="limpa">
+        <li>Comparar imagem com frases fica no acaso para DCIS × IC: algumas frases "ganham" em quase todos os patches, independentemente da imagem.</li>
+        <li>Ajustar frases olhando as mesmas lâminas superajusta: trocas que subiam o acerto nas lâminas de ajuste não se repetiram em lâminas novas.</li>
+        <li>O rótulo do BRACS é da região marcada, e a maioria das anotações é um retângulo que inclui estroma junto com a lesão. Quase metade dos patches "DCIS" não tem tumor.</li>
+        <li>O atípico tinha pouco dado (972 patches, quase todos de 3 lâminas) e quase nunca era reconhecido. Treinar nas regiões do BRACS leva o acerto por patch a 35% (rótulo oficial), ainda o mais baixo das três categorias.</li>
+        <li>O descritor treinado nas regiões marca falsos DCIS e carcinoma invasivo em lâminas benignas (21% dos patches nas 20 benignas do teste); usar lâminas benignas como negativos reduz para 7%, ao custo de menos acertos em DCIS.</li>
+        <li>O CellViT não tem a classe "mioepitelial" e confunde linfócitos e tumor com estroma; a medida dos núcleos não bate com a anotação de patologistas.</li>
+        <li>Generalização: o QuiltNet com camada treinada parecia bom no BRACS e caiu para perto do acaso em outra instituição.</li>
+      </ul>
+    </div>
+    <div class="exemplo painel">
+      <h3>Exemplo de resultado</h3>
+      <pre class="saida">BRACS_748 · 32 patches descritos
+[96256,41984] (maligno 1.00) ductal carcinoma in situ 0.99
+[94720,22016] (maligno 1.00) invasive carcinoma 0.98
+[71680,61952] (maligno 1.00) ductal carcinoma in situ 1.00
+[102400,42496] (maligno 1.00) invasive carcinoma 0.85
+[98304,37888] (maligno 1.00) invasive carcinoma 1.00
+…
+categorias: maligno 32 · DCIS 26 · carcinoma invasivo 6</pre>
+    </div>
+  </div>
+</section>
+
+<!-- DECISÃO DA LÂMINA -->
+<section class="estagio" id="lamina">
+  <div class="cab eo"><span class="marca">3½</span><h2>Decisão da lâmina inteira</h2><p>Etapa nova. Em vez de o modelo de linguagem decidir a classe a partir de 32 patches, um classificador usa até 2.000 patches de cada lâmina: 12 números (frações por classe, médias e percentis altos das probabilidades) entram numa regressão logística treinada com o rótulo de 79 lâminas. O modelo de linguagem passa a só redigir.</p></div>
+
+  <div class="painel destaque">
+    <h3>Novo: MIL com atenção, treinado direto no rótulo da lâmina</h3>
+    <p>Em vez de passar pelo descritor de cada patch, um modelo de MIL com atenção (Ilse et al., 2018) recebe os embeddings do UNI2-h dos 2.000 patches e aprende a classe com o rótulo de 79 lâminas. A atenção indica quais patches pesaram na decisão.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Nas 57 lâminas</th><th class="num">Benigno</th><th class="num">Atípico</th><th class="num">DCIS</th><th class="num">IC</th><th class="num">Total</th><th class="num">Acurácia balanceada</th></tr></thead>
+      <tbody>
+        <tr><td>Classificador + negativos</td><td class="num">10/20</td><td class="num">6/17</td><td class="num">2/8</td><td class="num">11/12</td><td class="num">29/57</td><td class="num">0,505</td></tr>
+        <tr class="vence"><td><b>MIL com atenção</b></td><td class="num">15/20</td><td class="num">10/17</td><td class="num">2/8</td><td class="num">11/12</td><td class="num"><b>38/57</b></td><td class="num"><b>0,626</b></td></tr>
+      </tbody>
+    </table></div>
+    <div class="tabela"><table>
+      <thead><tr><th></th><th class="num">Descritor</th><th class="num">MIL</th></tr></thead>
+      <tbody>
+        <tr><td>AUC benigno × atípico (37 lâminas)</td><td class="num">0,58</td><td class="num"><b>0,78</b></td></tr>
+        <tr><td>AUC maligno × resto</td><td class="num">0,83</td><td class="num">0,88</td></tr>
+        <tr><td>Acurácia balanceada em 3 classes</td><td class="num">0,52</td><td class="num">0,68</td></tr>
+        <tr><td>Resposta em conjunto: acerto / exatas</td><td class="num">0,70 / 0,44</td><td class="num">0,83 / 0,70</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Confirmação sem usar as 57: em validação cruzada por paciente nas 79 lâminas de treino, o mesmo MIL acerta 57/79 (acurácia balanceada 0,68; benigno × atípico AUC 0,92), contra 46/79 (0,51) do classificador com descritor.</p>
+    <p class="nota">Critérios fixados antes: acurácia balanceada &gt; 0,505 e AUC benigno × atípico ≥ 0,70. Intervalo de 95%: 0,52–0,75. Nenhum paciente em comum entre treino e teste; nenhum limiar escolhido no teste. Em 3 classes, 0,68 fica perto do UNI + ABMIL publicado (0,687, com 395 lâminas de treino), comparação indicativa. O DCIS continua fraco.</p>
+    <span class="selo ok">passou nos dois critérios</span>
+  </div>
+
+  <div class="painel">
+    <h3>A atenção do MIL cai nas lesões anotadas?</h3>
+    <p>Nas 29 lâminas do teste com lesão anotada pelos patologistas, os 5% de patches com maior atenção foram comparados com as anotações.</p>
+    <div class="tabela"><table>
+      <thead><tr><th></th><th class="num">Lâminas acima do acaso</th><th class="num">Topo na lesão</th><th class="num">Acaso</th><th class="num">Razão</th></tr></thead>
+      <tbody>
+        <tr class="vence"><td><b>Atenção do MIL</b></td><td class="num">21/29</td><td class="num">11,5%</td><td class="num">2,3%</td><td class="num"><b>5,0</b></td></tr>
+        <tr><td>Descritor, P(não benigno)</td><td class="num">24/29</td><td class="num">8,8%</td><td class="num">2,3%</td><td class="num">3,9</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Critério: acima do acaso em ≥ 70% das lâminas e razão ≥ 2. As anotações cobrem só 2,3% dos patches e marcam regiões, não a lesão inteira; por isso as frações absolutas são baixas. A atenção serve de explicação: aponta onde o modelo viu a lesão.</p>
+    <span class="selo ok">passou</span>
+  </div>
+
+  <div class="painel destaque">
+    <h3>Generalização para outro órgão: pulmão (TCGA)</h3>
+    <p>A mesma receita de classificação da lâmina (UNI2-h congelado e MIL com atenção, com o mesmo código e a mesma configuração de treino), retreinada com lâminas de pulmão do TCGA. O MIL é treinado do zero; o modelo da mama não é reaproveitado. Tarefa: adenocarcinoma (LUAD) × carcinoma escamoso (LUSC). 100 pacientes de cada tipo, sorteados antes de baixar; treino e teste com pacientes diferentes. O patch continua com 128 µm de lado, com o tamanho em pixels ajustado pela resolução de cada lâmina (20x ou 40x).</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Teste (78 lâminas)</th><th class="num">Resultado</th></tr></thead>
+      <tbody>
+        <tr class="vence"><td><b>AUC LUAD × LUSC</b></td><td class="num"><b>0,981</b> (IC 95% 0,953–1,0)</td></tr>
+        <tr><td>Acurácia balanceada</td><td class="num">0,949</td></tr>
+        <tr><td>Acerto por classe</td><td class="num">LUAD 37/39 · LUSC 37/39</td></tr>
+        <tr><td>Acerto nas lâminas de 20x</td><td class="num">8/8</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Critério fixado antes de baixar: AUC ≥ 0,85 e acurácia balanceada ≥ 0,75. Treino com 119 lâminas; 3 das 200 ficaram de fora (2 sem resolução no arquivo, 1 com download incompleto). Separar dois carcinomas de morfologia diferente é mais fácil que benigno × atípico na mama: o resultado mostra que a receita de classificação não depende de nada específico da mama, não que o problema da mama esteja resolvido.</p>
+    <span class="selo ok">passou</span>
+  </div>
+
+  <div class="painel">
+    <h3>Pulmão: descritor por patch e pré-laudo</h3>
+    <p>O resto da pipeline no pulmão. O descritor por patch (normal, adenocarcinoma, carcinoma escamoso) é treinado no LungHist700, um conjunto de imagens de microscópio com rótulo por imagem, e aplicado às regiões de maior atenção do MIL nas 78 lâminas de teste do TCGA. Os campos e o pré-laudo seguem a versão da mama, sem a regra do componente invasivo e sem as medidas de núcleo, e as instruções do modelo de linguagem pedem para apontar regiões cuja classe difere do tipo sugerido. Critérios fixados antes de rodar.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Teste</th><th>Critério</th><th class="num">Resultado</th></tr></thead>
+      <tbody>
+        <tr><td>Descritor nos pacientes de teste do LungHist700</td><td>acurácia balanceada ≥ 0,80</td><td class="num"><span class="selo ok">0,926</span></td></tr>
+        <tr><td>Descritor nas 3 regiões de maior atenção (TCGA)</td><td>classe real em ≥ 80% das lâminas</td><td class="num"><span class="selo falha">58/78</span> (adeno 21/39, escamoso 37/39)</td></tr>
+        <tr><td>Pré-laudo (78 textos)</td><td>tipo igual ao do MIL em ≥ 90%; nenhum número ou coordenada inventada</td><td class="num"><span class="selo ok">78/78</span>; 0 de 1.035 números; 0 de 436 coordenadas</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Nas lâminas de adenocarcinoma, 36 das 117 regiões de maior atenção são descritas como pulmão normal e 21 como escamoso. Hipóteses não verificadas: o padrão lepídico, que cresce sobre as paredes alveolares, e a diferença entre foto de microscópio (LungHist700) e lâmina escaneada (TCGA). Em 27 lâminas alguma região discorda do tipo sugerido, e só 3 textos apontam a discordância: a regra nas instruções não bastou. A escala do LungHist700 (µm/px) não é informada e foi estimada pelo tamanho dos núcleos de linfócito; a conferência 20x/40x deu 1,65, quando deveria ficar perto de 2.</p>
+    <span class="selo parcial">descritor não passou no TCGA; pré-laudo passou</span>
+  </div>
+
+  <div class="painel destaque">
+    <h3>Próstata: graduação no PANDA (ISUP 0–5)</h3>
+    <p>A mesma receita numa tarefa de graduação. Biópsias de próstata do PANDA, com grau ISUP de 0 (benigno) a 5 e máscara de rótulos (Gleason 3, 4, 5 no Radboud; câncer × benigno no Karolinska). Sorteio fixado antes de baixar: treino com 600 biópsias do Radboud (100 por grau) e teste com 300 do Karolinska (50 por grau), em centros diferentes porque o PANDA não informa o paciente. MIL, descritor por patch (treinado nas máscaras do Radboud), conferência das regiões de maior atenção na máscara e pré-laudo, com critérios fixados antes de rodar.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Teste (Karolinska)</th><th>Critério</th><th class="num">Resultado</th></tr></thead>
+      <tbody>
+        <tr><td>MIL: grau ISUP, 300 biópsias</td><td>kappa quadrático ≥ 0,60</td><td class="num"><span class="selo falha">0,237</span> (IC 95% 0,14–0,34)</td></tr>
+        <tr><td>MIL: benigno × câncer</td><td>AUC ≥ 0,85</td><td class="num"><span class="selo ok">0,940</span> (IC 95% 0,91–0,97)</td></tr>
+        <tr><td>Descritor por patch: benigno × câncer</td><td>AUC ≥ 0,85</td><td class="num"><span class="selo falha">0,775</span></td></tr>
+        <tr><td>3 regiões de maior atenção no câncer (máscara)</td><td>≥ 2 de 3 em ≥ 80% das biópsias</td><td class="num"><span class="selo falha">76%</span> (acaso 43%)</td></tr>
+        <tr><td>Pré-laudo (60 textos)</td><td>grau igual ao do MIL em ≥ 90%; nenhum número ou coordenada inventada</td><td class="num"><span class="selo ok">60/60</span>; 0 de 628 números; 0 de 315 coordenadas</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">O MIL separa câncer de benigno em outro centro, mas não gradua: prevê ISUP 3 em 209 das 300 biópsias, inclusive em 38 das 50 benignas e em 31 das 50 de ISUP 5. Pode ser a troca de centro (outra coloração e outro escâner) ou a falta de informação espacial (o MIL não sabe onde cada patch está, e o Gleason é a arquitetura das glândulas). Em 35 das 60 biópsias do pré-laudo alguma região discorda do grau sugerido, e só 1 texto aponta a discordância. No download, o Kaggle limitou as requisições e uma rodada incompleta (861 biópsias) foi descartada; o teste foi refeito com as 900, sem mudança na regra.</p>
+    <span class="selo parcial">detecta câncer; não gradua</span>
+  </div>
+
+  <div class="painel destaque">
+    <h3>MIL com atenção em grafo (GAT-MIL) na próstata</h3>
+    <p>O MIL com atenção trata a biópsia como um saco de patches, sem saber quem é vizinho de quem, e o Gleason é a arquitetura das glândulas. No GAT-MIL, cada patch é ligado aos 8 vizinhos encostados e, antes da decisão, mistura o próprio embedding com o deles, com um peso aprendido por vizinho. Mesmo treino do MIL, sem ajuste. Comparação pareada com o MIL atual em dois cenários, com critério fixado antes: o GAT-MIL ganha em kappa, com o limite inferior do IC 95% da diferença acima de zero.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Cenário</th><th class="num">MIL atual</th><th class="num">GAT-MIL</th><th class="num">Diferença (IC 95%)</th></tr></thead>
+      <tbody>
+        <tr class="vence"><td>Treino no Radboud, teste no Karolinska (300)</td><td class="num">0,237</td><td class="num"><b>0,436</b></td><td class="num"><span class="selo ok">+0,199</span> (0,114–0,289)</td></tr>
+        <tr><td>Dentro do Radboud, validação cruzada (600)</td><td class="num">0,784</td><td class="num"><b>0,806</b></td><td class="num"><span class="selo ok">+0,021</span> (0,002–0,042)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Kappa quadrático do grau ISUP. Entre centros, as biópsias previstas como ISUP 3 caem de 209 para 129 de 300, e o benigno × câncer sobe de AUC 0,940 para 0,963. A vizinhança ajuda nos dois cenários, mas o problema maior é a troca de centro: dentro do Radboud os dois modelos graduam bem, no Karolinska não. Dentro do Radboud, a mesma pessoa pode ter biópsias no treino e no teste (o PANDA não informa o paciente), o que favorece os dois modelos igualmente. Próximo passo: a mesma comparação no BRACS e no TCGA.</p>
+    <figure><img src="img/grafo_gat_mil.jpg" alt="Biópsia de próstata deitada na horizontal com uma malha azul ligando os patches de tecido; ao lado, um zoom com um patch laranja ligado a oito vizinhos azuis" loading="lazy"><figcaption>Uma biópsia de teste do Karolinska (ISUP 4): os 510 patches de tecido e as ligações com os 8 vizinhos encostados. No zoom, o patch laranja e os 8 vizinhos com que ele mistura o embedding.</figcaption></figure>
+    <span class="selo ok">passou nos dois cenários</span>
+  </div>
+
+  <div class="painel">
+    <h3>GAT-MIL na mama e no pulmão</h3>
+    <p>A mesma comparação, com critério fixado antes. No BRACS e no TCGA a amostra de 2.000 patches cobre só parte do tecido, e quase nenhum patch tem vizinho encostado; o grafo liga cada patch aos até 8 patches da amostra mais próximos, a até 384 µm.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Cenário</th><th class="num">MIL atual</th><th class="num">GAT-MIL</th><th class="num">Diferença (IC 95%)</th></tr></thead>
+      <tbody>
+        <tr><td>Mama (BRACS), 57 lâminas, acurácia balanceada</td><td class="num">0,626</td><td class="num">0,597</td><td class="num"><span class="selo falha">−0,029</span> (−0,077 a 0,0)</td></tr>
+        <tr><td>Mama, validação cruzada por paciente (79)</td><td class="num">0,680</td><td class="num">0,636</td><td class="num"><span class="selo falha">−0,045</span> (−0,123 a 0,030)</td></tr>
+        <tr><td>Pulmão (TCGA), 78 lâminas, AUC</td><td class="num">0,981</td><td class="num">0,981</td><td class="num"><span class="selo ok">0,000</span> (−0,010 a 0,011)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Na mama o critério era o GAT-MIL ganhar, e não ganhou; no pulmão, já no teto, o critério era não piorar. A vizinhança ajudou só na graduação da próstata, onde o grafo cobre o tecido inteiro. Possíveis razões, não testadas: grafo parcial; o rótulo do BRACS é o da lesão mais grave, muitas vezes pequena; só 79 lâminas de treino.</p>
+    <figure><img src="img/grafo_bracs_parcial.jpg" alt="Lâmina de mama com a malha azul cobrindo só parte do tecido; ao lado, um zoom de 3 mm com patches azuis espalhados e ligações entre eles, deixando tecido descoberto" loading="lazy"><figcaption>BRACS_1284 (carcinoma invasivo): só os 2.000 patches sorteados têm embedding, e o grafo liga cada um aos até 8 mais próximos a até 384 µm. No zoom, o tecido entre os patches fica fora do grafo, ao contrário do PANDA.</figcaption></figure>
+    <span class="selo falha">mama: não ajudou · pulmão: empate</span>
+  </div>
+
+  <div class="painel">
+    <h3>Rim: três subtipos, em hospitais que o modelo nunca viu</h3>
+    <p>Terceiro órgão: carcinoma renal de células claras, papilífero e cromófobo (TCGA), mesma receita do pulmão. No TCGA, cada hospital mandou casos de um subtipo só; um modelo pode acertar aprendendo o "jeito" do hospital (coloração, escâner, preparo) em vez da morfologia. Por isso o teste principal usa só hospitais que não aparecem no treino. Critério fixado antes: MIL com acurácia balanceada ≥ 0,80 e AUC ≥ 0,90; GAT-MIL não pior.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Divisão</th><th class="num">MIL: acurácia balanceada</th><th class="num">MIL: AUC</th><th class="num">GAT-MIL: acurácia balanceada</th></tr></thead>
+      <tbody>
+        <tr class="vence"><td>Hospitais novos no teste (137 lâminas)</td><td class="num"><b>0,953</b> (0,915–0,983)</td><td class="num"><b>0,987</b></td><td class="num">0,945</td></tr>
+        <tr><td>Sorteio aleatório (119 lâminas)</td><td class="num">0,983</td><td class="num">1,000</td><td class="num">0,975</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Nos hospitais novos: células claras 49/54, papilífero 39/41, cromófobo 42/42. A queda do sorteio aleatório para os hospitais novos (0,98 → 0,95) mostra que parte do acerto no sorteio vinha de reconhecer o hospital, mas pouca. A padronização por hospital não se aplica aqui: com um subtipo por hospital, subtrair a média do hospital apagaria o próprio subtipo. Referência indicativa: o CLAM reporta AUC ~0,99 nos mesmos três subtipos, com divisão aleatória.</p>
+    <span class="selo ok">passou nos dois critérios</span>
+  </div>
+
+  <div class="painel destaque">
+    <h3>Pulmão: o subtipo está no núcleo ou no tecido em volta?</h3>
+    <p>Dataset do orientador (não público): 52 pacientes, adenocarcinoma × carcinoma epidermoide, com campos de biópsia e uma pasta de "citologia". Antes do teste, uma verificação mostrou que essa pasta tem núcleos recortados dos próprios campos de biópsia (cada recorte aparece pixel a pixel no seu campo). Então dá pra comparar o mesmo núcleo sozinho, sobre fundo branco, e com o tecido em volta. Avaliação por paciente (validação cruzada em 5 partes, repetida 5 vezes). Critérios fixados antes: biópsia com acurácia balanceada ≥ 0,80; núcleo isolado acima do acaso; contexto melhor que o núcleo isolado; UNI2-h melhor que medidas clássicas no núcleo.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>O que o modelo vê</th><th class="num">AUC</th><th class="num">Acurácia balanceada</th></tr></thead>
+      <tbody>
+        <tr><td>Núcleo isolado, medidas clássicas (forma, cor, textura)</td><td class="num">0,599</td><td class="num">0,518</td></tr>
+        <tr><td>Núcleo isolado, UNI2-h + MIL</td><td class="num">0,479</td><td class="num">0,532</td></tr>
+        <tr class="vence"><td>Mesmo núcleo com o tecido em volta (janela de 224 px, ~17% do campo), UNI2-h + MIL</td><td class="num"><b>0,862</b> (0,738–0,959)</td><td class="num">0,809</td></tr>
+        <tr><td>Janela de 448 px reduzida à metade (~67% do campo, mesma escala de um recorte do campo)</td><td class="num">0,948</td><td class="num">0,866</td></tr>
+        <tr><td>Campo de biópsia inteiro, UNI2-h + MIL</td><td class="num">0,942</td><td class="num"><b>0,886</b></td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">O núcleo sozinho fica no acaso, com o UNI2-h e com medidas clássicas. Com o tecido em volta numa janela de 224 px, o mesmo núcleo vai a AUC 0,86 (+0,42 sobre o núcleo sozinho, IC 0,21 a 0,61). Com a janela de 448 px chega a 0,95, mas essa janela tem o tamanho e a escala de um recorte do campo, então igualar o campo inteiro acontece por construção (correção de 26/11). Neste conjunto, o subtipo está no arranjo do tecido, não no núcleo; super-resolução do núcleo não traria essa informação. Ressalvas: 52 pacientes, um só hospital, máscaras dos núcleos de uma segmentação antiga.</p>
+    <span class="selo parcial">passou em 2 de 4 critérios</span>
+  </div>
+
+  <div class="painel destaque">
+    <h3>Próstata: troca de centro</h3>
+    <p>Duas correções que não usam nenhum rótulo do centro novo, com critério fixado antes (com o GAT-MIL, ganho em kappa com o limite inferior do IC 95% acima de zero). <b>Padronização por centro:</b> cada dimensão do embedding é centrada e escalada com a média e o desvio dos patches do próprio centro. <b>Normalização de cor (Reinhard):</b> a cor de cada biópsia é levada à cor média do treino, e os embeddings são recalculados.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Treino no Radboud, teste no Karolinska (300)</th><th class="num">MIL atual</th><th class="num">GAT-MIL</th><th class="num">Diferença no GAT-MIL (IC 95%)</th></tr></thead>
+      <tbody>
+        <tr><td>Embeddings originais</td><td class="num">0,237</td><td class="num">0,439</td><td class="num">—</td></tr>
+        <tr class="vence"><td>Padronização por centro</td><td class="num">0,540</td><td class="num"><b>0,609</b></td><td class="num"><span class="selo ok">+0,170</span> (0,067–0,269)</td></tr>
+        <tr><td>Normalização de cor</td><td class="num">0,275</td><td class="num">0,225</td><td class="num"><span class="selo falha">−0,214</span> (−0,317 a −0,102)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Kappa quadrático do grau ISUP. Com a padronização por centro, o colapso em ISUP 3 some (previstos como ISUP 3: 142 → 38 de 300) e os ganhos do GAT-MIL e da padronização se somam; o custo é precisar de um lote de lâminas do centro novo, sem rótulo, antes de usar. A normalização de cor piorou: só 1 das 50 benignas certa. A diferença entre centros que atrapalha o modelo não é só a cor média. Ainda longe do dentro do centro (~0,80).</p>
+    <span class="selo ok">padronização por centro: passou</span> <span class="selo falha">normalização de cor: não passou</span>
+  </div>
+
+  <div class="painel destaque">
+    <h3>Rede de grafos na próstata</h3>
+    <p>Ideia proposta em 14/11/2026. Em vez de olhar todos os patches, o modelo olha primeiro a biópsia inteira e escolhe até 16 pontos de interesse (os de maior atenção de um MIL que não viu a biópsia, com centros a pelo menos 1 mm). Em cada ponto monta um grafo local denso, numa janela de 7 × 7 patches; depois liga os pontos numa rede em que a atenção entre eles diminui com a distância. Mesmo treino, sem ajuste, embeddings originais. Critério fixado antes: a rede ganha do MIL atual em kappa, com o limite inferior do IC 95% da diferença acima de zero.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Cenário</th><th class="num">MIL atual</th><th class="num">GAT-MIL</th><th class="num">Rede de grafos</th><th class="num">Rede − MIL (IC 95%)</th></tr></thead>
+      <tbody>
+        <tr class="vence"><td>Treino no Radboud, teste no Karolinska (300)</td><td class="num">0,237</td><td class="num">0,420</td><td class="num"><b>0,442</b></td><td class="num"><span class="selo ok">+0,205</span> (0,104–0,310)</td></tr>
+        <tr><td>Dentro do Radboud, validação cruzada (600)</td><td class="num">0,784</td><td class="num">0,795</td><td class="num"><b>0,809</b></td><td class="num"><span class="selo falha">+0,025</span> (−0,002 a 0,051)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Kappa quadrático do grau ISUP. A rede usa em média 9,8 pontos por biópsia (as biópsias são finas, e poucas comportam 16 pontos a 1 mm), e as janelas cobrem 67% dos patches. Com isso fica no nível do GAT-MIL, que olha todos os patches (diferença +0,021 entre centros e +0,014 dentro do Radboud, as duas sem significância): escolher os pontos pela atenção não perde o que importa pro grau. Próximos passos: a rede com a padronização por centro, e a rede na mama, onde as lâminas são grandes e a amostra de patches é parcial.</p>
+    <figure><img src="img/rede_grafos.jpg" alt="A mesma biópsia de próstata em três painéis: atenção do MIL em tons de azul com o câncer contornado em laranja; 14 pontos numerados com janelas azuis e linhas ligando todos os pontos; zoom de uma janela de 7 por 7 patches com o grafo local" loading="lazy"><figcaption>A mesma biópsia do Karolinska. a) Atenção do MIL em cada patch, com o câncer anotado contornado em laranja. b) Os 14 pontos de interesse, a janela 7 × 7 de cada um e a rede completa entre os pontos (duas distâncias marcadas). c) O grafo local do ponto 1.</figcaption></figure>
+    <figure><img src="img/grafos_resultados.png" alt="Gráfico de barras do kappa: entre centros, MIL 0,237, GAT-MIL 0,420, rede de grafos 0,442 e GAT-MIL com padronização por centro 0,609; dentro do Radboud, 0,784, 0,795 e 0,809" loading="lazy"><figcaption>Kappa dos três modelos nos dois cenários, com IC 95%. A barra da padronização por centro vem do teste de troca de centro.</figcaption></figure>
+    <span class="selo ok">entre centros: passou</span> <span class="selo falha">dentro do Radboud: não passou, por pouco</span>
+  </div>
+
+  <h3>Mapas de atenção do MIL</h3>
+  <p class="nota">As mesmas quatro lâminas dos mapas do descritor. Esquerda: classe de cada patch pelo descritor. Direita: atenção do MIL, em percentil dentro da lâmina (escuro = pesou mais na decisão), com o contorno das lesões anotadas pelos patologistas em azul-esverdeado.</p>
+  <div class="figuras mapas">
+    <figure><img src="img/mapa_atencao_BRACS_1284.jpg" alt="Mapa de atenção de uma lâmina de carcinoma invasivo, com atenção alta sobre a área tumoral e as regiões anotadas" loading="lazy"><figcaption><span class="selo ok">certo</span> BRACS_1284, carcinoma invasivo (MIL: IC, 1,00). A atenção alta cobre a área do tumor e as regiões anotadas.</figcaption></figure>
+    <figure><img src="img/mapa_atencao_BRACS_1330.jpg" alt="Mapa de atenção de uma lâmina benigna" loading="lazy"><figcaption><span class="selo ok">certo</span> BRACS_1330, benigna (MIL: benigno, 0,85). Na versão com descritor, essa lâmina saía como atípica.</figcaption></figure>
+    <figure><img src="img/mapa_atencao_BRACS_1283.jpg" alt="Mapa de atenção de uma lâmina de DCIS" loading="lazy"><figcaption><span class="selo falha">errado</span> BRACS_1283, DCIS (MIL: atípico, 0,95). O DCIS é a classe mais fraca do MIL.</figcaption></figure>
+    <figure><img src="img/mapa_atencao_BRACS_1003691.jpg" alt="Mapa de atenção de uma lâmina atípica com uma lesão anotada pequena" loading="lazy"><figcaption><span class="selo falha">errado</span> BRACS_1003691, atípica (MIL: benigno, 0,76). A lesão anotada é pequena: dos 8 patches da amostra dentro dela, 2 estão entre os 4% de maior atenção e os outros 6 têm atenção baixa.</figcaption></figure>
+  </div>
+
+  <div class="painel destaque">
+    <h3>A atenção sustenta a decisão? Teste de remoção e de suficiência (pulmão e próstata)</h3>
+    <p>No pulmão (TCGA) não há anotação de região, então a atenção só era mostrada. Este teste não precisa de anotação: se a atenção é fiel ao modelo, tirar os patches de maior atenção deve derrubar a probabilidade da classe prevista mais do que tirar patches sorteados, e ficar só com eles deve sustentar a classe melhor do que ficar com sorteados. Mesmos modelos dos pré-laudos (classe prevista igual em 78/78 e 300/300). Critérios fixados antes: diferença &gt; 0 com IC 95% acima de 0, tirando 10% (remoção) e ficando com 20 patches (suficiência).</p>
+    <div class="tabela"><table>
+      <thead><tr><th></th><th class="num">Pulmão (78)</th><th class="num">Próstata (300)</th></tr></thead>
+      <tbody>
+        <tr class="vence"><td>Remoção: queda tirando 10% de maior atenção − tirando 10% sorteados</td><td class="num"><b>+0,120</b> (0,052 a 0,195)</td><td class="num"><b>+0,203</b> (0,173 a 0,234)</td></tr>
+        <tr><td>Classe muda tirando 10%: atenção / sorteio</td><td class="num">14,1% / 0%</td><td class="num">39,3% / 3,3%</td></tr>
+        <tr><td>Suficiência: P(classe) só com os 20 de maior atenção − só com 20 sorteados</td><td class="num"><b>−0,091</b> (−0,171 a −0,011)</td><td class="num"><b>+0,188</b> (0,165 a 0,211)</td></tr>
+        <tr><td>Separando pela classe prevista (depois, sem critério): suficiência</td><td class="num">escamoso +0,093; adenocarcinoma −0,276</td><td class="num">com câncer +0,196; ISUP 0 (8) −0,089</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Tirar os patches de maior atenção derruba a decisão; tirar a mesma quantidade sorteada quase não muda nada. A suficiência falha no pulmão por causa das lâminas previstas como adenocarcinoma. Hipótese: o MIL decide como um detector da classe "positiva" (escamoso, câncer), e a outra classe é a ausência dessa evidência; nessas lâminas, os patches de maior atenção são os mais parecidos com escamoso, o que bate com o descritor ter chamado de normal ou escamoso as regiões de maior atenção em 18 de 39 lâminas de adenocarcinoma.</p>
+    <span class="selo ok">remoção: passou nos dois</span> <span class="selo ok">suficiência, próstata: passou</span> <span class="selo falha">suficiência, pulmão: não passou</span>
+  </div>
+
+  <div class="painel">
+    <h3>O mesmo teste com o GAT-MIL padronizado (próstata)</h3>
+    <p>Os pré-laudos da próstata usam o GAT-MIL com embeddings padronizados por centro, e as regiões vêm da atenção dele. Mesma pergunta e mesmos critérios, com o grafo refeito só com os patches que ficam. Modelo retreinado com a mesma receita (classe igual à da rodada dos pré-laudos em 259 de 300; atenção com correlação 0,95).</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Próstata, 300 biópsias</th><th class="num">ABMIL</th><th class="num">GAT-MIL padronizado</th></tr></thead>
+      <tbody>
+        <tr class="vence"><td>Remoção: 10% de maior atenção − sorteados</td><td class="num">+0,203</td><td class="num"><b>+0,310</b> (0,268 a 0,356)</td></tr>
+        <tr><td>Classe muda tirando 10%: atenção / sorteio</td><td class="num">39% / 3%</td><td class="num">55% / 5%</td></tr>
+        <tr><td>Suficiência: só os 20 de maior atenção − 20 sorteados</td><td class="num">+0,188</td><td class="num"><b>+0,124</b> (0,086 a 0,160)</td></tr>
+        <tr><td>Previstas como ISUP 0 (35): remoção; suficiência</td><td class="num">−0,263; −0,089 (8)</td><td class="num">−0,207; −0,305</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">A atenção do GAT-MIL sustenta a decisão, e mais fortemente na remoção que a do ABMIL. A exceção é a mesma: nas biópsias previstas como benignas, os patches de maior atenção são os mais suspeitos de câncer, não a evidência de benignidade.</p>
+    <span class="selo ok">remoção e suficiência: passaram</span>
+  </div>
+
+  <div class="painel">
+    <h3>Teste nas 57 lâminas: acurácia balanceada nas 4 classes (rótulo oficial)</h3>
+    <div class="barras">
+      <div class="barra"><span class="nome">Hierárquico + negativos (sem critério)</span><span class="trilho"><i style="width:51.8%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,518</span></div>
+      <div class="barra"><span class="nome"><b>Classificador + negativos</b></span><span class="trilho"><i style="width:50.5%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,505</span></div>
+      <div class="barra"><span class="nome">Classificador</span><span class="trilho"><i style="width:45.5%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,455</span></div>
+      <div class="barra cinza"><span class="nome">Modelo de linguagem decide (E0)</span><span class="trilho"><i style="width:42.3%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,423</span></div>
+      <div class="barra cinza"><span class="nome">Regra de proporção (22/10)</span><span class="trilho"><i style="width:30.7%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">0,307</span></div>
+    </div>
+    <span class="legenda-acaso">acaso (0,25, 4 classes)</span>
+    <div class="tabela"><table>
+      <thead><tr><th></th><th class="num">Benigno</th><th class="num">Atípico</th><th class="num">DCIS</th><th class="num">IC</th><th class="num">Total</th><th>Critério</th></tr></thead>
+      <tbody>
+        <tr><td>Modelo de linguagem decide (E0)</td><td class="num">1/20</td><td class="num">1/17</td><td class="num">8/8</td><td class="num">7/12</td><td class="num">17/57</td><td><span class="selo ref">referência</span></td></tr>
+        <tr><td>Regra de proporção (22/10)</td><td class="num">7/20</td><td class="num">5/17</td><td class="num">0/8</td><td class="num">7/12</td><td class="num">19/57</td><td><span class="selo falha">não passou</span></td></tr>
+        <tr><td>Classificador</td><td class="num">7/20</td><td class="num">3/17</td><td class="num">3/8</td><td class="num">11/12</td><td class="num">24/57</td><td><span class="selo ref">sem critério nesta versão</span></td></tr>
+        <tr class="vence"><td><b>Classificador + negativos benignos</b></td><td class="num">10/20</td><td class="num">6/17</td><td class="num">2/8</td><td class="num">11/12</td><td class="num"><b>29/57</b></td><td><span class="selo ok">passou, por pouco</span></td></tr>
+        <tr><td>Hierárquico + negativos</td><td class="num">10/20</td><td class="num">9/17</td><td class="num">1/8</td><td class="num">11/12</td><td class="num">31/57</td><td><span class="selo ref">sem critério</span></td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Cada célula: lâminas certas / lâminas daquela classe (20 + 17 + 8 + 12 = 57). Linhas do modelo de linguagem e da regra de 22/10: as mesmas previsões, repontuadas com o rótulo oficial. Classificadores: refeitos com o rótulo oficial em 07/11. Intervalo de 95% do classificador com negativos: 0,40–0,63. O critério comparava com a versão de 06/11 repontuada (0,491).</p>
+  </div>
+
+  <div class="grade dois">
+    <div class="painel">
+      <h3>Lâminas benignas como exemplos negativos</h3>
+      <p>O rótulo de uma lâmina do BRACS é o da lesão mais grave: numa lâmina benigna, nenhum patch é atípico nem maligno. Até 500 patches de cada uma das 34 lâminas benignas do treino (N, PB, UDH) entram no descritor como "benigno", sem usar os do mesmo paciente ao descrever uma lâmina.</p>
+      <div class="barras">
+        <div class="barra cinza"><span class="nome">Antes</span><span class="trilho"><i style="width:20.6%"></i></span><span class="valor">20,6%</span></div>
+        <div class="barra"><span class="nome">Com negativos</span><span class="trilho"><i style="width:6.6%"></i></span><span class="valor">6,6%</span></div>
+      </div>
+      <p class="nota">Fração média de patches classificados como DCIS ou IC nas 20 lâminas benignas do teste. Por patch, nas regiões de validação: benigno 84% → 88%, maligno 90% → 87%.</p>
+      <span class="selo ok">passou</span>
+    </div>
+    <div class="painel">
+      <h3>Versões binárias (rótulo oficial, com negativos)</h3>
+      <div class="tabela"><table>
+        <thead><tr><th></th><th class="num">AUC</th><th class="num">Limiar 0,5</th><th class="num">Sens. ≥ 0,90 no treino</th></tr></thead>
+        <tbody>
+          <tr><td>Maligno × resto</td><td class="num">0,83</td><td class="num">sens. 13/20, espec. 30/37</td><td class="num">sens. 20/20, espec. 0/37</td></tr>
+          <tr><td>Suspeito (FEA, ADH, DCIS, IC) × benigno</td><td class="num">0,66</td><td class="num">sens. 26/37, espec. 10/20</td><td class="num">sens. 35/37, espec. 5/20</td></tr>
+        </tbody>
+      </table></div>
+      <p class="nota">Critério: sensibilidade ≥ 0,90 e especificidade ≥ 0,40, com o limiar escolhido no treino. O maligno se separa bem do resto, mas o limiar do treino não transfere para o teste; dizer sempre "não maligno" já acerta 37/57. Lesões atípicas ocupam pouca área, e os números da lâmina inteira as diluem.</p>
+      <span class="selo falha">não passou</span>
+    </div>
+    <div class="painel">
+      <h3>Abstenção: "não sei" (agrupamento antigo)</h3>
+      <p>Quando a maior probabilidade fica abaixo de um limiar escolhido no treino, a lâmina vai direto ao patologista.</p>
+      <div class="tabela"><table>
+        <thead><tr><th></th><th class="num">Lâminas</th><th class="num">Acurácia balanceada</th></tr></thead>
+        <tbody>
+          <tr><td>Todas</td><td class="num">57</td><td class="num">0,424</td></tr>
+          <tr class="vence"><td>Com decisão</td><td class="num">32 (56%)</td><td class="num">0,478</td></tr>
+        </tbody>
+      </table></div>
+      <p class="nota">A curva de acerto por cobertura oscila entre 0,41 e 0,50, sem subir de forma regular: 57 lâminas são poucas para concluir.</p>
+      <span class="selo parcial">passou, ganho pequeno</span>
+    </div>
+    <div class="painel">
+      <h3>Comparação com o publicado (3 classes)</h3>
+      <div class="barras">
+        <div class="barra cinza"><span class="nome">UNI + ABMIL (395 lâminas de treino)</span><span class="trilho"><i style="width:68.7%"></i><span class="acaso" style="left:33.3%"></span></span><span class="valor">0,687</span></div>
+        <div class="barra cinza"><span class="nome">ResNet-50 + ABMIL (395)</span><span class="trilho"><i style="width:55.2%"></i><span class="acaso" style="left:33.3%"></span></span><span class="valor">0,552</span></div>
+        <div class="barra"><span class="nome">Hierárquico + negativos (79), sem critério</span><span class="trilho"><i style="width:56%"></i><span class="acaso" style="left:33.3%"></span></span><span class="valor">0,560</span></div>
+        <div class="barra"><span class="nome">Classificador + negativos (79)</span><span class="trilho"><i style="width:51.8%"></i><span class="acaso" style="left:33.3%"></span></span><span class="valor">0,518</span></div>
+        <div class="barra e"><span class="nome">Modelo de linguagem decide</span><span class="trilho"><i style="width:37%"></i><span class="acaso" style="left:33.3%"></span></span><span class="valor">0,370</span></div>
+      </div>
+      <span class="legenda-acaso">acaso (0,33, 3 classes)</span>
+      <p class="nota">Comparação indicativa, não direta: o artigo do UNI testa nas 87 lâminas oficiais; aqui são 57 delas. Referência: Chen et al., <i>Nature Medicine</i>, 2024, Extended Data Table 19.</p>
+    </div>
+  </div>
+
+  <div class="painel">
+    <h3>Concentração espacial dos patches suspeitos</h3>
+    <p>Hipótese vinda dos mapas de calor abaixo: numa lesão, os patches suspeitos formam um foco; numa lâmina benigna, os falsos positivos ficam espalhados. Quatro números a mais por lâmina, com os 8 vizinhos mais próximos de cada patch: o agrupamento dos suspeitos, dos malignos e dos atípicos, e a fração de suspeitos em foco.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Benigno × atípico (37 lâminas)</th><th class="num">AUC</th></tr></thead>
+      <tbody>
+        <tr><td>12 atributos</td><td class="num">0,58</td></tr>
+        <tr><td>12 + 4 espaciais</td><td class="num">0,61</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Critério: ganho de pelo menos 0,05 e AUC de pelo menos 0,70. A hipótese não se sustentou: nas lâminas benignas, os suspeitos também ficam agrupados, cerca de 4 vezes acima do acaso, quase como nas atípicas (4,5). Os falsos positivos vêm em regiões inteiras que o descritor confunde, e os dois mapas que sugeriram a ideia não representavam o conjunto.</p>
+    <span class="selo falha">não passou</span>
+  </div>
+
+  <div class="painel">
+    <h3>Resposta em conjunto: "benigno ou atípico"</h3>
+    <p>Quando o classificador não separa benigno de atípico, responde "benigno ou atípico" em vez de chutar. Medem-se juntos o acerto do conjunto (a classe real está na resposta?) e as respostas exatas (uma classe só), para o recuo não virar resposta vaga sempre.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Nas 57 lâminas</th><th class="num">Acerto do conjunto</th><th class="num">Respostas exatas</th></tr></thead>
+      <tbody>
+        <tr><td>Sem recuo (3 classes)</td><td class="num">0,53</td><td class="num">1,00</td></tr>
+        <tr><td>Com recuo</td><td class="num">0,70</td><td class="num">0,44</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Critério: acerto do conjunto ≥ 0,75 e respostas exatas ≥ 0,50. A margem de recuo, escolhida no treino, ficou no máximo, e a resposta virou quase "maligno × não maligno": 26 das 37 benignas e atípicas recebem "benigno ou atípico"; 6 de 20 malignas também.</p>
+    <span class="selo falha">não passou</span>
+  </div>
+
+  <h3>Mapas de calor: onde o sistema viu cada coisa</h3>
+  <p class="nota">Primeira lâmina de cada classe real do teste, sem escolha por acerto. Esquerda: classe prevista de cada patch. Direita: probabilidade de não ser benigno. Só 2.000 patches de cada lâmina foram classificados, por isso o aspecto pontilhado. Descritor das regiões, sem os negativos, e classificador da lâmina de 06/11 (agrupamento antigo); os rótulos reais das quatro lâminas não mudam com a correção.</p>
+  <div class="figuras mapas">
+    <figure><img src="img/mapa_BRACS_1284.jpg" alt="Mapa de calor de uma lâmina de carcinoma invasivo, com patches de alta probabilidade formando um bloco contínuo" loading="lazy"><figcaption><span class="selo ok">certo</span> BRACS_1284, carcinoma invasivo. Os patches suspeitos formam um bloco contínuo (classificador: IC, 0,997).</figcaption></figure>
+    <figure><img src="img/mapa_BRACS_1330.jpg" alt="Mapa de calor de uma lâmina benigna, com patches de alta probabilidade espalhados pelo tecido" loading="lazy"><figcaption><span class="selo falha">errado</span> BRACS_1330, benigna. Os falsos positivos ficam espalhados, sem foco (classificador: atípico, 0,37).</figcaption></figure>
+    <figure><img src="img/mapa_BRACS_1283.jpg" alt="Mapa de calor de uma lâmina de DCIS" loading="lazy"><figcaption><span class="selo ok">certo</span> BRACS_1283, DCIS (classificador: DCIS, confiança baixa, 0,39).</figcaption></figure>
+    <figure><img src="img/mapa_BRACS_1003691.jpg" alt="Mapa de calor de uma lâmina atípica" loading="lazy"><figcaption><span class="selo falha">errado</span> BRACS_1003691, atípica (classificador: DCIS, 0,41; atípico vem logo atrás, com 0,37).</figcaption></figure>
+  </div>
+
+  <div class="par">
+    <div class="desafios">
+      <h3>Problemas e desafios</h3>
+      <ul class="limpa">
+        <li><b>Benigno × atípico é o ponto mais difícil:</b> na triagem, os dois quase não se separam. A lesão atípica ocupa pouca área, e as médias da lâmina a diluem.</li>
+        <li><b>Tratar um erro cria outro:</b> os negativos cortaram os falsos malignos, mas o DCIS caiu de 3 para 2 de 8 lâminas. Cada versão acerta classes diferentes.</li>
+        <li><b>Rótulo errado por semanas:</b> o UDH, benigno no BRACS, estava agrupado como atípico. A correção mudou os números, mas não a conclusão; parte do ganho no atípico de 22/10 vinha dele.</li>
+        <li><b>Poucos dados de lâmina:</b> 79 lâminas de treino contra as 395 do BRACS. Baixar as 379 restantes leva cerca de 40 horas.</li>
+        <li><b>Teste reaproveitado:</b> as 57 lâminas já foram usadas em vários testes. Nada foi ajustado nelas, mas repetir comparações aumenta a chance de um ganho por acaso. A confirmação deve usar as 30 lâminas de teste ainda não usadas.</li>
+        <li><b>Limiares em poucas lâminas superajustam:</b> a regra de proporção de 22/10 chegou a 0,87 nas 18 lâminas de desenvolvimento e caiu para 0,35 no teste.</li>
+        <li><b>Hardware compartilhado:</b> com RAM de 15 GB e GPU de 4 GB, os testes rodam um de cada vez, com limite de memória; lâminas grandes estouram até a geração das figuras.</li>
+      </ul>
+    </div>
+    <div class="exemplo painel">
+      <h3>Exemplo de resultado: campos enviados ao modelo de linguagem (BRACS_264, classificador de 06/11)</h3>
+      <pre class="saida">Classe sugerida pelo classificador: benigno
+Probabilidades: benigno 0.40, atípico 0.33,
+  DCIS 0.15, carcinoma invasivo 0.12
+Confiança: baixa
+Proporção entre os 2000 patches:
+  benigno 73.3% · atípico 13.9%
+  DCIS 8.0% · carcinoma invasivo 4.8%
+Regiões a conferir:
+  [3584,59904] ductal carcinoma in situ 1.00
+  [4096,62464] invasive carcinoma 1.00
+  [43008,56832] atypical epithelial lesion</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ESTÁGIO 4 -->
+<section class="estagio" id="e4">
+  <div class="cab"><span class="marca">4</span><h2>Agregação</h2><p>Junta os 32 textos num único prompt, com as contagens por categoria e as imagens de 3 patches âncora.</p></div>
+  <div class="grade">
+    <div class="painel">
+      <h3>Exemplo de cabeçalho (BRACS_748)</h3>
+      <p class="num" style="font-size:.85rem;padding:12px;background:var(--vidro);border-radius:8px;white-space:pre-wrap;max-width:none">Patches analisados: 32
+Patches por categoria: benigno 0, atipico 0, maligno 32
+  - ductal carcinoma in situ: 26/32 (81%)
+  - invasive carcinoma: 6/32 (19%)
+Componente invasivo: PRESENTE (3 patches, P ≥ 0,90)</p>
+    </div>
+    <div class="painel">
+      <h3>Regra do componente invasivo</h3>
+      <p>Na prática, um componente invasivo define o diagnóstico mesmo sendo minoria dos patches. Sem essa regra, o modelo de linguagem seguia a maioria. Com ela, o prompt diz se há componente invasivo (pelo menos 2 patches de carcinoma invasivo com probabilidade ≥ 0,90) e lembra que ele define o diagnóstico.</p>
+    </div>
+  </div>
+  <div class="par">
+    <div class="desafios">
+      <h3>Problemas e desafios</h3>
+      <ul class="limpa">
+        <li>O limiar da regra (2 patches, probabilidade ≥ 0,90) foi fixado por critério, sem ajuste. Ele marcou componente invasivo em 10 das 18 lâminas de desenvolvimento, quando só 5 eram de carcinoma invasivo.</li>
+        <li>A regra propaga os falsos positivos do descritor: lâminas atípicas com patches "invasivos" passam a ser apresentadas como carcinoma invasivo.</li>
+        <li>As contagens por categoria dependem dos 32 patches escolhidos pelo roteador, que puxa o que parece suspeito; a proporção de patches não representa a lâmina inteira.</li>
+      </ul>
+    </div>
+    <div class="exemplo painel">
+      <h3>Exemplo de resultado (BRACS_1641, tecido normal)</h3>
+      <pre class="saida">Patches analisados: 32
+Patches por categoria: benigno 30, atipico 2, maligno 0
+  - benign tissue: 30/32 patches (94%)
+  - atypical epithelial lesion: 2/32 patches (6%)
+Componente invasivo: não detectado (critério: ≥ 2 patches
+com invasive carcinoma e probabilidade ≥ 0.90; encontrados 0).</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ESTÁGIO 5 -->
+<section class="estagio" id="e5">
+  <div class="cab eo"><span class="marca">5</span><h2>Síntese: o pré-laudo</h2><p>Um modelo de linguagem local (Gemma 3 4B, via Ollama) lê o prompt e as imagens e escreve o rascunho, com impressão diagnóstica, grau de confiança, regiões para revisão e limitações. O rótulo real nunca vai para o modelo.</p></div>
+  <div class="grade">
+    <div class="painel">
+      <h3>Teste da regra, nas 15 lâminas fora das usadas para criá-la</h3>
+      <div class="barras">
+        <div class="barra"><span class="nome">Com a regra</span><span class="trilho"><i style="width:60%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">9/15</span></div>
+        <div class="barra cinza"><span class="nome">Sem a regra</span><span class="trilho"><i style="width:33.3%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">5/15</span></div>
+      </div>
+      <span class="legenda-acaso">acaso (25%, 4 classes)</span>
+      <div class="tabela"><table>
+        <thead><tr><th></th><th class="num">Benigno</th><th class="num">Atípico</th><th class="num">DCIS</th><th class="num">IC</th><th class="num">Total</th></tr></thead>
+        <tbody>
+          <tr><td>Sem a regra</td><td class="num">1/6</td><td class="num">0/4</td><td class="num">1/1</td><td class="num">3/4</td><td class="num">5/15</td></tr>
+          <tr class="vence"><td>Com a regra</td><td class="num">4/6</td><td class="num">0/4</td><td class="num">1/1</td><td class="num">4/4</td><td class="num"><b>9/15</b></td></tr>
+        </tbody>
+      </table></div>
+      <p class="nota">Cada célula: lâminas certas / lâminas daquela classe, com o rótulo oficial. O total é a soma das colunas.</p>
+      <span class="selo ok">passou: IC 3 → 4 de 4; benignas 1 → 4 de 6</span>
+    </div>
+    <div class="painel destaque">
+      <h3>Teste externo: 57 lâminas do conjunto de teste oficial</h3>
+      <span class="selo parcial">passou no critério por pouco · 57 lâminas de 31 pacientes nunca usados</span>
+      <div class="barras">
+        <div class="barra"><span class="nome">Com a regra</span><span class="trilho"><i style="width:29.8%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">17/57</span></div>
+        <div class="barra cinza"><span class="nome">Sem a regra</span><span class="trilho"><i style="width:24.6%"></i><span class="acaso" style="left:25%"></span></span><span class="valor">14/57</span></div>
+      </div>
+      <span class="legenda-acaso">acaso (25%, 4 classes)</span>
+      <div class="tabela"><table>
+        <thead><tr><th></th><th class="num">Benigno</th><th class="num">Atípico</th><th class="num">DCIS</th><th class="num">IC</th><th class="num">Total</th></tr></thead>
+        <tbody>
+          <tr><td>Sem a regra</td><td class="num">1/20</td><td class="num">1/17</td><td class="num">7/8</td><td class="num">5/12</td><td class="num">14/57</td></tr>
+          <tr class="vence"><td>Com a regra</td><td class="num">1/20</td><td class="num">1/17</td><td class="num">8/8</td><td class="num">7/12</td><td class="num"><b>17/57</b></td></tr>
+          <tr><td>Respostas malignas</td><td class="num" colspan="4"></td><td class="num">55/57</td></tr>
+        </tbody>
+      </table></div>
+      <p class="nota">Cada célula: lâminas certas / lâminas daquela classe, com o rótulo oficial (20 + 17 + 8 + 12 = 57). Com a regra: 1 + 1 + 8 + 7 = 17 certas.</p>
+      <p class="nota">A regra ajuda no carcinoma invasivo (5 → 7 de 12), mas a pipeline chama de maligno 55 das 57 lâminas. O ganho nas benignas visto no desenvolvimento não se repetiu. O problema vem antes do modelo de linguagem: o roteador busca o que parece suspeito e o descritor quase nunca diz "atípico".</p>
+    </div>
+  </div>
+  <div class="painel destaque">
+    <h3>O modelo de linguagem só redige</h3>
+    <p>A classe passa a vir do classificador da lâmina, e o modelo recebe campos fixos: classe, probabilidades, confiança, proporções e regiões. Uma checagem automática confere o texto: a classe é a sugerida? Os números e as coordenadas citados existem na evidência? A comparação é com os 57 pré-laudos antigos.</p>
+    <div class="tabela"><table>
+      <thead><tr><th></th><th class="num">Só redige (novo)</th><th class="num">Modelo decide (antigo)</th></tr></thead>
+      <tbody>
+        <tr><td>Classe do texto igual à sugerida</td><td class="num">57/57</td><td class="num">—</td></tr>
+        <tr class="vence"><td>Números sem sustentação</td><td class="num">0 de 791</td><td class="num">11 de 523 (2,1%)</td></tr>
+        <tr><td>Coordenadas inventadas</td><td class="num">0 de 175</td><td class="num">2 de 178</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">57 lâminas do teste. A checagem não detecta achados morfológicos inventados; na leitura de 3 textos, não houve nenhum. O texto quase só reorganiza os campos. A classe veio do classificador de 06/11 (agrupamento antigo).</p>
+    <span class="selo ok">passou</span>
+  </div>
+
+  <div class="painel destaque">
+    <h3>Pré-laudo com o MIL: classe do MIL, regiões de maior atenção</h3>
+    <p>A classe e a confiança vêm do MIL; as regiões citadas são os 3 patches de maior atenção, os que mais pesaram na decisão, cada um com a descrição do descritor. O modelo de linguagem só redige.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>57 pré-laudos</th><th class="num">Com o MIL</th><th class="num">Modelo decide (antigo)</th></tr></thead>
+      <tbody>
+        <tr><td>Classe do texto igual à sugerida</td><td class="num">57/57</td><td class="num">—</td></tr>
+        <tr><td>Números sem sustentação</td><td class="num">0 de 791</td><td class="num">11 de 523</td></tr>
+        <tr><td>Coordenadas inventadas</td><td class="num">0 de 267</td><td class="num">2 de 178</td></tr>
+        <tr class="vence"><td>Classe final certa</td><td class="num">38/57</td><td class="num">17/57</td></tr>
+        <tr><td>Regiões citadas dentro da lesão anotada</td><td class="num">18 de 93</td><td class="num">7 de 93 (descritor)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Passou no critério fixado antes (classe igual em ≥ 90% e números sem sustentação não maiores que nos antigos). Regiões dentro da lesão: lâminas atípicas, DCIS e IC com anotação; as anotações cobrem só ~2% dos patches.</p>
+    <span class="selo ok">passou</span>
+    <p><b>Problema que a checagem automática não pega:</b> em 15 lâminas, o MIL sugere benigno, mas regiões de maior atenção são descritas pelo descritor como atípicas ou malignas. Só 1 dos 15 textos aponta a contradição; os outros a justificam. Exemplo (BRACS_1003691, atípica):</p>
+    <pre class="saida">Benigno [...] A presença de um patch de ductal carcinoma
+in situ (1.00) com alta probabilidade (0.99) influenciou
+a sugestão de benignidade.</pre>
+    <p class="nota">Os números estão todos certos, mas o raciocínio não: um patch de DCIS não sustenta benignidade. Isso reforça a leitura dos textos por patologista e pede uma regra nos campos que sinalize a contradição.</p>
+  </div>
+
+  <div class="painel destaque">
+    <h3>Aviso de discordância pronto nos campos (pulmão e próstata)</h3>
+    <p>Quando uma região de maior atenção contradiz a classe sugerida, o texto quase nunca dizia isso, mesmo com a regra nas instruções (pulmão 3 de 27, próstata 1 de 35). Aqui a discordância é calculada por código e entra nos campos como uma linha pronta ("AVISO: a região [x,y] foi descrita como … o que discorda do tipo sugerido …"); o modelo só precisa reproduzi-la numa seção própria. Mesmos documentos, campos e modelo dos testes anteriores. Critérios fixados antes: aponta em ≥ 90% dos documentos com região discordante; falso alarme ≤ 10% nos documentos sem discordância; classe, números e coordenadas continuam fiéis.</p>
+    <div class="tabela"><table>
+      <thead><tr><th></th><th class="num">Pulmão antes</th><th class="num">Pulmão com aviso</th><th class="num">Próstata antes</th><th class="num">Próstata com aviso</th></tr></thead>
+      <tbody>
+        <tr class="vence"><td>Documentos com região discordante que apontam</td><td class="num">5/27</td><td class="num"><b>27/27</b></td><td class="num">11/35</td><td class="num"><b>35/35</b></td></tr>
+        <tr><td>Regiões discordantes apontadas</td><td class="num">12/64</td><td class="num">64/64</td><td class="num">23/75</td><td class="num">75/75</td></tr>
+        <tr><td>Falso alarme sem discordância</td><td class="num">3/51</td><td class="num">0/51</td><td class="num">8/25</td><td class="num">0/25</td></tr>
+        <tr><td>Classe igual; números e coordenadas inventados</td><td class="num">78/78; 0</td><td class="num">78/78; 0</td><td class="num">60/60; 0</td><td class="num">60/60; 0</td></tr>
+        <tr><td>Aviso em região que não discorda (contado depois)</td><td class="num">—</td><td class="num">1 doc.</td><td class="num">—</td><td class="num">9 docs.</td></tr>
+        <tr><td>Classe da região trocada (contado depois)</td><td class="num">1 doc.</td><td class="num">0</td><td class="num">0</td><td class="num">3 docs.</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Com o aviso pronto, o texto aponta todas as regiões discordantes nos dois órgãos e não avisa sem motivo nos documentos sem discordância. Lendo os textos depois, apareceu o que o critério de falso alarme não mede: dentro de documentos que têm aviso, o modelo às vezes copia o formato para regiões que não discordam (na próstata, 9 de 60, a maioria Gleason 3 ou 4 em biópsias com ISUP ≥ 1) e, em 3 deles, troca a classe da região. O modelo reproduz bem, mas não deve decidir o que é discordante: o próximo passo é inserir a seção de avisos por código e conferir o par coordenada–classe na checagem.</p>
+    <span class="selo ok">passou nos 3 critérios, nos dois órgãos</span>
+  </div>
+
+  <div class="painel destaque">
+    <h3>Avisos colados por código e pré-laudo em inglês (pulmão e próstata)</h3>
+    <p>O modelo continua redigindo o pré-laudo, mas o conteúdo da seção de avisos é substituído por código pelas linhas calculadas, e a checagem passa a conferir o par coordenada–classe de cada região citada. A mesma configuração foi rodada em inglês (campos traduzidos por código, instruções em inglês). Mesmos documentos e modelo. Critérios fixados antes: 0 trocas de classe, 0 avisos em região que não discorda, todas as regiões discordantes na seção, 0 números e coordenadas inventados; em inglês, também a classe igual em ≥ 90%.</p>
+    <div class="tabela"><table>
+      <thead><tr><th></th><th class="num">Pulmão PT</th><th class="num">Pulmão EN</th><th class="num">Próstata PT</th><th class="num">Próstata EN</th></tr></thead>
+      <tbody>
+        <tr><td>Classe igual à sugerida</td><td class="num">78/78</td><td class="num">78/78</td><td class="num">60/60</td><td class="num">60/60</td></tr>
+        <tr><td>Regiões discordantes na seção</td><td class="num">64/64</td><td class="num">64/64</td><td class="num">75/75</td><td class="num">75/75</td></tr>
+        <tr class="vence"><td>Docs. com aviso em região que não discorda (texto do modelo → colado)</td><td class="num">1 → <b>0</b></td><td class="num">4 → <b>0</b></td><td class="num">9 → <b>0</b></td><td class="num">10 → <b>0</b></td></tr>
+        <tr class="vence"><td>Docs. com classe da região trocada (texto do modelo → colado)</td><td class="num">0 → 0</td><td class="num">0 → 0</td><td class="num">3 → <b>0</b></td><td class="num">3 → <b>0</b></td></tr>
+        <tr><td>Números não sustentados</td><td class="num">0/891</td><td class="num">0/574</td><td class="num">0/408</td><td class="num">0/388</td></tr>
+        <tr><td>Coordenadas inventadas</td><td class="num">0/274</td><td class="num"><b>1/284</b></td><td class="num">0/200</td><td class="num">0/276</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Os avisos espúrios e as trocas de classe estavam todos no que o modelo escrevia na seção de avisos e somem com a colagem, nos dois idiomas. A única falha foi em inglês, no pulmão: num documento, o modelo copiou uma coordenada errada na lista de regiões para revisão ([22815,28392] virou [22815,28913]); a checagem acusa, mas o critério pedia zero. Essa lista também pode ser montada por código. Na próstata, os campos ainda vêm do ABMIL sem padronização por centro (quase tudo ISUP 3).</p>
+    <span class="selo ok">português: passou nos dois órgãos</span> <span class="selo ok">inglês, próstata: passou</span> <span class="selo falha">inglês, pulmão: não passou (1 coordenada)</span>
+  </div>
+
+  <div class="painel destaque">
+    <h3>O aviso marca os erros do MIL? E a lista de regiões colada por código</h3>
+    <p>O aviso de discordância é calculado por código a partir das 3 regiões de maior atenção, então dá para medi-lo em todas as lâminas de teste: o MIL erra mais quando há aviso? Pulmão: 78 lâminas, ABMIL. Próstata: 300 biópsias, GAT-MIL com embeddings padronizados por centro (o melhor modelo na troca de centro), erro = câncer trocado por benigno ou o contrário. Critério fixado antes: taxa de erro maior com aviso, Fisher unilateral p &lt; 0,05.</p>
+    <div class="tabela"><table>
+      <thead><tr><th></th><th class="num">Pulmão (78; 4 erros)</th><th class="num">Próstata (300; 35 erros)</th></tr></thead>
+      <tbody>
+        <tr class="vence"><td>Erro com aviso / sem aviso</td><td class="num"><b>4/27 / 0/51</b></td><td class="num"><b>16% / 6%</b> (27/169, 8/131)</td></tr>
+        <tr><td>Erros que têm aviso</td><td class="num">4 de 4</td><td class="num">27 de 35</td></tr>
+        <tr><td>Fisher unilateral; risco relativo</td><td class="num">p = 0,012; —</td><td class="num">p = 0,006; 2,6 (1,3 a 7,5)</td></tr>
+        <tr><td>Erros pegos pela confiança não alta</td><td class="num">1 de 4</td><td class="num">28 de 35</td></tr>
+        <tr><td>Erros pegos por aviso ou confiança não alta</td><td class="num">4 de 4</td><td class="num">34 de 35</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">No pulmão, 3 dos 4 erros têm confiança alta e só o aviso os marca; com 4 erros, o resultado é frágil. Na próstata o aviso é frequente (169 de 300) e soma com a confiança. Na mesma rodada, a lista "Regiões para revisão prioritária" também passou a ser colada por código: no pulmão, 0 coordenadas inventadas em português (0 de 439) e em inglês (0 de 331), e o critério passou nos dois idiomas. O GAT-MIL padronizado, retreinado guardando a atenção (kappa 0,57; antes 0,61, o treino na GPU não é determinístico), não colapsa em ISUP 3, e a atenção dele cai no câncer em 227 de 250 biópsias (ABMIL: 190). Os pré-laudos da próstata com ele, avisos e regiões colados, passam no critério: classe igual em 60/60 (português) e 56/60 (inglês; nos 4 restantes a impressão escrita está certa e quem errou foi a extração da classe; lendo a classe por código na impressão, 60/60), 0 avisos espúrios, 0 trocas de classe e 0 coordenadas inventadas (0 de 262 e 0 de 247). Antes da colagem, o modelo criou avisos em regiões que não discordam em 7 e 14 documentos.</p>
+    <span class="selo ok">aviso × erro: passou nos dois órgãos</span> <span class="selo ok">regiões coladas, pulmão: passou em português e inglês</span> <span class="selo ok">próstata com GAT-MIL: passou nos dois idiomas</span>
+  </div>
+
+  <div class="painel">
+    <h3>Outro modelo de linguagem: Llama 3.2 3B</h3>
+    <p>A mesma configuração final (campos, instruções, avisos e regiões colados por código), trocando só o modelo que redige, para saber se a fidelidade vem da colagem ou do Gemma. Critério fixado antes, em cada órgão e idioma: classe igual em ≥ 90% e as mesmas condições de antes.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Llama 3.2 3B</th><th class="num">Pulmão PT</th><th class="num">Pulmão EN</th><th class="num">Próstata PT</th><th class="num">Próstata EN</th></tr></thead>
+      <tbody>
+        <tr><td>Classe extraída = sugerida</td><td class="num">57/78</td><td class="num">78/78</td><td class="num">60/60</td><td class="num">60/60</td></tr>
+        <tr class="vence"><td>Regiões discordantes na seção de avisos</td><td class="num">64/64</td><td class="num">64/64</td><td class="num">55/55</td><td class="num">55/55</td></tr>
+        <tr><td>Aviso espúrio; classe trocada (documentos)</td><td class="num">1; 0</td><td class="num">0; 0</td><td class="num">0; 0</td><td class="num">0; 0</td></tr>
+        <tr><td>Números sem sustentação; coordenadas inventadas</td><td class="num">0; 0</td><td class="num">0; 0</td><td class="num">0; 0</td><td class="num">1; 0</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">Os avisos, a classe das regiões e as coordenadas ficam certos com o Llama também. As duas falhas vêm de outro lugar: em português o Llama escreve os títulos de seção com ### ou em negrito, e tanto a colagem quanto a leitura da classe procuram o título exato; lendo a impressão, a classe está certa nos 276 laudos. Em inglês na próstata, ele escreveu um número calculado (69% = 100% − 31%), que a checagem pegou. Lição: as seções críticas devem ser montadas pelo código, não localizadas no texto do modelo.</p>
+    <span class="selo ok">pulmão EN e próstata PT: passou</span> <span class="selo falha">pulmão PT e próstata EN: não passou</span>
+  </div>
+
+  <div class="painel destaque">
+    <h3>Seções montadas pelo código e template sem modelo de linguagem</h3>
+    <p>Pergunta da revisão: o que o modelo de linguagem acrescenta a um template, e quantos erros comete escrevendo livremente? No template, o código monta o laudo inteiro. No braço com modelo, o código monta impressão, avisos, regiões e limitações, e o modelo escreve só o parágrafo de resumo; a checagem é feita só nesse parágrafo. Critério fixado antes, em 8 casos (modelo × órgão × idioma): 0 números sem sustentação, 0 coordenadas inventadas, 0 classes trocadas, 0 avisos em região concordante e classe lida certa em 100%.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>Parágrafo livre</th><th class="num">Pulmão PT</th><th class="num">Pulmão EN</th><th class="num">Próstata PT</th><th class="num">Próstata EN</th></tr></thead>
+      <tbody>
+        <tr class="vence"><td>Template: erros (todas as medidas)</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr>
+        <tr><td>Gemma: números sem sustentação (documentos)</td><td class="num">5 (3)</td><td class="num">5 (3)</td><td class="num">5 (5)</td><td class="num">0 (0)</td></tr>
+        <tr><td>Llama: números sem sustentação (documentos)</td><td class="num">27 (7)</td><td class="num">26 (7)</td><td class="num">36 (9)</td><td class="num">18 (6)</td></tr>
+        <tr><td>Aviso em região concordante, Gemma; Llama (limite superior)</td><td class="num">12; 16</td><td class="num">22; 11</td><td class="num">24; 3</td><td class="num">31; 5</td></tr>
+        <tr><td>Classe trocada; classe lida certa</td><td class="num">0; 78/78</td><td class="num">0; 78/78</td><td class="num">0; 60/60</td><td class="num">0; 60/60</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">A classe fica certa em 552 de 552 laudos, porque a impressão é montada pelo código. Os erros ficam no parágrafo livre: o Llama converte coordenadas em pixels como se fossem polegadas ou milímetros; o Gemma erra pouco. A medida de aviso em região concordante foi feita para a seção de avisos e, no texto livre, também conta negações ("nenhum aviso de discordância... regiões [x,y]"); por isso é um limite superior. O template, do mesmo tamanho, passa por construção: ele é a linha de base, e o parágrafo do modelo, se mantido, deve vir marcado como não verificado.</p>
+    <span class="selo falha">Q: não passou em nenhum dos 8 casos</span> <span class="selo ok">classe certa e nenhuma troca: 552/552</span>
+  </div>
+
+  <div class="painel">
+    <h3>O aviso contra as linhas de base</h3>
+    <p>O aviso acrescenta algo à confiança do classificador para achar os erros? AUROC para achar erro, pulmão (197 lâminas com divisão por centro, 21 erros) e próstata (300, 30 erros câncer × benigno). Critérios fixados antes: B1, aviso acima do acaso; B2, confiança + aviso melhor que a confiança sozinha.</p>
+    <div class="tabela"><table>
+      <thead><tr><th>AUROC (IC 95%)</th><th class="num">Pulmão</th><th class="num">Próstata</th></tr></thead>
+      <tbody>
+        <tr><td>Aviso</td><td class="num">0,765 (0,648–0,862)</td><td class="num">0,715 (0,616–0,809)</td></tr>
+        <tr><td>Confiança</td><td class="num">0,769</td><td class="num">0,779</td></tr>
+        <tr class="vence"><td>Discordância entre as 5 sementes</td><td class="num">0,777</td><td class="num"><b>0,913</b></td></tr>
+        <tr><td>Confiança + aviso</td><td class="num">0,725</td><td class="num">0,807</td></tr>
+      </tbody>
+    </table></div>
+    <p class="nota">O aviso acha erros acima do acaso nos dois órgãos, mas não acrescenta à confiança. Para triagem, a discordância entre sementes é melhor; o papel do aviso é explicar (apontar a região que contradiz a decisão), não detectar erro melhor que a incerteza do próprio classificador.</p>
+    <span class="selo ok">B1: passou nos dois</span> <span class="selo falha">B2: não passou</span>
+  </div>
+
+  <div class="painel">
+    <h3>Como o modelo de linguagem se comporta</h3>
+    <ul class="limpa">
+      <li>Sem a regra, é alarmista: nas 18 lâminas de desenvolvimento, chamou de maligno 17, quando só 7 eram. No teste externo, com ou sem regra, chamou de maligno 55 de 57.</li>
+      <li>Repete os falsos positivos do descritor: numa lâmina benigna com 12 patches "malignos", o MedGemma afirmou carcinoma com confiança alta.</li>
+      <li>O Gemma 3 prioriza melhor que o MedGemma (3 regiões, não 32), é mais cauteloso e mais rápido.</li>
+      <li>Não segue bem instruções de formato: a classificação final precisou ser extraída por uma segunda chamada, em formato restrito.</li>
+    </ul>
+  </div>
+
+  <h3>Exemplos de pré-laudo (trechos reais, Gemma 3 4B)</h3>
+  <div class="par">
+    <div class="exemplo painel">
+      <span class="selo ok">certo</span>
+      <h3>BRACS_1489 · rótulo real: DCIS</h3>
+      <pre class="saida">## Impressão diagnóstica sugerida
+Moderada. A alta prevalência de DCIS (84%) sugere uma
+avaliação mais aprofundada para determinar o grau e a
+extensão da doença. A presença de patches com categorias
+de "atípico" e "invasivo carcinoma" requer investigação
+adicional.
+
+## Regiões para revisão prioritária
+[99840,17408] – Patch com alta probabilidade de DCIS (1.00).
+[117248,24064] – Patch com alta probabilidade de DCIS (1.00).
+
+Classificação extraída: DCIS</pre>
+    </div>
+    <div class="exemplo painel">
+      <span class="selo ok">certo, com a regra</span>
+      <h3>BRACS_1641 · rótulo real: tecido normal</h3>
+      <pre class="saida">## Impressão diagnóstica sugerida
+Baixo (devido à predominância de tecido benigno e à baixa
+probabilidade da lesão atípica). A evidência atual não
+suporta a presença de carcinoma invasivo.
+
+## Regiões para revisão prioritária
+[59392,52736] - Probabilidade de 0.97 para lesão epitelial
+atípica, necessita de avaliação mais detalhada.
+
+Classificação extraída: benigno</pre>
+    </div>
+  </div>
+
+  <div class="par">
+    <div class="desafios">
+      <h3>Problemas e desafios</h3>
+      <ul class="limpa">
+        <li>Hardware: numa GPU de 4 GB, só parte do modelo cabe na placa; o resto roda na CPU. Cada pré-laudo leva de 1 a 4 minutos.</li>
+        <li>Memória: o servidor do Ollama acumulava cache a cada pré-laudo até travar o computador; o modelo passou a ser descarregado após cada chamada.</li>
+        <li>O modelo herda os erros do descritor: com patches malignos falsos, ele escreve "carcinoma".</li>
+        <li>Confunde "81% dos patches" com "81% de probabilidade" e às vezes lista todos os patches como prioritários.</li>
+        <li>Extrair a classificação é parte do problema. Na BRACS_1641 sem a regra, o texto diz "a predominância de tecido benigno sugere uma avaliação de lesão benigna", mas a extração em formato restrito devolveu DCIS. Numa conferência de 20 pré-laudos sorteados, a extração bateu com o texto em 8, contrariou o texto em 2 e, em 10, o texto não se decidia por uma classe e a extração escolheu DCIS.</li>
+        <li>O modelo raramente se compromete: em metade dos pré-laudos conferidos, escreve algo como "a predominância de tecido benigno sugere benignidade, no entanto a presença de DCIS requer investigação". Vários desses casos têm evidência com maioria de patches benignos; poucos patches malignos bastam pra lâmina virar maligna.</li>
+      </ul>
+    </div>
+    <div class="exemplo painel">
+      <span class="selo falha">extração divergente</span>
+      <h3>BRACS_1641 sem a regra · rótulo real: tecido normal</h3>
+      <pre class="saida">## Impressão diagnóstica sugerida
+Baixo (6% de patches atípicos) – A predominância de tecido
+benigno sugere uma avaliação de lesão benigna. A presença
+de duas lesões atípicas requer investigação adicional.
+
+Classificação extraída: DCIS   ← não bate com o texto</pre>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL -->
+<section class="final">
+  <h2>Onde a pipeline está</h2>
+  <div class="tabela"><table>
+    <thead><tr><th>Estágio</th><th>Situação</th><th>Próximo passo</th></tr></thead>
+    <tbody>
+      <tr><td>1. Filtro de tecido</td><td><span class="selo ok">resolvido</span></td><td>—</td></tr>
+      <tr><td>2. Roteador</td><td><span class="selo parcial">bom em lâminas malignas</span></td><td>métrica para lâminas benignas e atípicas</td></tr>
+      <tr><td>3. Descritor</td><td><span class="selo parcial">bom no DCIS × IC; negativos cortam falsos malignos; atípico ainda fraco</span></td><td>recuperar o DCIS sem perder as benignas</td></tr>
+      <tr><td>3½. Decisão da lâmina</td><td><span class="selo ok">MIL com 79 lâminas: 38/57, acurácia balanceada 0,63; benigno × atípico AUC 0,78; no pulmão (TCGA), AUC 0,98; no rim (TCGA, hospitais novos), acurácia balanceada 0,95; na próstata (PANDA), detecta câncer (AUC 0,94) mas gradua mal (kappa 0,24; com o GAT-MIL, 0,44; com o GAT-MIL e a padronização por centro, 0,61; com a rede de grafos, 0,44; na mama o GAT-MIL não ajudou)</span></td><td>MIL com as 379 lâminas de treino; confirmar nas 30 lâminas de teste não usadas; na próstata, adotar GAT-MIL + padronização por centro como padrão; rede de grafos com padronização por centro e na mama</td></tr>
+      <tr><td>4. Agregação</td><td><span class="selo parcial">regra ajuda no IC</span></td><td>trocar a contagem dos 32 patches pelos campos fixos</td></tr>
+      <tr><td>5. Síntese</td><td><span class="selo parcial">só redige, com a classe do MIL; números fiéis; com o aviso pronto nos campos, aponta as discordâncias em 27/27 (pulmão) e 35/35 (próstata), antes 5 e 11; com os avisos colados por código, 0 avisos falsos e 0 trocas de classe, em português e em inglês; com a lista de regiões também colada, 0 coordenadas inventadas no pulmão nos dois idiomas; o aviso marca os erros do MIL (pulmão 4 de 4 erros; próstata 16% × 6%)</span></td><td>avaliação por patologista; seções críticas montadas pelo código</td></tr>
+    </tbody>
+  </table></div>
+  <h3>O que os testes mostraram até aqui</h3>
+  <ul class="limpa">
+    <li>O filtro de tecido funciona, e os roteadores acham tumor em 86–88% dos patches escolhidos nas lâminas malignas (sorteio: 52%).</li>
+    <li>Comparar a imagem com frases (zero-shot) é o gargalo do descritor: fica no acaso no DCIS × IC, mesmo quando o embedding contém a informação. Uma camada treinada em cima do UNI2-h separa DCIS de IC e generaliza pra outra instituição (BACH).</li>
+    <li>Deixar o modelo de linguagem decidir a classe a partir de 32 patches chama quase tudo de maligno (17 de 57). Tirar a decisão dele e treinar o descritor com lâminas benignas como negativos leva a 29 de 57.</li>
+    <li>Um MIL com atenção, treinado direto no rótulo de 79 lâminas, supera tudo o que passa pelo descritor por patch: 38 de 57 lâminas, acurácia balanceada 0,63, benigno × atípico AUC 0,78. A atenção dele cai nas lesões anotadas 5× mais que o acaso.</li>
+    <li>A mesma receita (UNI2-h + MIL) funciona em outro órgão: no pulmão (TCGA), adenocarcinoma × escamoso com AUC 0,98.</li>
+    <li>Na próstata (PANDA), detecta câncer em outro centro (AUC 0,94), mas não gradua (kappa 0,24): quase tudo vira ISUP 3. Dentro do mesmo centro gradua bem (~0,80), então o problema é a troca de centro.</li>
+    <li>Dar ao MIL a vizinhança dos patches (GAT-MIL) melhora a graduação da próstata (0,24 → 0,44 entre centros; 0,78 → 0,81 dentro). Na mama não ajudou e no pulmão empatou, com o grafo montado só sobre a amostra de 2.000 patches.</li>
+    <li>Padronizar os embeddings por centro foi o que mais ajudou na troca de centro (MIL 0,54; GAT-MIL 0,61). Normalizar a cor não ajudou (GAT-MIL 0,23): a diferença entre hospitais não é só a cor média.</li>
+    <li>A rede de grafos chega ao nível do GAT-MIL olhando só as janelas em volta de ~10 pontos por biópsia (67% dos patches): escolher os pontos pela atenção não perde o que importa pro grau.</li>
+    <li>No pulmão do dataset do orientador, o núcleo isolado não carrega o subtipo (AUC 0,48 com UNI2-h, 0,60 com medidas clássicas); o mesmo núcleo com o tecido em volta (janela de 224 px) chega a 0,86.</li>
+    <li>O pré-laudo, quando só redige a partir de campos fixos, fica fiel: a classe bate em 57/57 (mama), 78/78 (pulmão) e 60/60 (próstata), sem números nem coordenadas inventados. Com a regra só nas instruções, quase nunca apontava quando uma região contradiz a classe (1 de 15, 3 de 27, 1 de 35); com o aviso calculado por código e pronto nos campos, aponta em 27 de 27 (pulmão) e 35 de 35 (próstata), sem falso alarme nos documentos sem discordância. Na próstata, o modelo ainda acrescentava avisos em regiões que não discordam (9 de 60); com a seção de avisos colada por código, isso some (0, em português e em inglês).</li>
+    <li>A atenção do MIL é fiel ao modelo pelo teste de remoção (pulmão e próstata), mas nas lâminas previstas como adenocarcinoma os patches de maior atenção não sustentam a classe: ali a atenção aponta o que mais parece escamoso, não a evidência do adenocarcinoma.</li>
+    <li>O aviso de discordância marca os erros do MIL: no pulmão, os 4 erros estão entre as 27 lâminas com aviso (a confiança do MIL pega só 1); na próstata, o MIL erra câncer × benigno em 16% das biópsias com aviso e em 6% das sem aviso.</li>
+    <li>Com divisão por centro de origem (cada lâmina prevista por modelos que nunca viram o centro dela), o pulmão fica em AUC 0,947 e acurácia balanceada 0,893 (antes 0,981 na divisão aleatória), e o aviso continua marcando os erros (16 de 21, p = 0,0001).</li>
+    <li>Na próstata, em 5 execuções, o GAT-MIL padronizado fica em kappa 0,649 ± 0,040, acima do ABMIL original em todas; a padronização por centro pesa mais que o grafo.</li>
+    <li>O aviso acha erros acima do acaso (AUROC 0,77 e 0,72), mas não acrescenta à confiança do classificador; a discordância entre as 5 sementes é o melhor sinal na próstata (0,91).</li>
+    <li>Com as seções críticas montadas pelo código, a classe fica certa em 552 de 552 laudos; o parágrafo livre do modelo ainda traz números sem sustentação (Gemma poucos, Llama muitos). Um template sem modelo de linguagem passa por construção.</li>
+    <li>O CellViT nas regiões de maior atenção separa câncer de benigno na próstata (fração neoplásica AUC 0,76; número de núcleos 0,86), mas os tipos sem retreino não servem como contagem: mesmo no câncer, só 6% dos núcleos são chamados de neoplásicos.</li>
+    <li>A confiança que vai no laudo é superconfiante, sobretudo na próstata ("alta" acerta o grau exato em 53%), e precisa ser calibrada. O aviso de tecido normal também marca erros; separá-lo do aviso tumoral não melhora.</li>
+    <li>A pipeline inteira cabe num notebook com GPU de 4 GB: ~2 min por lâmina, quase tudo na extração dos embeddings; só com CPU, ~30 min.</li>
+    <li>Pela decomposição exata da margem, nas lâminas previstas como adenocarcinoma os patches de maior atenção têm contribuição líquida zero e, sozinhos, sustentam a classe pior que sorteados: ali a atenção alta não é evidência da classe prevista.</li>
+    <li>Um MIL com atenção por classe (multi-ramo) mantém o desempenho no pulmão por centro (AUC 0,945), mas não resolve a "classe por ausência": a suficiência na margem segue negativa em adenocarcinoma (−1,92) e ISUP 0 (−3,05), mostrando que o achado não depende da atenção única.</li>
+    <li>No teste externo da próstata (500 biópsias do Karolinska nunca usadas, distribuição natural, modelo congelado), o modelo detecta câncer (AUC 0,94), mas não gradua: kappa 0,27, contra 0,63 nas 300 usadas para escolhê-lo. A padronização pelo centro novo não ajuda fora do lote balanceado. Na próstata, o que se sustenta é a detecção, não o grau.</li>
+    <li>A calibração ajustada fora do teste (temperatura do desenvolvimento) leva o erro de calibração da próstata externa de 0,33 a 0,04; depois dela, quase nenhuma biópsia fica com confiança "alta".</li>
+    <li>Refazendo toda a próstata com um único modelo (execução 0), os critérios mantêm o resultado: o aviso marca erros (15% × 4%), os laudos colados ficam sem erro, e o parágrafo livre do modelo continua com números sem sustentação.</li>
+    <li>No pulmão com a divisão por centro, remoção e suficiência repetem o padrão da divisão aleatória (+0,20; −0,03; −0,27 nas previstas como adenocarcinoma). No GAT-MIL, fixar o grafo não muda a suficiência negativa.</li>
+    <li>Uma checagem do sentido do texto acha erros que a checagem de existência não via: parágrafos que afirmam como predominante um padrão que não é o maior nos campos (Gemma 6 a 27 por caso). O aviso em região concordante, contado por frase e sem negação, dá zero; a contagem antiga era de frases com negação ou várias regiões. A diferença Gemma × Llama se mantém em 3 sementes.</li>
+    <li>No pulmão, o CellViT nas regiões também tem sentido: a fração de núcleos neoplásicos separa as regiões de tumor das de pulmão normal (AUC 0,84), e os tipos acompanham o padrão (escamoso 89% neoplásicos e núcleos maiores; adenocarcinoma 46%; pulmão normal 20%). Na próstata, com o modelo único, o resultado se mantém (0,75; número de núcleos 0,83). As células agora entram no laudo montado pelo código, uma linha por região, sem nenhum erro.</li>
+    <li>No teste externo da próstata, onde o grau não se sustenta, o aviso continua marcando os erros câncer × benigno (126 de 130; 35% de erro com aviso × 3% sem), mas aparece em 71% das biópsias; uma biópsia sem aviso quase sempre está certa. A atenção cai no câncer anotado em 85% das biópsias externas com câncer.</li>
+    <li>Pelo ROAR (tirar e retreinar), a atenção aponta onde está a informação da decisão: sem os 50% de maior atenção, a AUC cai de 0,95 para 0,81 no pulmão e de 0,94 para 0,56 na próstata; sem 50% sorteados, não muda.</li>
+    <li>O texto livre do modelo também liga números à classe errada, mas uma regra automática não mede isso com confiança (precisão 0,03 e 0,28): precisa de leitura humana. Nas 240 biópsias que nunca viraram laudo, as regras do laudo, sem mudança, mantêm o template sem erro.</li>
+  </ul>
+  <p class="nota">Ressalvas gerais: 2 lâminas por classe no desenvolvimento; as anotações do BRACS marcam regiões, não cada célula; o rótulo da lâmina é o da lesão mais grave; no PANDA não há identificação do paciente, então dentro do Radboud a mesma pessoa pode ter biópsias no treino e no teste.</p>
+</section>
+
+<!-- TABELA GERAL -->
+<section class="final" id="tabela-geral">
+  <h2>Tabela geral: tipo de câncer, dataset, método e métricas</h2>
+  <p class="nota">Os resultados principais de cada etapa, por tipo de câncer: mama (BRACS; benigno, atípico, DCIS, carcinoma invasivo), pulmão (TCGA; adenocarcinoma × carcinoma escamoso), rim (TCGA; células claras, papilífero, cromófobo), pulmão no dataset do orientador (adenocarcinoma × epidermoide; núcleo isolado × tecido em volta) e próstata (PANDA; grau ISUP 0–5). "Treino → teste" indica o conjunto de treino e o de avaliação; o teste nunca entra no treino. Em negrito, o melhor método da decisão da lâmina em cada órgão. Detalhes e testes intermediários em <code>resultados.md</code>.</p>
+  <div class="tabela"><table class="geral">
+    <thead><tr><th>Tipo de câncer</th><th>Dataset (treino → teste)</th><th>Etapa</th><th>Método</th><th>Métrica</th><th class="num">Resultado</th><th>Situação</th></tr></thead>
+    <tbody>
+        <tr><td>Mama</td><td>BRACS_748 (98 regiões) e 16 lâminas</td><td>1. Filtro de tecido</td><td>Otsu na saturação + morfologia</td><td>Cobertura das regiões anotadas</td><td class="num">98/98 regiões (96%); 74–100% nas 16 lâminas</td><td><span class="selo ok">resolvido</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 7 lâminas malignas</td><td>2. Roteador</td><td>Frases (QuiltNet) e UNI2-h "não benigno"</td><td>Fração dos 32 patches com tumor (núcleos)</td><td class="num">0,86 e 0,88 (sorteio 0,52)</td><td><span class="selo parcial">bom em malignas</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 8 lâminas novas</td><td>3. Descritor</td><td>Zero-shot com frases (QuiltNet)</td><td>Acerto médio benigno / atípico / maligno</td><td class="num">53,2% (acaso 33%)</td><td><span class="selo ref">agrupamento antigo</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 3 lâminas fora do treino</td><td>3. Descritor</td><td>UNI2-h + regressão logística</td><td>AUC DCIS × IC</td><td class="num">0,96 / 0,96 / 0,99 (frases: 0,50–0,58)</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Mama</td><td>BRACS → BACH (Porto)</td><td>3. Descritor</td><td>UNI2-h + regressão logística</td><td>AUC DCIS × IC por imagem</td><td class="num">0,95 (QuiltNet: 0,57)</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 18 lâminas</td><td>3. Descritor</td><td>Hierárquico com UNI2-h</td><td>Acerto médio em 4 classes</td><td class="num">55,8% (frases 42,3%; acaso 25%)</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Mama</td><td>NuCLS (mama, TCGA)</td><td>3. Núcleos</td><td>CellViT + tipo treinado no NuCLS</td><td>Tumor: sensibilidade / valor preditivo; medida de contato com estroma</td><td class="num">0,83 / 0,88; Spearman 0,35</td><td><span class="selo falha">medida não passou</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 79 → 57 (teste oficial)</td><td>3½. Decisão da lâmina</td><td>Modelo de linguagem decide</td><td>Acertos; acurácia balanceada (4 classes)</td><td class="num">17/57; 0,423</td><td><span class="selo ref">referência</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 79 → 57</td><td>3½. Decisão da lâmina</td><td>Classificador + negativos benignos</td><td>Acertos; acurácia balanceada</td><td class="num">29/57; 0,505 (IC 0,40–0,63)</td><td><span class="selo parcial">passou por pouco</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 79 → 57</td><td>3½. Decisão da lâmina</td><td><b>MIL com atenção</b></td><td>Acertos; acurácia balanceada; benigno × atípico; 3 classes</td><td class="num"><b>38/57; 0,626</b> (IC 0,52–0,75); AUC 0,78; 0,68</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 79, validação cruzada por paciente</td><td>3½. Decisão da lâmina</td><td>MIL com atenção</td><td>Acertos; acurácia balanceada; benigno × atípico</td><td class="num">57/79; 0,680; AUC 0,915</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 79 → 57 e validação cruzada</td><td>3½. Decisão da lâmina</td><td>GAT-MIL</td><td>Acurácia balanceada</td><td class="num">0,597 e 0,636 (MIL: 0,626 e 0,680)</td><td><span class="selo falha">não passou</span></td></tr>
+        <tr><td>Mama</td><td>Publicado (Chen et al., 2024): 395 → 87</td><td>3½. Decisão da lâmina</td><td>UNI + ABMIL</td><td>Acurácia balanceada (3 classes)</td><td class="num">0,687 (comparação indicativa)</td><td><span class="selo ref">referência</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 29 lâminas com lesão anotada</td><td>3½. Explicação</td><td>Atenção do MIL</td><td>Razão dentro da lesão × acaso</td><td class="num">5,0 (21 de 29 lâminas acima do acaso)</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 57</td><td>5. Pré-laudo</td><td>Gemma 3 4B decide (com a regra do invasivo)</td><td>Acertos; números sem sustentação</td><td class="num">17/57; 2,1%</td><td><span class="selo ref">referência</span></td></tr>
+        <tr><td>Mama</td><td>BRACS, 57</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige (classe do MIL)</td><td>Classe igual; números sem sustentação; coordenadas inventadas; contradições apontadas</td><td class="num">57/57; 0 de 791; 0 de 267; 1 de 15</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 119 → 78</td><td>3½. Decisão da lâmina</td><td><b>MIL com atenção</b></td><td>AUC; acurácia balanceada</td><td class="num"><b>0,981; 0,949</b></td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 119 → 78</td><td>3½. Decisão da lâmina</td><td>GAT-MIL</td><td>AUC</td><td class="num">0,981 (diferença 0,000)</td><td><span class="selo ok">não piorou</span></td></tr>
+        <tr><td>Pulmão</td><td>LungHist700, 10 pacientes de teste</td><td>3. Descritor</td><td>UNI2-h + regressão logística</td><td>Acurácia balanceada (normal, adeno, escamoso)</td><td class="num">0,926</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Pulmão</td><td>LungHist700 → TCGA, 78</td><td>3. Descritor</td><td>Descritor nas 3 regiões de maior atenção</td><td>Lâminas com a classe certa</td><td class="num">58/78 (adenocarcinoma 21/39)</td><td><span class="selo falha">não passou</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 78</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige (tipo do MIL)</td><td>Tipo igual; números sem sustentação; coordenadas inventadas; discordâncias apontadas</td><td class="num">78/78; 0 de 1.035; 0 de 436; 3 de 27</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 78</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige, com aviso de discordância pronto nos campos</td><td>Discordâncias apontadas; falso alarme; classe igual; números e coordenadas inventados</td><td class="num">27 de 27; 0 de 51; 78/78; 0 e 0</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 78</td><td>3½. Decisão da lâmina</td><td>Atenção do MIL: remoção e suficiência</td><td>Tirar 10% de maior atenção − sorteados; ficar com 20 − sorteados</td><td class="num">+0,120; −0,091</td><td><span class="selo parcial">remoção passou; suficiência não</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 78</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige, avisos colados por código (português; inglês)</td><td>Avisos em região concordante; classe trocada; coordenadas inventadas</td><td class="num">0; 0; 0 de 274 (inglês: 0; 0; 1 de 284)</td><td><span class="selo parcial">português passou; inglês não</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 78</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige, avisos e lista de regiões colados por código (português; inglês)</td><td>Avisos em região concordante; classe trocada; coordenadas inventadas</td><td class="num">0; 0; 0 de 439 (inglês: 0; 0; 0 de 331)</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 78</td><td>5. Pré-laudo</td><td>Aviso de discordância × erro do MIL</td><td>Erro com aviso / sem aviso; Fisher</td><td class="num">4/27 / 0/51; p = 0,012</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Rim</td><td>TCGA-RCC, 162 → 137 (hospitais novos)</td><td>3½. Decisão da lâmina</td><td><b>MIL com atenção</b></td><td>Acurácia balanceada (3 subtipos); AUC macro</td><td class="num"><b>0,953; 0,987</b></td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Rim</td><td>TCGA-RCC, 180 → 119 (sorteio aleatório)</td><td>3½. Decisão da lâmina</td><td>MIL com atenção</td><td>Acurácia balanceada; AUC macro</td><td class="num">0,983; 1,000</td><td><span class="selo ref">comparação</span></td></tr>
+        <tr><td>Rim</td><td>TCGA-RCC, hospitais novos</td><td>3½. Decisão da lâmina</td><td>GAT-MIL</td><td>Acurácia balanceada</td><td class="num">0,945 (diferença −0,008)</td><td><span class="selo ok">não piorou</span></td></tr>
+        <tr><td>Pulmão</td><td>Orientador, 52 pacientes (validação cruzada por paciente)</td><td>3½. Decisão do paciente</td><td><b>MIL com atenção, campos de biópsia</b></td><td>Acurácia balanceada; AUC (adeno × epidermoide)</td><td class="num"><b>0,886; 0,942</b></td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Pulmão</td><td>Orientador, 52 pacientes</td><td>3½. Decisão do paciente</td><td>MIL com atenção, núcleo isolado</td><td>AUC</td><td class="num">0,479 (clássico: 0,599)</td><td><span class="selo falha">no acaso</span></td></tr>
+        <tr><td>Pulmão</td><td>Orientador, 52 pacientes</td><td>3½. Decisão do paciente</td><td>MIL com atenção, núcleo + tecido em volta (janela de 224 px)</td><td>AUC</td><td class="num">0,862 (+0,42 sobre o núcleo isolado)</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Próstata</td><td>PANDA, Radboud 600 → Karolinska 300</td><td>3½. Decisão da lâmina</td><td>MIL com atenção</td><td>Kappa quadrático; AUC benigno × câncer</td><td class="num">0,237; 0,940</td><td><span class="selo parcial">detecta, não gradua</span></td></tr>
+        <tr><td>Próstata</td><td>PANDA, Radboud, validação cruzada (600)</td><td>3½. Decisão da lâmina</td><td>MIL com atenção</td><td>Kappa quadrático</td><td class="num">0,784</td><td><span class="selo ref">referência</span></td></tr>
+        <tr><td>Próstata</td><td>Radboud → Karolinska / dentro do Radboud</td><td>3½. Decisão da lâmina</td><td>GAT-MIL</td><td>Kappa quadrático</td><td class="num">0,436 / 0,806</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Próstata</td><td>Radboud → Karolinska</td><td>3½. Decisão da lâmina</td><td>MIL + padronização por centro</td><td>Kappa quadrático</td><td class="num">0,540</td><td><span class="selo ref">sem critério</span></td></tr>
+        <tr><td>Próstata</td><td>Radboud → Karolinska</td><td>3½. Decisão da lâmina</td><td><b>GAT-MIL + padronização por centro</b></td><td>Kappa quadrático; previstos como ISUP 3</td><td class="num"><b>0,609</b> (IC 0,515–0,699); 38 de 300</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Próstata</td><td>Radboud → Karolinska</td><td>3½. Decisão da lâmina</td><td>GAT-MIL + normalização de cor (Reinhard)</td><td>Kappa quadrático</td><td class="num">0,225</td><td><span class="selo falha">não passou</span></td></tr>
+        <tr><td>Próstata</td><td>Radboud → Karolinska / dentro do Radboud</td><td>3½. Decisão da lâmina</td><td>Rede de grafos</td><td>Kappa quadrático</td><td class="num">0,442 / 0,809</td><td><span class="selo parcial">passou entre centros</span></td></tr>
+        <tr><td>Próstata</td><td>Radboud (máscaras) → Karolinska</td><td>3. Descritor</td><td>UNI2-h + regressão logística (benigno, Gleason 3, 4, 5)</td><td>AUC benigno × câncer por patch</td><td class="num">0,775</td><td><span class="selo falha">não passou</span></td></tr>
+        <tr><td>Próstata</td><td>Karolinska, 250 biópsias com câncer</td><td>3½. Explicação</td><td>Atenção do MIL na máscara</td><td>Biópsias com ≥ 2 das 3 regiões no câncer</td><td class="num">190/250 (acaso 0,43)</td><td><span class="selo falha">não passou</span></td></tr>
+        <tr><td>Próstata</td><td>Karolinska, 60</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige (grau do MIL)</td><td>Grau igual; números sem sustentação; coordenadas inventadas; discordâncias apontadas</td><td class="num">60/60; 0 de 628; 0 de 315; 1 de 35</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Próstata</td><td>Karolinska, 60</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige, com aviso de discordância pronto nos campos</td><td>Discordâncias apontadas; falso alarme; classe igual; números e coordenadas inventados</td><td class="num">35 de 35; 0 de 25; 60/60; 0 e 0 (avisos a mais em 9 de 60)</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Próstata</td><td>Karolinska, 300</td><td>3½. Decisão da lâmina</td><td>Atenção do MIL: remoção e suficiência</td><td>Tirar 10% de maior atenção − sorteados; ficar com 20 − sorteados</td><td class="num">+0,203; +0,188</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Próstata</td><td>Karolinska, 60</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige, avisos colados por código (português; inglês)</td><td>Avisos em região concordante; classe trocada; coordenadas inventadas</td><td class="num">0; 0; 0 de 200 (inglês: 0; 0; 0 de 276)</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Próstata</td><td>Karolinska, 300</td><td>3½. Decisão da lâmina</td><td>GAT-MIL padronizado, retreinado guardando a atenção</td><td>Kappa quadrático; ≥ 2 de 3 regiões de maior atenção no câncer</td><td class="num">0,570; 227/250 (ABMIL 190/250)</td><td><span class="selo ref">sem critério</span></td></tr>
+        <tr><td>Próstata</td><td>Karolinska, 300</td><td>5. Pré-laudo</td><td>Aviso de discordância × erro do MIL (GAT-MIL padronizado; câncer × benigno)</td><td>Erro com aviso / sem aviso; risco relativo; Fisher</td><td class="num">16% / 6%; 2,6 (1,3 a 7,5); p = 0,006</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Próstata</td><td>Karolinska, 60</td><td>5. Pré-laudo</td><td>Gemma 3 4B só redige, GAT-MIL padronizado, avisos e regiões colados (português; inglês)</td><td>Classe igual; avisos em região concordante; classe trocada; coordenadas inventadas</td><td class="num">60/60; 0; 0; 0 de 262 (inglês: 56/60; 0; 0; 0 de 247)</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Próstata</td><td>Karolinska, 300</td><td>3½. Decisão da lâmina</td><td>Atenção do GAT-MIL padronizado: remoção e suficiência</td><td>Tirar 10% de maior atenção − sorteados; ficar com 20 − sorteados</td><td class="num">+0,310; +0,124</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Pulmão e próstata</td><td>276 pré-laudos finais</td><td>5. Pré-laudo</td><td>Classe lida por código na impressão (modelo só como reserva)</td><td>Classe = decisão</td><td class="num">276/276 (antes 272/276)</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Pulmão e próstata</td><td>276 pré-laudos</td><td>5. Pré-laudo</td><td>Llama 3.2 3B no lugar do Gemma, mesma colagem</td><td>Critério em 4 casos (órgão × idioma)</td><td class="num">2 de 4; avisos e coordenadas certos nos 4</td><td><span class="selo parcial">parcial</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 197 lâminas, 5 partes por centro de origem</td><td>3½. Decisão da lâmina</td><td>ABMIL, centros nunca vistos</td><td>AUC; acurácia balanceada</td><td class="num">0,947 (0,910–0,976); 0,893</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 197, por centro</td><td>5. Pré-laudo</td><td>Aviso × erro do MIL</td><td>Erros com aviso; Fisher</td><td class="num">16 de 21; p = 0,0001</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Próstata</td><td>Radboud → Karolinska, 300, 5 execuções</td><td>3½. Decisão da lâmina</td><td>GAT-MIL padronizado (× ABMIL original)</td><td>Kappa quadrático, média ± desvio</td><td class="num">0,649 ± 0,040 (0,295)</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Pulmão e próstata</td><td>197 e 300</td><td>5. Pré-laudo</td><td>Aviso contra confiança e discordância entre sementes</td><td>AUROC para achar erro: aviso; ganho sobre a confiança</td><td class="num">0,765 e 0,715; sem ganho</td><td><span class="selo parcial">B1 passou, B2 não</span></td></tr>
+        <tr><td>Pulmão e próstata</td><td>552 laudos</td><td>5. Pré-laudo</td><td>Seções montadas pelo código; modelo escreve só o resumo (Gemma; Llama)</td><td>Erros no parágrafo livre, 8 casos</td><td class="num">classe 552/552; números sem sustentação 0–5 e 18–36 por caso</td><td><span class="selo falha">não passou</span></td></tr>
+        <tr><td>Pulmão e próstata</td><td>197 e 300</td><td>3½. Explicação</td><td>Decomposição exata da margem nas lâminas "por ausência"</td><td>Contribuição dos 20 de maior atenção; suficiência em logit</td><td class="num">pulmão −0,002 e −1,98; próstata +0,366</td><td><span class="selo parcial">H2 passou; H1 e H3 não</span></td></tr>
+        <tr><td>Pulmão e próstata</td><td>197 e 300</td><td>5. Pré-laudo</td><td>Aviso tumoral × só tecido normal; calibração da confiança</td><td>Erro com cada aviso (pulmão); ECE antes → depois</td><td class="num">29% × 18%, p = 0,22; ECE 0,09 → 0,04 e 0,28 → 0,09</td><td><span class="selo falha">T não passou</span></td></tr>
+        <tr><td>Próstata</td><td>Karolinska, 300 biópsias, 900 regiões</td><td>3½. Explicação</td><td>CellViT nas 3 regiões de maior atenção (sem treino)</td><td>AUC câncer × benigno (máscara): fração neoplásica; número de núcleos</td><td class="num">0,756 (0,721–0,792); 0,856</td><td><span class="selo ok">passou</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 3 lâminas</td><td>Custo</td><td>Notebook, RTX 3050 4 GB, i5 de 6 núcleos, 15 GB de RAM</td><td>Tempo por lâmina, GPU / só CPU</td><td class="num">~2 min / ~30 min (UNI2-h: mediana 92 s, pico 2,65 GB; Gemma 14,6 tokens/s)</td><td><span class="selo ref">sem critério</span></td></tr>
+        <tr><td>Pulmão e próstata</td><td>197 por centro e 300</td><td>3½. Explicação</td><td>MIL com atenção por classe (multi-ramo)</td><td>Pulmão AUC / AB; suficiência "por ausência" (adeno; ISUP 0)</td><td class="num">0,945 / 0,878; −1,92 e −3,05 (κ próstata 0,721, sem critério)</td><td><span class="selo parcial">M1 passou; M2 e M3 não</span></td></tr>
+        <tr><td>Pulmão e próstata</td><td>552 parágrafos, sementes 0–2</td><td>5. Pré-laudo</td><td>Sementes do modelo de linguagem; checagem semântica do texto</td><td>Gemma &lt; Llama em números sem sustentação; S1 (predominância), S2 (aviso por frase); S1 = S2 = 0 no template</td><td class="num">Gemma 11/12/8 × Llama 29/31/23; S1 Gemma 6–27 e Llama 4–10 por caso; S2 0</td><td><span class="selo ok">R e V passaram</span></td></tr>
+        <tr><td>Próstata</td><td>Karolinska, 300 (35 previstas ISUP 0)</td><td>3½. Explicação</td><td>GAT-MIL padronizado com o grafo fixo ao tirar patches</td><td>Suficiência na margem nas previstas ISUP 0</td><td class="num">−2,92 (IC −3,33 a −2,48)</td><td><span class="selo falha">F não passou</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 197, 5 partes por centro</td><td>3½. Explicação</td><td>Remoção e suficiência da atenção (ABMIL)</td><td>Maior atenção − sorteio: tirar 10%; ficar com 20</td><td class="num">+0,200 (0,149–0,251); −0,032 (−0,267 nas previstas adenocarcinoma)</td><td><span class="selo parcial">X1c passou, X2c não</span></td></tr>
+        <tr><td>Próstata</td><td>Radboud 600 → Karolinska 500 nunca usadas (distribuição natural)</td><td>3½. Decisão da lâmina</td><td>GAT-MIL padronizado congelado (teste externo)</td><td>Kappa quadrático; AUC câncer; ECE antes → depois da temperatura do desenvolvimento</td><td class="num">0,265 (0,183–0,345); 0,943; 0,33 → 0,04</td><td><span class="selo parcial">K1 não passou; K2 passou</span></td></tr>
+        <tr><td>Próstata</td><td>Karolinska, 300 e 60 laudos</td><td>5. Pré-laudo</td><td>Tudo de novo com um modelo único (execução 0)</td><td>Aviso × erro (E); laudos colados (F2); seções pelo código (Q)</td><td class="num">15% × 4%, p = 0,0009; 0 erros; Gemma pt 18 números sem sustentação</td><td><span class="selo parcial">E e F2 passaram, Q não</span></td></tr>
+        <tr><td>Pulmão</td><td>TCGA, 78 lâminas, 234 regiões</td><td>3½. Explicação</td><td>CellViT nas 3 regiões de maior atenção (sem treino; lâminas baixadas de novo)</td><td>AUC tumor × pulmão normal (classificador de patches): fração neoplásica; número; área</td><td class="num">0,837 (0,687–0,961); 0,785; 0,848</td><td><span class="selo ok">NP passou</span></td></tr>
+        <tr><td>Próstata</td><td>Karolinska, 300 biópsias, 900 regiões (modelo único)</td><td>3½. Explicação</td><td>CellViT nas 3 regiões de maior atenção</td><td>AUC câncer × benigno (máscara): fração neoplásica; número de núcleos</td><td class="num">0,747 (0,708–0,782); 0,826</td><td><span class="selo ok">N passou</span></td></tr>
+        <tr><td>Pulmão e próstata</td><td>138 laudos × 2 idiomas</td><td>5. Pré-laudo</td><td>Template com uma linha de células por região</td><td>Classe trocada; aviso em região concordante; coordenadas e números inventados; classe lida</td><td class="num">0; 0; 0; 0; 276/276</td><td><span class="selo ok">T0 passou</span></td></tr>
+        <tr><td>Próstata</td><td>Karolinska, 500 nunca usadas (distribuição natural)</td><td>5. Pré-laudo</td><td>Aviso de discordância × erro do MIL no teste externo</td><td>Erro câncer × benigno com / sem aviso; erros pegos; atenção no câncer</td><td class="num">35% / 3%; 126 de 130 (aviso em 71%); 279/330 (acaso 0,30)</td><td><span class="selo ok">E<sub>ext</sub> passou</span></td></tr>
+        <tr><td>Próstata</td><td>Karolinska, 60 laudos (modelo único)</td><td>5. Pré-laudo</td><td>Llama 3.2 3B com avisos e regiões colados</td><td>Classe; avisos e coordenadas; números sem sustentação (português; inglês)</td><td class="num">60/60; todos certos; 1 e 1 (complementos calculados)</td><td><span class="selo falha">L não passou</span></td></tr>
+        <tr><td>Pulmão e próstata</td><td>197 (por centro) e 300</td><td>3½. Explicação</td><td>ROAR: tirar os patches de maior atenção de todas as lâminas e retreinar</td><td>AUC sem os 50% de maior atenção × sem 50% sorteados</td><td class="num">pulmão 0,81 × 0,95; próstata 0,56 × 0,94</td><td><span class="selo ok">ROAR-P e ROAR-Q passaram</span></td></tr>
+        <tr><td>Pulmão e próstata</td><td>552 parágrafos</td><td>5. Pré-laudo</td><td>Checagem de ligação número ↔ classe (v1; v2 pós-hoc)</td><td>Template sem erro; precisão da regra nos parágrafos (amostra lida)</td><td class="num">0 e 0; 1/40 e 11/39</td><td><span class="selo parcial">V2 passou; regra imprecisa</span></td></tr>
+        <tr><td>Próstata</td><td>240 biópsias que nunca viraram laudo</td><td>5. Pré-laudo</td><td>Mesmas regras do laudo, sem mudança</td><td>Template: erros; classe lida</td><td class="num">0; 240/240 (pt e en)</td><td><span class="selo ok">R1 passou</span></td></tr>
+    </tbody>
+  </table></div>
+  <p class="nota">Acaso: acurácia balanceada 0,25 em 4 classes e 0,33 em 3; AUC 0,5; kappa 0. Mama e próstata com intervalo de 95% por bootstrap (na mama, agrupado por paciente). Resultados de 06/11 ou antes no BRACS usam o agrupamento antigo, com o UDH em atípico.</p>
+</section>
+
+<footer>
+  <p>Pipeline Ideia 01 · orientação Prof. João Batista Florindo · situação em 27/11/2026. Modelos: QuiltNet-B-32, UNI2-h, CellViT-256, Gemma 3 4B e MedGemma 4B, todos rodando localmente.</p>
+  <p>Imagens de lâminas: BRACS (Brancati et al., <i>BRACS: A Dataset for BReAst Carcinoma Subtyping in H&amp;E Histology Images</i>, Database, 2022), licença CC BY-NC 4.0. Núcleos anotados: NuCLS (Amgad et al., GigaScience, 2022), CC0. Lâminas de pulmão e rim: TCGA-LUAD, TCGA-LUSC, TCGA-KIRC, TCGA-KIRP e TCGA-KICH (NCI Genomic Data Commons, acesso aberto); só resultados numéricos. Imagens de pulmão para o descritor: LungHist700 (Diosdado et al., Scientific Data, 2024), CC BY 4.0; só resultados numéricos. Biópsias de próstata: PANDA (Bulten et al., Nature Medicine, 2022), CC BY-NC-SA 4.0; as figuras dos grafos desenham sobre uma biópsia do PANDA e seguem a mesma licença. Imagens do BACH não são reproduzidas (licença CC BY-NC-ND); só os resultados numéricos.</p>
+</footer>
+
+</div>
+</body>
+</html>
