@@ -1180,6 +1180,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
     <li>A confiança que vai no laudo é superconfiante, sobretudo na próstata ("alta" acerta o grau exato em 53%), e precisa ser calibrada. O aviso de tecido normal também marca erros; separá-lo do aviso tumoral não melhora.</li>
     <li>A pipeline inteira cabe num notebook com GPU de 4 GB: ~2 min por lâmina, quase tudo na extração dos embeddings; só com CPU, ~30 min.</li>
     <li>Pela decomposição exata da margem, nas lâminas previstas como adenocarcinoma os patches de maior atenção têm contribuição líquida zero e, sozinhos, sustentam a classe pior que sorteados: ali a atenção alta não é evidência da classe prevista.</li>
+    <li>Um MIL com atenção por classe (multi-ramo) mantém o desempenho no pulmão por centro (AUC 0,945), mas não resolve a "classe por ausência": a suficiência na margem segue negativa em adenocarcinoma (−1,92) e ISUP 0 (−3,05), mostrando que o achado não depende da atenção única.</li>
   </ul>
   <p class="nota">Ressalvas gerais: 2 lâminas por classe no desenvolvimento; as anotações do BRACS marcam regiões, não cada célula; o rótulo da lâmina é o da lesão mais grave; no PANDA não há identificação do paciente, então dentro do Radboud a mesma pessoa pode ter biópsias no treino e no teste.</p>
 </section>
@@ -1251,6 +1252,7 @@ Classificação extraída: DCIS   ← não bate com o texto</pre>
         <tr><td>Pulmão e próstata</td><td>197 e 300</td><td>5. Pré-laudo</td><td>Aviso tumoral × só tecido normal; calibração da confiança</td><td>Erro com cada aviso (pulmão); ECE antes → depois</td><td class="num">29% × 18%, p = 0,22; ECE 0,09 → 0,04 e 0,28 → 0,09</td><td><span class="selo falha">T não passou</span></td></tr>
         <tr><td>Próstata</td><td>Karolinska, 300 biópsias, 900 regiões</td><td>3½. Explicação</td><td>CellViT nas 3 regiões de maior atenção (sem treino)</td><td>AUC câncer × benigno (máscara): fração neoplásica; número de núcleos</td><td class="num">0,756 (0,721–0,792); 0,856</td><td><span class="selo ok">passou</span></td></tr>
         <tr><td>Pulmão</td><td>TCGA, 3 lâminas</td><td>Custo</td><td>Notebook, RTX 3050 4 GB, i5 de 6 núcleos, 15 GB de RAM</td><td>Tempo por lâmina, GPU / só CPU</td><td class="num">~2 min / ~30 min (UNI2-h: mediana 92 s, pico 2,65 GB; Gemma 14,6 tokens/s)</td><td><span class="selo ref">sem critério</span></td></tr>
+        <tr><td>Pulmão e próstata</td><td>197 por centro e 300</td><td>3½. Explicação</td><td>MIL com atenção por classe (multi-ramo)</td><td>Pulmão AUC / AB; suficiência "por ausência" (adeno; ISUP 0)</td><td class="num">0,945 / 0,878; −1,92 e −3,05 (κ próstata 0,721, sem critério)</td><td><span class="selo parcial">M1 passou; M2 e M3 não</span></td></tr>
     </tbody>
   </table></div>
   <p class="nota">Acaso: acurácia balanceada 0,25 em 4 classes e 0,33 em 3; AUC 0,5; kappa 0. Mama e próstata com intervalo de 95% por bootstrap (na mama, agrupado por paciente). Resultados de 06/11 ou antes no BRACS usam o agrupamento antigo, com o UDH em atípico.</p>

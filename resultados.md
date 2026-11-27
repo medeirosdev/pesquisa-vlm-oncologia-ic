@@ -859,6 +859,23 @@ Pergunta: os dados de células que o CellViT dá em cada região que vai para o 
 
 Leitura: os dados de células nas regiões são informativos para comparar regiões (mais núcleos, núcleos maiores e mais "neoplásicos" no câncer), mas os tipos do CellViT sem retreino não servem como contagem diagnóstica. No laudo, o número de núcleos e a área são os dados mais confiáveis; a proporção de tipos deve vir com essa ressalva.
 
+## MIL com atenção por classe (multi-ramo), pulmão e próstata (26/11)
+
+Pergunta, a partir da revisão: no ABMIL a atenção é única para todas as classes; com um ramo de atenção por classe (como no CLAM multi-ramo, sem a perda de agrupamento), os 20 patches de maior atenção do ramo da classe prevista passam a sustentar a decisão também nas lâminas "por ausência" (previstas como adenocarcinoma no pulmão ou ISUP 0 na próstata)? Pulmão: 197 lâminas nas 5 partes por centro de `pulmao_por_centro.py`, comparado ao ABMIL nas mesmas partes e sementes. Próstata: 600 biópsias do Radboud (treino) e 300 do Karolinska (teste), embeddings padronizados por centro, comparado ao ABMIL padronizado nas mesmas 5 sementes (0 a 4). Fixado antes de rodar (commit `db8b6ab`). Critérios: M1, pulmão por centro com AUC ≥ 0,85 e acurácia balanceada ≥ 0,75; M2 (pulmão), nas previstas como adenocarcinoma, suficiência na margem (20 de maior atenção do ramo da classe − 20 sorteados) > 0 com limite inferior do IC 95% > 0; M3 (próstata), o mesmo nas previstas como ISUP 0. Script: `Testes/Pipeline01/mil/mil_multiramo.py`.
+
+| Órgão e modelo | Desempenho | Suficiência na margem, "por ausência" (IC 95%) | Suficiência na margem, classe "positiva" (IC 95%) |
+|---|---|---|---|
+| Pulmão, multi-ramo | AUC **0,945**, AB **0,878** | adeno (n = 96): **−1,92** (−3,23 a −0,64) | escamoso (n = 101): +5,90 (5,24 a 6,65) |
+| Pulmão, ABMIL (comparador) | AUC 0,947, AB 0,893 | adeno (n = 95): −2,06 (−3,42 a −0,79) | escamoso (n = 102): +5,97 (5,35 a 6,69) |
+| Próstata, multi-ramo padronizado | κ quadrático 0,721 (sem critério) | ISUP 0 (n = 39): **−3,05** (−3,73 a −2,41) | ISUP ≥ 1 (n = 261): +2,28 (1,92 a 2,66) |
+| Próstata, ABMIL padronizado | κ quadrático 0,540 | ISUP 0 (n = 21): −2,09 (−2,66 a −1,56) | ISUP ≥ 1 (n = 279): +2,18 (1,89 a 2,48) |
+
+- **M1 passou** (AUC 0,945 e acurácia balanceada 0,878 no pulmão por centro).
+- **M2 não passou** (−1,92, IC −3,23 a −0,64, quase idêntico ao −2,06 do ABMIL) e **M3 não passou** (−3,05, IC −3,73 a −2,41; ABMIL −2,09).
+- Sem critério: na próstata, o κ quadrático do multi-ramo padronizado ficou em 0,721 (ABMIL padronizado 0,540 nas mesmas sementes); é um número exploratório no conjunto de desenvolvimento do Karolinska (300 biópsias balanceadas), sujeito à confirmação no conjunto externo.
+
+Leitura: dar um ramo de atenção para cada classe não resolve o comportamento de "classe por ausência"; o achado de suficiência negativa nessas lâminas não depende de a atenção ser única.
+
 ## Custo da pipeline num notebook (26/11)
 
 Pergunta: quanto custa rodar a pipeline num computador comum, com GPU e só com CPU? Notebook com RTX 3050 Laptop (4 GB), i5-11400H (6 núcleos, 12 threads), 15,4 GB de RAM. 3 lâminas de teste do pulmão (464 MB a 2,9 GB; 11.760 a 31.066 patches de tecido; 2.000 sorteados), cada etapa cronometrada separadamente. Medição descritiva, sem critério; o que seria medido foi fixado antes (commit `57a2a59`), com duas correções antes de qualquer medida do modelo de linguagem (`edad449`: liberar a VRAM do PyTorch antes do Ollama; `f704763`: converter o UNI2-h na CPU). As tentativas anteriores falharam por falta de memória na GPU, duas delas porque outro projeto usava a GPU; esta rodou com a máquina ociosa (nenhum outro processo na GPU, carga < 3 por 5 minutos). Script: `Testes/Pipeline01/ferramentas/medir_recursos.py`.
@@ -910,3 +927,4 @@ Detalhes: `Testes/Pipeline01/notas/problemas_e_metrica.md`.
 19. Os dados de células do CellViT nas regiões de maior atenção têm sentido na próstata: a fração de núcleos neoplásicos separa regiões de câncer de benignas (AUC 0,756; o número de núcleos, 0,856), mas os tipos sem retreino não servem como contagem (mesmo no câncer, só 6% dos núcleos são chamados de neoplásicos). Número e área dos núcleos são os dados mais confiáveis para o laudo.
 20. A confiança que vai no laudo é superconfiante (ECE 0,09 no pulmão e 0,28 na próstata; na próstata, "alta" acerta o grau exato em só 53%) e precisa ser calibrada; a escala de temperatura leva o ECE a 0,04 e 0,09. Separar o aviso tumoral do aviso de tecido normal não o torna mais preciso (pulmão, 29% × 18% de erro, p = 0,22).
 21. Um aviso por padrão de Gleason incompatível com o grau previsto não marca mais erros de grau (57% × 58%), mas indica a direção do erro quando aparece (+0,9 grau com padrão mais alto, −1,75 com mais baixo). A proporção de padrões do classificador de patches cresce com a classe real, mas não é fração de tumor: na próstata, "benigno" domina até no ISUP 5.
+22. Um MIL com atenção por classe (multi-ramo, um ramo por classe) mantém o desempenho no pulmão por centro (AUC 0,945, acurácia balanceada 0,878; M1 passou), mas não resolve a "classe por ausência": a suficiência na margem continua negativa nas lâminas previstas como adenocarcinoma (−1,92; M2 não passou) e nas biópsias previstas como ISUP 0 (−3,05; M3 não passou). O achado não depende da atenção única. (Sem critério: κ quadrático 0,721 na próstata nas 300 de desenvolvimento, contra 0,540 do ABMIL padronizado.)
