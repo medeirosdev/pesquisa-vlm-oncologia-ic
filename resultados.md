@@ -993,10 +993,10 @@ Pergunta da revisão 01 (C3): os testes de remoção e suficiência tiram patche
 | Tirar e retreinar | Pulmão, ABMIL por centro (197): AUC / AB | Próstata, GAT-MIL padr. (300 de desenvolvimento): AUC câncer / κ |
 |---|---|---|
 | Nada | 0,947 / 0,893 | 0,964 / 0,617 |
-| 10% sorteados / de maior atenção | 0,945 / 0,935 | — |
+| 10%: AUC com sorteados / com os de maior atenção | 0,945 / 0,935 | — |
 | 50% sorteados | 0,949 / 0,893 | 0,943 / 0,634 |
 | **50% de maior atenção** | **0,810** / 0,761 | **0,558** / 0,120 |
-| 90% sorteados / de maior atenção | 0,948 / **0,702** | — |
+| 90%: AUC com sorteados / com os de maior atenção | 0,948 / **0,702** | — |
 | Diferença em 50% (IC 95%) | −0,139 (−0,201 a −0,081) | −0,384 (−0,456 a −0,313) |
 
 - **ROAR-P e ROAR-Q passaram.** Mesmo retreinando, tirar os patches de maior atenção derruba o desempenho, e tirar a mesma fração sorteada não muda nada: a informação da classe está concentrada nos patches que a atenção aponta.
