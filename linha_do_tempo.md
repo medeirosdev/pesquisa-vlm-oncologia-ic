@@ -166,6 +166,7 @@ Achado importante: cobrir mais de 80% dos RoIs exige k ≥ 512, que custa ~23 mi
 | 27/11 | Teste externo do Karolinska (500 biópsias nunca usadas, distribuição natural; fixado antes): AUC câncer 0,94, mas kappa 0,27 (K1 não passou; 0,63 no conjunto de desenvolvimento) e especificidade 0,29; a padronização pelo centro novo não ajuda (0,28 só com o Radboud); calibração ajustada fora do teste leva o ECE de 0,33 a 0,04. Reexecução da próstata com um modelo único: E e F2 passaram, Q não. |
 | 27/11 | Células do CellViT no pulmão (78 lâminas baixadas de novo, só as janelas das regiões guardadas): fração neoplásica separa regiões de tumor das de pulmão normal, AUC 0,84 (NP passou); próstata com o modelo único, AUC 0,75 (N passou de novo); células dentro do laudo montado pelo código, 0 erros (T0 passou). |
 | 27/11 | Aviso × erro no teste externo da próstata (500 biópsias, fixado antes): o aviso marca 126 dos 130 erros câncer × benigno (35% de erro com aviso × 3% sem; E_ext passou), mas aparece em 71% das biópsias; atenção no câncer anotado em 85% das externas com câncer (acaso 30%). |
+| 27/11 | Llama 3.2 3B com avisos e regiões colados na próstata do modelo único (fixado antes): classe, avisos e coordenadas certos, mas 1 número calculado em 60 laudos em cada idioma (L não passou; em português tinha passado na execução anterior). Nenhuma tabela da próstata mistura execuções agora. |
 
 ## Onde paramos
 

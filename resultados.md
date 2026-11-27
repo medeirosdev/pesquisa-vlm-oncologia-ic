@@ -953,6 +953,23 @@ Pergunta: o aviso de discordância, que marca os erros no desenvolvimento, ainda
 
 Leitura: no centro novo, na distribuição natural, o grau do modelo não se sustenta, mas o aviso continua marcando onde ele erra: quase toda biópsia sem aviso está certa quanto a câncer × benigno (139 de 143). A atenção continua caindo no câncer.
 
+## Próstata com o modelo único: Llama 3.2 3B com avisos e regiões colados (27/11)
+
+Pergunta: a última tabela que misturava execuções (as linhas do Llama na tabela de avisos, feitas com uma execução anterior do GAT-MIL padronizado) se mantém com o modelo único r0? Mesmo `segundo_modelo.py` (instruções, colagem, extração da classe e critério L) nos 60 documentos da próstata de r0. Fixado antes de rodar (commit `25e102c`; etapas `llama_redigir` e `llama_checar` de `prelaudo/prostata_r0.py`).
+
+| Próstata, Llama 3.2 3B | Português, r0 (antes) | Inglês, r0 (antes) |
+|---|---|---|
+| Classe = sugerida | 60/60 (60/60) | 60/60 (60/60) |
+| Discordantes na seção | 52/52 (55/55) | 52/52 (55/55) |
+| Classe trocada; aviso em região concordante; coordenadas inventadas | 0; 0; 0 (0; 0; 0) | 0; 0; 0 (0; 0; 0) |
+| Números sem sustentação | **1** (0) | **1** (1) |
+| Critério L | **não passou** (passou) | não passou (não passou) |
+
+- Os dois números são complementos calculados pelo modelo, proibidos pelas instruções: "32% às outras classes" (1 − 0,68) e "probability of carcinoma 0.48" (1 − 0,52). Em português, L mudou de resultado entre as execuções por um único número.
+- Avisos, regiões e classe continuam certos por construção (colagem e leitura por código).
+
+Leitura: o resultado do Llama com colagem é instável no limite (0 ou 1 número calculado em 60 laudos), e o padrão de erro é o mesmo do parágrafo livre: o modelo calcula números. Com isso, nenhuma tabela da próstata mistura execuções.
+
 ## Custo da pipeline num notebook (26/11)
 
 Pergunta: quanto custa rodar a pipeline num computador comum, com GPU e só com CPU? Notebook com RTX 3050 Laptop (4 GB), i5-11400H (6 núcleos, 12 threads), 15,4 GB de RAM. 3 lâminas de teste do pulmão (464 MB a 2,9 GB; 11.760 a 31.066 patches de tecido; 2.000 sorteados), cada etapa cronometrada separadamente. Medição descritiva, sem critério; o que seria medido foi fixado antes (commit `57a2a59`), com duas correções antes de qualquer medida do modelo de linguagem (`edad449`: liberar a VRAM do PyTorch antes do Ollama; `f704763`: converter o UNI2-h na CPU). As tentativas anteriores falharam por falta de memória na GPU, duas delas porque outro projeto usava a GPU; esta rodou com a máquina ociosa (nenhum outro processo na GPU, carga < 3 por 5 minutos). Script: `Testes/Pipeline01/ferramentas/medir_recursos.py`.
@@ -1010,3 +1027,4 @@ Detalhes: `Testes/Pipeline01/notas/problemas_e_metrica.md`.
 25. Um MIL com atenção por classe (multi-ramo, um ramo por classe) mantém o desempenho no pulmão por centro (AUC 0,945, acurácia balanceada 0,878; M1 passou), mas não resolve a "classe por ausência": a suficiência na margem continua negativa nas lâminas previstas como adenocarcinoma (−1,92; M2 não passou) e nas biópsias previstas como ISUP 0 (−3,05; M3 não passou). O achado não depende da atenção única. (Sem critério: κ quadrático 0,721 na próstata nas 300 de desenvolvimento, contra 0,540 do ABMIL padronizado.)
 26. O CellViT dá dados com sentido nos dois órgãos: no pulmão, a fração de núcleos neoplásicos separa as regiões de tumor das de pulmão normal (AUC 0,84) e acompanha o padrão (escamoso com núcleos maiores); na próstata, com o modelo único, o resultado se mantém (0,75; número de núcleos 0,83). As linhas de células entram no laudo montado pelo código sem nenhum erro.
 27. No teste externo da próstata, onde o grau não se sustenta, o aviso de discordância continua marcando os erros câncer × benigno (126 dos 130 erros; 35% de erro com aviso contra 3% sem), mas marca 71% das biópsias; quase toda biópsia sem aviso está certa. A atenção cai no câncer anotado em 85% das biópsias externas com câncer (acaso 30%).
+28. Com o modelo único, o Llama com avisos e regiões colados mantém classe, avisos e coordenadas certos na próstata, mas escreve um número calculado (complemento de uma probabilidade) em 1 de 60 laudos em cada idioma; o critério L, que tinha passado em português na execução anterior, não passou. As seções críticas certas vêm da colagem; o texto do modelo continua calculando números.
